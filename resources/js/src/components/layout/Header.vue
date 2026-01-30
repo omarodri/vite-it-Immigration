@@ -7,7 +7,7 @@
                         <img class="w-8 ltr:-ml-1 rtl:-mr-1 inline" src="/assets/images/logo.svg" alt="" />
                         <span
                             class="text-2xl ltr:ml-1.5 rtl:mr-1.5 font-semibold align-middle hidden md:inline dark:text-white-light transition-all duration-300"
-                            >VRISTO</span
+                            >VITE-IT</span
                         >
                     </router-link>
 
@@ -119,7 +119,7 @@
                                 <img :src="currentFlag" alt="flag" class="w-5 h-5 object-cover rounded-full" />
                             </button>
                             <template #content="{ close }">
-                                <ul class="!px-2 text-dark dark:text-white-dark grid grid-cols-2 gap-2 font-semibold dark:text-white-light/90 w-[280px]">
+                                <ul class="!px-2 text-dark dark:text-white-dark grid grid-cols-1 gap-0 font-semibold dark:text-white-light/90 w-[280px]">
                                     <template v-for="item in store.languageList" :key="item.code">
                                         <li>
                                             <button
@@ -157,7 +157,7 @@
                                             <div
                                                 class="absolute h-full w-full bg-[url('/assets/images/menu-heade.jpg')] bg-no-repeat bg-center bg-cover inset-0"
                                             ></div>
-                                            <h4 class="font-semibold relative z-10 text-lg">Messages</h4>
+                                            <h4 class="font-semibold relative z-10 text-lg">{{ $t('messages') }}</h4>
                                         </div>
                                     </li>
                                     <template v-for="msg in messages" :key="msg.id">
@@ -317,28 +317,29 @@
                                     <li>
                                         <router-link to="/users/profile" class="dark:hover:text-white" @click="close()">
                                             <icon-user class="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
-
-                                            Profile
+                                            {{ $t('profile_in_bar') }}
+                                            
                                         </router-link>
                                     </li>
                                     <li>
                                         <router-link to="/apps/mailbox" class="dark:hover:text-white" @click="close()">
                                             <icon-mail class="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
-
-                                            Inbox
+                                            {{ $t('inbox') }}
+                                            
                                         </router-link>
                                     </li>
                                     <li>
                                         <router-link to="/auth/boxed-lockscreen" class="dark:hover:text-white" @click="close()">
                                             <icon-lock-dots class="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
-
-                                            Lock Screen
+                                            {{ $t('lock_screen') }}
+                                            
                                         </router-link>
                                     </li>
                                     <li class="border-t border-white-light dark:border-white-light/10">
                                         <button type="button" class="text-danger !py-3 w-full" @click="close(); handleLogout();">
                                             <icon-logout class="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 rotate-90 shrink-0" />
-                                            Sign Out
+                                            {{ $t('sign_out') }}
+                                            
                                         </button>
                                     </li>
                                 </ul>

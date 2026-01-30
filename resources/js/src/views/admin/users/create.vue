@@ -1,0 +1,358 @@
+<template>
+    <div>
+        <!-- Breadcrumb -->
+        <ul class="flex space-x-2 rtl:space-x-reverse mb-5">
+            <li>
+                <router-link to="/admin/users" class="text-primary hover:underline">Users</router-link>
+            </li>
+            <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
+                <span>Create User</span>
+            </li>
+        </ul>
+
+        <div class="panel">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-5">
+                <h5 class="font-semibold text-lg dark:text-white-light">Create New User</h5>
+                <router-link to="/admin/users" class="btn btn-outline-secondary gap-2">
+                    <icon-arrow-left class="w-4 h-4" />
+                    Back to List
+                </router-link>
+            </div>
+
+            <!-- Form -->
+            <form @submit.prevent="handleSubmit" class="space-y-5">
+                <!-- Error Alert -->
+                <div v-if="errorMessage" class="flex items-center p-3.5 rounded text-danger bg-danger-light dark:bg-danger-dark-light">
+                    <span class="ltr:pr-2 rtl:pl-2">{{ errorMessage }}</span>
+                    <button type="button" class="ltr:ml-auto rtl:mr-auto hover:opacity-80" @click="errorMessage = ''">
+                        <icon-x class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Name -->
+                    <div>
+                        <label for="name" class="mb-2 block">
+                            Name <span class="text-danger">*</span>
+                        </label>
+                        <div class="relative">
+                            <input
+                                id="name"
+                                v-model="form.name"
+                                type="text"
+                                placeholder="Enter full name"
+                                class="form-input pl-10"
+                                :class="{ 'border-danger': v$.name.$error }"
+                            />
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                <icon-user class="w-5 h-5" />
+                            </span>
+                        </div>
+                        <template v-if="v$.name.$error">
+                            <p class="text-danger mt-1 text-sm">{{ v$.name.$errors[0]?.$message }}</p>
+                        </template>
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label for="email" class="mb-2 block">
+                            Email <span class="text-danger">*</span>
+                        </label>
+                        <div class="relative">
+                            <input
+                                id="email"
+                                v-model="form.email"
+                                type="email"
+                                placeholder="Enter email address"
+                                class="form-input pl-10"
+                                :class="{ 'border-danger': v$.email.$error }"
+                            />
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                <icon-mail class="w-5 h-5" />
+                            </span>
+                        </div>
+                        <template v-if="v$.email.$error">
+                            <p class="text-danger mt-1 text-sm">{{ v$.email.$errors[0]?.$message }}</p>
+                        </template>
+                    </div>
+
+                    <!-- Password -->
+                    <div>
+                        <label for="password" class="mb-2 block">
+                            Password <span class="text-danger">*</span>
+                        </label>
+                        <div class="relative">
+                            <input
+                                id="password"
+                                v-model="form.password"
+                                :type="showPassword ? 'text' : 'password'"
+                                placeholder="Enter password"
+                                class="form-input pl-10 pr-10"
+                                :class="{ 'border-danger': v$.password.$error }"
+                            />
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                <icon-lock-dots class="w-5 h-5" />
+                            </span>
+                            <button
+                                type="button"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                @click="showPassword = !showPassword"
+                            >
+                                <icon-eye class="w-5 h-5" />
+                            </button>
+                        </div>
+                        <template v-if="v$.password.$error">
+                            <p class="text-danger mt-1 text-sm">{{ v$.password.$errors[0]?.$message }}</p>
+                        </template>
+                        <p class="text-gray-500 text-xs mt-1">Minimum 8 characters</p>
+                    </div>
+
+                    <!-- Password Confirmation -->
+                    <div>
+                        <label for="password_confirmation" class="mb-2 block">
+                            Confirm Password <span class="text-danger">*</span>
+                        </label>
+                        <div class="relative">
+                            <input
+                                id="password_confirmation"
+                                v-model="form.password_confirmation"
+                                :type="showPasswordConfirm ? 'text' : 'password'"
+                                placeholder="Confirm password"
+                                class="form-input pl-10 pr-10"
+                                :class="{ 'border-danger': v$.password_confirmation.$error }"
+                            />
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                <icon-lock-dots class="w-5 h-5" />
+                            </span>
+                            <button
+                                type="button"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                @click="showPasswordConfirm = !showPasswordConfirm"
+                            >
+                                <icon-eye class="w-5 h-5" />
+                            </button>
+                        </div>
+                        <template v-if="v$.password_confirmation.$error">
+                            <p class="text-danger mt-1 text-sm">{{ v$.password_confirmation.$errors[0]?.$message }}</p>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Roles -->
+                <div>
+                    <label class="mb-2 block">
+                        Roles <span class="text-danger">*</span>
+                    </label>
+                    <div v-if="isLoadingRoles" class="flex items-center gap-2 text-gray-500">
+                        <span class="animate-spin border-2 border-primary border-l-transparent rounded-full w-4 h-4"></span>
+                        Loading roles...
+                    </div>
+                    <div v-else class="flex flex-wrap gap-4">
+                        <label
+                            v-for="role in roles"
+                            :key="role.id"
+                            class="flex items-center cursor-pointer"
+                        >
+                            <input
+                                type="checkbox"
+                                :value="role.id"
+                                v-model="form.roles"
+                                class="form-checkbox"
+                                :class="getRoleCheckboxClass(role.name)"
+                            />
+                            <span class="ml-2" :class="getRoleTextClass(role.name)">
+                                {{ capitalizeFirst(role.name) }}
+                            </span>
+                        </label>
+                    </div>
+                    <template v-if="v$.roles.$error">
+                        <p class="text-danger mt-1 text-sm">{{ v$.roles.$errors[0]?.$message }}</p>
+                    </template>
+                </div>
+
+                <!-- Send Welcome Email -->
+                <div>
+                    <label class="flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            v-model="form.send_welcome_email"
+                            class="form-checkbox text-success"
+                        />
+                        <span class="ml-2 text-white-dark">
+                            Send welcome email with login credentials
+                        </span>
+                    </label>
+                    <p class="text-gray-500 text-xs mt-1 ml-6">
+                        The user will receive an email with their login details and instructions.
+                    </p>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <router-link to="/admin/users" class="btn btn-outline-danger">
+                        Cancel
+                    </router-link>
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        :disabled="isSubmitting"
+                    >
+                        <template v-if="isSubmitting">
+                            <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-5 h-5 inline-block mr-2"></span>
+                            Creating...
+                        </template>
+                        <template v-else>
+                            <icon-save class="w-5 h-5 mr-2" />
+                            Create User
+                        </template>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useVuelidate } from '@vuelidate/core';
+import { required, email, minLength, sameAs, helpers } from '@vuelidate/validators';
+import { useMeta } from '@/composables/use-meta';
+import { useUserStore } from '@/stores/user';
+import { useNotification } from '@/composables/useNotification';
+import roleService, { type RoleWithPermissions } from '@/services/roleService';
+
+// Icons
+import IconArrowLeft from '@/components/icon/icon-arrow-left.vue';
+import IconUser from '@/components/icon/icon-user.vue';
+import IconMail from '@/components/icon/icon-mail.vue';
+import IconLockDots from '@/components/icon/icon-lock-dots.vue';
+import IconEye from '@/components/icon/icon-eye.vue';
+import IconSave from '@/components/icon/icon-save.vue';
+import IconX from '@/components/icon/icon-x.vue';
+
+useMeta({ title: 'Create User' });
+
+const router = useRouter();
+const userStore = useUserStore();
+const { success, error } = useNotification();
+
+// State
+const roles = ref<RoleWithPermissions[]>([]);
+const isSubmitting = ref(false);
+const isLoadingRoles = ref(false);
+const errorMessage = ref('');
+const showPassword = ref(false);
+const showPasswordConfirm = ref(false);
+
+// Form
+const form = reactive({
+    name: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
+    roles: [] as number[],
+    send_welcome_email: true,
+});
+
+// Computed for sameAs validation
+const passwordRef = computed(() => form.password);
+
+// Validation rules
+const rules = computed(() => ({
+    name: {
+        required: helpers.withMessage('Name is required', required),
+        minLength: helpers.withMessage('Name must be at least 2 characters', minLength(2)),
+    },
+    email: {
+        required: helpers.withMessage('Email is required', required),
+        email: helpers.withMessage('Please enter a valid email address', email),
+    },
+    password: {
+        required: helpers.withMessage('Password is required', required),
+        minLength: helpers.withMessage('Password must be at least 8 characters', minLength(8)),
+    },
+    password_confirmation: {
+        required: helpers.withMessage('Please confirm the password', required),
+        sameAs: helpers.withMessage('Passwords do not match', sameAs(passwordRef)),
+    },
+    roles: {
+        required: helpers.withMessage('Please select at least one role', required),
+        minLength: helpers.withMessage('Please select at least one role', minLength(1)),
+    },
+}));
+
+const v$ = useVuelidate(rules, form);
+
+// Methods
+const capitalizeFirst = (str: string): string => {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+const getRoleCheckboxClass = (roleName: string): string => {
+    const classes: Record<string, string> = {
+        admin: 'text-danger',
+        editor: 'text-warning',
+        user: 'text-info',
+    };
+    return classes[roleName] || 'text-primary';
+};
+
+const getRoleTextClass = (roleName: string): string => {
+    const classes: Record<string, string> = {
+        admin: 'text-danger font-semibold',
+        editor: 'text-warning',
+        user: 'text-info',
+    };
+    return classes[roleName] || '';
+};
+
+const fetchRoles = async () => {
+    isLoadingRoles.value = true;
+    try {
+        roles.value = await roleService.getRoles();
+    } catch (err) {
+        error('Failed to load roles');
+    } finally {
+        isLoadingRoles.value = false;
+    }
+};
+
+const handleSubmit = async () => {
+    const isValid = await v$.value.$validate();
+    if (!isValid) return;
+
+    isSubmitting.value = true;
+    errorMessage.value = '';
+
+    try {
+        await userStore.createUser({
+            name: form.name,
+            email: form.email,
+            password: form.password,
+            password_confirmation: form.password_confirmation,
+            roles: form.roles,
+            send_welcome_email: form.send_welcome_email,
+        });
+
+        success('User created successfully');
+        router.push('/admin/users');
+    } catch (err: any) {
+        if (err.response?.data?.errors) {
+            const errors = err.response.data.errors;
+            const firstError = Object.values(errors)[0];
+            errorMessage.value = Array.isArray(firstError) ? firstError[0] : String(firstError);
+        } else {
+            errorMessage.value = err.response?.data?.message || 'Failed to create user';
+        }
+    } finally {
+        isSubmitting.value = false;
+    }
+};
+
+// Initialize
+onMounted(() => {
+    fetchRoles();
+});
+</script>

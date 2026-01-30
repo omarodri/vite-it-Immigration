@@ -14,18 +14,18 @@
         "skipLibCheck": true,
         "baseUrl": "./",
         "paths": {
-            "@/*": ["src/*"]
+            "@/*": ["resources/js/src/*"]
         },
         "noImplicitAny": false,
         "allowJs": true,
         "types": ["@intlify/unplugin-vue-i18n/messages"]
     },
     "include": [
-        "src/**/*.js",
-        "src/**/*.ts",
-        "src/**/*.d.ts",
-        "src/**/*.tsx",
-        "src/**/*.vue"
+        "resources/js/src/**/*.js",
+        "resources/js/src/**/*.ts",
+        "resources/js/src/**/*.d.ts",
+        "resources/js/src/**/*.tsx",
+        "resources/js/src/**/*.vue"
     ],
     "references": [
         {

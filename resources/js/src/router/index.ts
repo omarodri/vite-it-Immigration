@@ -5,6 +5,18 @@ import appSetting from '@/app-setting';
 
 import HomeView from '../views/index.vue';
 
+// Route metadata interface
+declare module 'vue-router' {
+    interface RouteMeta {
+        layout?: 'auth' | 'app';
+        requiresAuth?: boolean;
+        requiresVerified?: boolean;
+        permission?: string | string[];
+        role?: string | string[];
+        guest?: boolean;
+    }
+}
+
 // Public routes that don't require authentication
 const publicRoutes = [
     'boxed-signin',
@@ -19,9 +31,19 @@ const publicRoutes = [
     'error404',
     'error500',
     'error503',
+    'error403',
     'maintenence',
     'coming-soon-boxed',
     'coming-soon-cover',
+    'verify-email',
+    'two-factor-challenge',
+];
+
+// Routes that don't require email verification
+const noVerificationRoutes = [
+    'email-verification-notice',
+    'verify-email',
+    ...publicRoutes,
 ];
 
 const routes: RouteRecordRaw[] = [
@@ -461,6 +483,32 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/users/user-account-settings.vue'),
     },
 
+    // Admin - User Management
+    {
+        path: '/admin/users',
+        name: 'admin-users',
+        component: () => import('../views/admin/users/list.vue'),
+        meta: { permission: 'users.view' },
+    },
+    {
+        path: '/admin/users/create',
+        name: 'admin-users-create',
+        component: () => import('../views/admin/users/create.vue'),
+        meta: { permission: 'users.create' },
+    },
+    {
+        path: '/admin/users/:id',
+        name: 'admin-users-show',
+        component: () => import('../views/admin/users/show.vue'),
+        meta: { permission: 'users.view' },
+    },
+    {
+        path: '/admin/users/:id/edit',
+        name: 'admin-users-edit',
+        component: () => import('../views/admin/users/edit.vue'),
+        meta: { permission: 'users.update' },
+    },
+
     // pages
     {
         path: '/pages/knowledge-base',
@@ -515,6 +563,12 @@ const routes: RouteRecordRaw[] = [
         meta: { layout: 'auth' },
     },
     {
+        path: '/pages/error403',
+        name: 'error403',
+        component: () => import('../views/pages/error403.vue'),
+        meta: { layout: 'auth' },
+    },
+    {
         path: '/pages/maintenence',
         name: 'maintenence',
         component: () => import('../views/pages/maintenence.vue'),
@@ -526,13 +580,13 @@ const routes: RouteRecordRaw[] = [
         path: '/auth/boxed-signin',
         name: 'boxed-signin',
         component: () => import('../views/auth/boxed-signin.vue'),
-        meta: { layout: 'auth' },
+        meta: { layout: 'auth', guest: true },
     },
     {
         path: '/auth/boxed-signup',
         name: 'boxed-signup',
         component: () => import('../views/auth/boxed-signup.vue'),
-        meta: { layout: 'auth' },
+        meta: { layout: 'auth', guest: true },
     },
     {
         path: '/auth/boxed-lockscreen',
@@ -544,19 +598,19 @@ const routes: RouteRecordRaw[] = [
         path: '/auth/boxed-password-reset',
         name: 'boxed-password-reset',
         component: () => import('../views/auth/boxed-password-reset.vue'),
-        meta: { layout: 'auth' },
+        meta: { layout: 'auth', guest: true },
     },
     {
         path: '/auth/cover-login',
         name: 'cover-login',
         component: () => import('../views/auth/cover-login.vue'),
-        meta: { layout: 'auth' },
+        meta: { layout: 'auth', guest: true },
     },
     {
         path: '/auth/cover-register',
         name: 'cover-register',
         component: () => import('../views/auth/cover-register.vue'),
-        meta: { layout: 'auth' },
+        meta: { layout: 'auth', guest: true },
     },
     {
         path: '/auth/cover-lockscreen',
@@ -568,12 +622,32 @@ const routes: RouteRecordRaw[] = [
         path: '/auth/cover-password-reset',
         name: 'cover-password-reset',
         component: () => import('../views/auth/cover-password-reset.vue'),
-        meta: { layout: 'auth' },
+        meta: { layout: 'auth', guest: true },
     },
     {
         path: '/auth/reset-password',
         name: 'reset-password',
         component: () => import('../views/auth/reset-password.vue'),
+        meta: { layout: 'auth', guest: true },
+    },
+    // Email verification routes
+    {
+        path: '/auth/email-verification-notice',
+        name: 'email-verification-notice',
+        component: () => import('../views/auth/email-verification-notice.vue'),
+        meta: { layout: 'auth', requiresAuth: true },
+    },
+    {
+        path: '/auth/verify-email',
+        name: 'verify-email',
+        component: () => import('../views/auth/verify-email.vue'),
+        meta: { layout: 'auth' },
+    },
+    // Two-Factor Authentication
+    {
+        path: '/auth/two-factor-challenge',
+        name: 'two-factor-challenge',
+        component: () => import('../views/auth/two-factor-challenge.vue'),
         meta: { layout: 'auth' },
     },
 ];
@@ -607,6 +681,7 @@ router.beforeEach(async (to, from, next) => {
 
     // Check if route is public
     const isPublicRoute = publicRoutes.includes(to.name as string);
+    const requiresNoVerification = noVerificationRoutes.includes(to.name as string);
 
     // Try to fetch user on first navigation if not authenticated
     if (!authChecked && !authStore.isAuthenticated) {
@@ -618,16 +693,55 @@ router.beforeEach(async (to, from, next) => {
         }
     }
 
-    // Redirect logic
+    // Two-factor authentication guards
+    if (authStore.twoFactorRequired && to.name !== 'two-factor-challenge') {
+        return next({ name: 'two-factor-challenge' });
+    }
+    if (to.name === 'two-factor-challenge' && !authStore.twoFactorRequired) {
+        return next({ name: 'boxed-signin' });
+    }
+
+    // Check authentication
     if (!authStore.isAuthenticated && !isPublicRoute) {
         // Not authenticated, trying to access protected route
-        next({ name: 'boxed-signin' });
-    } else if (authStore.isAuthenticated && isPublicRoute && to.name !== 'error404' && to.name !== 'error500' && to.name !== 'error503') {
-        // Authenticated user trying to access login/register pages
-        next({ name: 'home' });
-    } else {
-        next();
+        return next({ name: 'boxed-signin' });
     }
+
+    // Check if guest route (only for non-authenticated users)
+    if (authStore.isAuthenticated && to.meta.guest) {
+        return next({ name: 'home' });
+    }
+
+    // Check email verification (only for routes that explicitly require it via meta.requiresVerified)
+    // This makes email verification opt-in rather than mandatory
+    if (to.meta.requiresVerified && authStore.isAuthenticated && !authStore.isEmailVerified) {
+        return next({ name: 'email-verification-notice' });
+    }
+
+    // Check permission-based access
+    if (to.meta.permission) {
+        const permissions = Array.isArray(to.meta.permission) ? to.meta.permission : [to.meta.permission];
+        const hasPermission = authStore.hasAnyPermission(permissions);
+
+        if (!hasPermission) {
+            return next({
+                name: 'error403',
+                query: { permission: permissions.join(', ') }
+            });
+        }
+    }
+
+    // Check role-based access
+    if (to.meta.role) {
+        const roles = Array.isArray(to.meta.role) ? to.meta.role : [to.meta.role];
+        const hasRole = authStore.hasAnyRole(roles);
+
+        if (!hasRole) {
+            return next({ name: 'error403' });
+        }
+    }
+
+    next();
 });
 
 router.afterEach((to, from, next) => {

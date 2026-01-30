@@ -101,6 +101,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Email Verification
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define the expiration time for email verification links.
+    | This security feature keeps verification links short-lived so they
+    | have less time to be compromised.
+    |
+    */
+
+    'verification' => [
+        'expire' => 60, // minutes
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Password Confirmation Timeout
     |--------------------------------------------------------------------------
     |

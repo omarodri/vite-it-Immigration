@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -12,11 +13,43 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
+        // Seed roles and permissions first
+        $this->call(RolePermissionSeeder::class);
 
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        // Create admin user if not exists
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@vristo.com'],
+            [
+                'name' => 'Admin User',
+                'email' => 'admin@vristo.com',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+            ]
+        );
+        $admin->assignRole('admin');
+
+        // Create editor user if not exists
+        $editor = User::firstOrCreate(
+            ['email' => 'editor@vristo.com'],
+            [
+                'name' => 'Editor User',
+                'email' => 'editor@vristo.com',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+            ]
+        );
+        $editor->assignRole('editor');
+
+        // Create regular user if not exists
+        $user = User::firstOrCreate(
+            ['email' => 'user@vristo.com'],
+            [
+                'name' => 'Regular User',
+                'email' => 'user@vristo.com',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+            ]
+        );
+        $user->assignRole('user');
     }
 }
