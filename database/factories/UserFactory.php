@@ -37,4 +37,26 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * Indicate that the model has two-factor authentication enabled.
+     *
+     * @param string|null $secret
+     * @return $this
+     */
+    public function withTwoFactor(?string $secret = null): static
+    {
+        return $this->state(function (array $attributes) use ($secret) {
+            $recoveryCodes = [];
+            for ($i = 0; $i < 8; $i++) {
+                $recoveryCodes[] = strtoupper(Str::random(10));
+            }
+
+            return [
+                'two_factor_secret' => $secret ?? (new \PragmaRX\Google2FA\Google2FA())->generateSecretKey(),
+                'two_factor_recovery_codes' => $recoveryCodes,
+                'two_factor_confirmed_at' => now(),
+            ];
+        });
+    }
 }

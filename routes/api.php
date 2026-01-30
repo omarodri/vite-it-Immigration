@@ -1,7 +1,12 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\TwoFactorController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,17 +20,64 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Public routes (no authentication required)
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+// Public routes with rate limiting
+Route::middleware('throttle:login')->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/two-factor-challenge', [AuthController::class, 'twoFactorChallenge']);
+});
 
-// Password reset routes
-Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
-Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+Route::middleware('throttle:register')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+});
+
+// Password reset routes with rate limiting
+Route::middleware('throttle:password-reset')->group(function () {
+    Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
+    Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+});
+
 Route::get('/verify-token/{token}/{email}', [PasswordResetController::class, 'verifyToken']);
 
-// Protected routes (authentication required)
-Route::middleware('auth:sanctum')->group(function () {
+// Email verification (signed URL - no auth required)
+Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->middleware(['signed', 'throttle:email-verification'])
+    ->name('verification.verify');
+
+// Protected routes (authentication required) with API rate limiting
+Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
+    // Auth routes
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Email verification routes (auth required)
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
+        ->middleware('throttle:email-verification')
+        ->name('verification.send');
+    Route::get('/email/verification-status', [EmailVerificationController::class, 'status']);
+
+    // Profile management routes
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
+    Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar']);
+    Route::post('/profile/password', [ProfileController::class, 'changePassword']);
+
+    // User management routes
+    Route::apiResource('users', UserController::class);
+    Route::delete('/users/bulk', [UserController::class, 'bulkDestroy']);
+
+    // Role management routes
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::get('/roles/{role}', [RoleController::class, 'show']);
+    Route::post('/roles', [RoleController::class, 'store']);
+    Route::put('/roles/{role}', [RoleController::class, 'update']);
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
+    Route::get('/permissions', [RoleController::class, 'permissions']);
+
+    // Two-factor authentication management routes
+    Route::post('/two-factor/enable', [TwoFactorController::class, 'enable']);
+    Route::post('/two-factor/confirm', [TwoFactorController::class, 'confirm']);
+    Route::delete('/two-factor/disable', [TwoFactorController::class, 'disable']);
+    Route::get('/two-factor/recovery-codes', [TwoFactorController::class, 'recoveryCodes']);
+    Route::post('/two-factor/recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes']);
 });

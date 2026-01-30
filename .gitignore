@@ -18,9 +18,13 @@ yarn-error.log
 # IDE
 /.idea
 /.vscode
+/.cursor
 *.swp
 *.swo
 .DS_Store
+
+# Claude Code
+/.claude/settings.local.json
 
 # Testing
 /coverage
@@ -28,3 +32,4 @@ yarn-error.log
 
 # Build
 /dist
+node_modules
