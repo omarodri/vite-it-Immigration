@@ -112,7 +112,7 @@
                         </div>
                         <div class="mb-10 md:mb-[60px]">
                             <ul class="flex justify-center gap-3.5 text-white">
-                                <li>
+                                <!-- <li>
                                     <a
                                         href="javascript:"
                                         class="inline-flex h-8 w-8 items-center justify-center rounded-full p-0 transition hover:scale-110"
@@ -120,8 +120,8 @@
                                     >
                                         <icon-instagram />
                                     </a>
-                                </li>
-                                <li>
+                                </li> -->
+                                <!-- <li>
                                     <a
                                         href="javascript:"
                                         class="inline-flex h-8 w-8 items-center justify-center rounded-full p-0 transition hover:scale-110"
@@ -129,8 +129,8 @@
                                     >
                                         <icon-facebook-circle />
                                     </a>
-                                </li>
-                                <li>
+                                </li> -->
+                                <!-- <li>
                                     <a
                                         href="javascript:"
                                         class="inline-flex h-8 w-8 items-center justify-center rounded-full p-0 transition hover:scale-110"
@@ -138,7 +138,7 @@
                                     >
                                         <icon-twitter :fill="true" />
                                     </a>
-                                </li>
+                                </li> -->
                                 <li>
                                     <a
                                         href="javascript:"
@@ -148,12 +148,21 @@
                                         <icon-google />
                                     </a>
                                 </li>
+                                <li>
+                                    <a
+                                        href="javascript:"
+                                        class="inline-flex h-8 w-8 items-center justify-center rounded-full p-0 transition hover:scale-110"
+                                        style="background: linear-gradient(135deg, rgba(239, 18, 98, 1) 0%, rgba(67, 97, 238, 1) 100%)"
+                                    >
+                                        <icon-microsoft />
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                         <div class="text-center dark:text-white">
                             Don't have an account ?
                             <router-link to="/auth/cover-register" class="uppercase text-primary underline transition hover:text-black dark:hover:text-white">
-                                SIGN UP
+                                {{ $t('signup') }}
                             </router-link>
                         </div>
                     </div>

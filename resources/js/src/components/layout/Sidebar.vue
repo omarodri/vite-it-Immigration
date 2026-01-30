@@ -5,7 +5,8 @@
                 <div class="flex justify-between items-center px-4 py-3">
                     <router-link to="/" class="main-logo flex items-center shrink-0">
                         <img class="w-8 ml-[5px] flex-none" src="/assets/images/logo.svg" alt="" />
-                        <span class="text-2xl ltr:ml-1.5 rtl:mr-1.5 font-semibold align-middle lg:inline dark:text-white-light">VRISTO</span>
+                        <span class="text-2xl ltr:ml-1.5 rtl:mr-1.5 font-semibold align-middle lg:inline dark:text-white-light">VITE-IT</span><br />
+                        <span class="text-2xs ltr:ml-1.5 rtl:mr-1.5 font-semibold align-middle lg:inline dark:text-white-light">Inmmigration</span>
                     </router-link>
                     <a
                         href="javascript:;"
@@ -57,6 +58,29 @@
                                 </ul>
                             </vue-collapsible>
                         </li>
+
+                        <!-- Admin Section (visible only for users with permission) -->
+                        <template v-if="canViewUsers">
+                            <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
+                                <icon-minus class="w-4 h-5 flex-none hidden" />
+                                <span>Admin</span>
+                            </h2>
+
+                            <li class="nav-item">
+                                <ul>
+                                    <li class="nav-item">
+                                        <router-link to="/admin/users" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-users class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    User Management
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                </ul>
+                            </li>
+                        </template>
 
                         <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
                             <icon-minus class="w-4 h-5 flex-none hidden" />
@@ -695,9 +719,10 @@
 </template>
 
 <script lang="ts" setup>
-    import { ref, onMounted } from 'vue';
+    import { ref, onMounted, computed } from 'vue';
 
     import { useAppStore } from '@/stores/index';
+    import { useAuthStore } from '@/stores/auth';
     import VueCollapsible from 'vue-height-collapsible/vue3';
 
     import IconCaretsDown from '@/components/icon/icon-carets-down.vue';
@@ -725,10 +750,15 @@
     import IconMenuPages from '@/components/icon/menu/icon-menu-pages.vue';
     import IconMenuAuthentication from '@/components/icon/menu/icon-menu-authentication.vue';
     import IconMenuDocumentation from '@/components/icon/menu/icon-menu-documentation.vue';
+    import IconUsers from '@/components/icon/icon-users.vue';
 
     const store = useAppStore();
+    const authStore = useAuthStore();
     const activeDropdown: any = ref('');
     const subActive: any = ref('');
+
+    // Check if user has permission to view users (admin section)
+    const canViewUsers = computed(() => authStore.hasPermission('users.view'));
 
     onMounted(() => {
         const selector = document.querySelector('.sidebar ul a[href="' + window.location.pathname + '"]');

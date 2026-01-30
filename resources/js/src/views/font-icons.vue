@@ -613,6 +613,7 @@
     import IconMessageDots from '@/components/icon/icon-message-dots.vue';
     import IconMessagesDot from '@/components/icon/icon-messages-dot.vue';
     import IconMicrophoneOff from '@/components/icon/icon-microphone-off.vue';
+    import IconMicrosoft from '@/components/icon/icon-microsoft.vue';    
     import IconMinus from '@/components/icon/icon-minus.vue';
     import IconMinusCircle from '@/components/icon/icon-minus-circle.vue';
     import IconMoodSmile from '@/components/icon/icon-mood-smile.vue';

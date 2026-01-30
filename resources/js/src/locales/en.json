@@ -124,5 +124,13 @@
     "coming_soon_boxed": "Coming Soon Boxed",
     "coming_soon_cover": "Coming Soon Cover",
     "contact_us_boxed": "Contact Us Boxed",
-    "contact_us_cover": "Contact Us Cover"
+    "contact_us_cover": "Contact Us Cover",
+    "messages": "Messages",    
+    "profile_in_bar": "Profile",
+    "inbox": "Inbox",
+    "lock_screen": "Lock Screen",
+    "sign_out": "Sign Out",
+    "signup": "Sign Up",
+    "signin": "Sign In",
+    "dont_have_an_account": "Don't have an account?"
 }

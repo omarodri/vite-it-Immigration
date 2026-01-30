@@ -31,7 +31,7 @@
                                     </span>
                                 </button>
                                 <template #content="{ close }">
-                                    <ul class="!px-2 text-dark dark:text-white-dark grid grid-cols-2 gap-2 font-semibold dark:text-white-light/90 w-[280px]">
+                                    <ul class="!px-2 text-dark dark:text-white-dark grid grid-cols-1 gap-0 font-semibold dark:text-white-light/90 w-[280px]">
                                         <template v-for="item in store.languageList" :key="item.code">
                                             <li>
                                                 <button
@@ -56,7 +56,7 @@
                     </div>
                     <div class="mx-auto w-full max-w-[440px]">
                         <div class="mb-10">
-                            <h1 class="text-3xl font-extrabold uppercase !leading-snug text-primary md:text-4xl">Sign in</h1>
+                            <h1 class="text-3xl font-extrabold uppercase !leading-snug text-primary md:text-4xl">{{ $t('signin') }}</h1>
                             <p class="text-base font-bold leading-normal text-white-dark">Enter your email and password to login</p>
                         </div>
                         <form class="space-y-5 dark:text-white" @submit.prevent="handleSubmit">
@@ -120,7 +120,7 @@
                                     <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-5 h-5 inline-block"></span>
                                     Signing in...
                                 </span>
-                                <span v-else>Sign in</span>
+                                <span v-else>{{ $t('signin') }}</span>
                             </button>
                         </form>
                         <div class="relative my-7 text-center md:mb-9">
@@ -129,7 +129,7 @@
                         </div>
                         <div class="mb-10 md:mb-[60px]">
                             <ul class="flex justify-center gap-3.5 text-white">
-                                <li>
+                                <!-- <li>
                                     <a
                                         href="javascript:"
                                         class="inline-flex h-8 w-8 items-center justify-center rounded-full p-0 transition hover:scale-110"
@@ -137,8 +137,8 @@
                                     >
                                         <icon-instagram />
                                     </a>
-                                </li>
-                                <li>
+                                </li> -->
+                                <!-- <li>
                                     <a
                                         href="javascript:"
                                         class="inline-flex h-8 w-8 items-center justify-center rounded-full p-0 transition hover:scale-110"
@@ -146,8 +146,8 @@
                                     >
                                         <icon-facebook-circle />
                                     </a>
-                                </li>
-                                <li>
+                                </li> -->
+                                <!-- <li>
                                     <a
                                         href="javascript:"
                                         class="inline-flex h-8 w-8 items-center justify-center rounded-full p-0 transition hover:scale-110"
@@ -155,7 +155,7 @@
                                     >
                                         <icon-twitter :fill="true" />
                                     </a>
-                                </li>
+                                </li> -->
                                 <li>
                                     <a
                                         href="javascript:"
@@ -165,12 +165,22 @@
                                         <icon-google />
                                     </a>
                                 </li>
+                                <li>
+                                    <a
+                                        href="javascript:"
+                                        class="inline-flex h-8 w-8 items-center justify-center rounded-full p-0 transition hover:scale-110"
+                                        style="background: linear-gradient(135deg, rgba(239, 18, 98, 1) 0%, rgba(67, 97, 238, 1) 100%)"
+                                    >
+                                        <icon-microsoft />
+                                    </a>
+                                </li>                                
                             </ul>
                         </div>
                         <div class="text-center dark:text-white">
-                            Don't have an account ?
+                            {{ $t('dont_have_an_account') }}
+                            
                             <router-link to="/auth/boxed-signup" class="uppercase text-primary underline transition hover:text-black dark:hover:text-white">
-                                SIGN UP
+                                {{ $t('signup') }}
                             </router-link>
                         </div>
                     </div>
@@ -193,10 +203,11 @@
     import IconCaretDown from '@/components/icon/icon-caret-down.vue';
     import IconMail from '@/components/icon/icon-mail.vue';
     import IconLockDots from '@/components/icon/icon-lock-dots.vue';
-    import IconInstagram from '@/components/icon/icon-instagram.vue';
-    import IconFacebookCircle from '@/components/icon/icon-facebook-circle.vue';
-    import IconTwitter from '@/components/icon/icon-twitter.vue';
+    // import IconInstagram from '@/components/icon/icon-instagram.vue';
+    // import IconFacebookCircle from '@/components/icon/icon-facebook-circle.vue';
+    // import IconTwitter from '@/components/icon/icon-twitter.vue';
     import IconGoogle from '@/components/icon/icon-google.vue';
+    import IconMicrosoft from '@/components/icon/icon-microsoft.vue';
     import IconX from '@/components/icon/icon-x.vue';
 
     useMeta({ title: 'Login Boxed' });
@@ -231,10 +242,16 @@
         errorMessage.value = '';
 
         try {
-            await authStore.login({
+            const response = await authStore.login({
                 email: form.email,
                 password: form.password,
             });
+
+            if (response.two_factor_required) {
+                router.push({ name: 'two-factor-challenge' });
+                return;
+            }
+
             router.push('/');
         } catch (error: any) {
             if (error.response?.data?.errors) {

@@ -124,5 +124,13 @@
     "coming_soon_boxed": "Próximamente en caja",
     "coming_soon_cover": "Próximamente Portada",
     "contact_us_boxed": "Comuníquese con nosotros",
-    "contact_us_cover": "Contáctenos Portada"
+    "contact_us_cover": "Contáctenos Portada",
+    "messages": "Mensajes",
+    "profile_in_bar": "Perfil",
+    "inbox": "Bandeja de entrada",
+    "lock_screen": "Bloquear Pantalla",
+    "sign_out": "Salir",
+    "signup": "Registrarse",
+    "signin": "Iniciar sesión",
+    "dont_have_an_account": "No tienes una cuenta"
 }

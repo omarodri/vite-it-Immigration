@@ -124,5 +124,13 @@
     "coming_soon_boxed": "Bientôt en boîte",
     "coming_soon_cover": "Prochainement Couverture",
     "contact_us_boxed": "Contactez-nous",
-    "contact_us_cover": "Contactez-nous Couverture"
+    "contact_us_cover": "Contactez-nous Couverture",
+    "messages": "Menssajes",
+    "profile_in_bar": "Profil",
+    "inbox": "Boîte Mail",
+    "lock_screen": "Bloquer l'écran",
+    "sign_out": "Sortir",
+    "signup": "S'inscrire",
+    "signin": "Se connecter",
+    "dont_have_an_account": "Vous n'avez pas de compte ?"
 }

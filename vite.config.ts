@@ -37,4 +37,37 @@ export default defineConfig({
     optimizeDeps: {
         include: ["@fullcalendar/core", "@fullcalendar/vue3"],
     },
+    build: {
+        chunkSizeWarningLimit: 1000, // 1MB - some libraries like highlight.js are large
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    // Vue core
+                    'vue-vendor': ['vue', 'vue-router', 'pinia'],
+                    // Charts
+                    'apexcharts': ['apexcharts', 'vue3-apexcharts'],
+                    // Calendar
+                    'fullcalendar': [
+                        '@fullcalendar/core',
+                        '@fullcalendar/daygrid',
+                        '@fullcalendar/timegrid',
+                        '@fullcalendar/interaction',
+                        '@fullcalendar/vue3',
+                    ],
+                    // Rich text editors
+                    'editors': ['vue3-quill', 'easymde', 'vue3-easymde'],
+                    // Code highlighting
+                    'highlight': ['highlight.js'],
+                    // UI utilities
+                    'ui-utils': ['sweetalert2', 'vue-flatpickr-component', 'tippy.js'],
+                    // Carousel & animations
+                    'swiper': ['swiper'],
+                    // Data tables
+                    'datatables': ['@bhplugin/vue3-datatable'],
+                    // i18n
+                    'i18n': ['vue-i18n'],
+                },
+            },
+        },
+    },
 });
