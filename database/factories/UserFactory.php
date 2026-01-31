@@ -41,7 +41,6 @@ class UserFactory extends Factory
     /**
      * Indicate that the model has two-factor authentication enabled.
      *
-     * @param string|null $secret
      * @return $this
      */
     public function withTwoFactor(?string $secret = null): static
@@ -53,7 +52,7 @@ class UserFactory extends Factory
             }
 
             return [
-                'two_factor_secret' => $secret ?? (new \PragmaRX\Google2FA\Google2FA())->generateSecretKey(),
+                'two_factor_secret' => $secret ?? (new \PragmaRX\Google2FA\Google2FA)->generateSecretKey(),
                 'two_factor_recovery_codes' => $recoveryCodes,
                 'two_factor_confirmed_at' => now(),
             ];

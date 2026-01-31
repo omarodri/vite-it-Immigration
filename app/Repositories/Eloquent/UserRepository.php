@@ -26,6 +26,7 @@ class UserRepository implements UserRepositoryInterface
     public function update(User $user, array $data): User
     {
         $user->update($data);
+
         return $user;
     }
 
@@ -38,7 +39,7 @@ class UserRepository implements UserRepositoryInterface
     {
         $query = User::with('roles');
 
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -46,7 +47,7 @@ class UserRepository implements UserRepositoryInterface
             });
         }
 
-        if (!empty($filters['role'])) {
+        if (! empty($filters['role'])) {
             $query->role($filters['role']);
         }
 

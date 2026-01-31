@@ -43,7 +43,7 @@ class AuthService
         $ipAddress = $request->ip();
         $userAgent = $request->userAgent();
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        if (! Auth::attempt($request->only('email', 'password'))) {
             LoginAttempt::log($email, $ipAddress, $userAgent, false, 'Invalid credentials');
 
             throw ValidationException::withMessages([
@@ -82,7 +82,7 @@ class AuthService
 
     public function twoFactorChallenge(Request $request): User
     {
-        if (!$request->hasSession()) {
+        if (! $request->hasSession()) {
             throw ValidationException::withMessages([
                 'code' => ['Session not available.'],
             ]);
@@ -91,7 +91,7 @@ class AuthService
         $userId = $request->session()->get('two_factor_user_id');
         $loginAt = $request->session()->get('two_factor_login_at');
 
-        if (!$userId || !$loginAt) {
+        if (! $userId || ! $loginAt) {
             throw ValidationException::withMessages([
                 'code' => ['Two-factor authentication session not found.'],
             ]);
@@ -106,7 +106,7 @@ class AuthService
 
         $user = $this->userRepository->findById($userId);
 
-        if (!$user) {
+        if (! $user) {
             $request->session()->forget(['two_factor_user_id', 'two_factor_login_at']);
             throw ValidationException::withMessages([
                 'code' => ['User not found.'],
@@ -121,7 +121,7 @@ class AuthService
             $isValid = $this->twoFactorService->verifyRecoveryCode($user, $request->recovery_code);
         }
 
-        if (!$isValid) {
+        if (! $isValid) {
             throw ValidationException::withMessages([
                 'code' => ['The provided code is invalid.'],
             ]);
@@ -168,8 +168,14 @@ class AuthService
 
     private function loadUserWithPermissions(User $user): User
     {
-        $user->load('roles');
-        $user->permissions = $user->getAllPermissions()->pluck('name')->toArray();
+        $user->load('roles.permissions');
+        $user->permissions = $user->roles
+            ->flatMap->permissions
+            ->pluck('name')
+            ->unique()
+            ->values()
+            ->toArray();
+
         return $user;
     }
 }

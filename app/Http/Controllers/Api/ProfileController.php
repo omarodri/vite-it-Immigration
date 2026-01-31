@@ -9,12 +9,20 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use OpenApi\Attributes as OA;
 
 class ProfileController extends Controller
 {
-    /**
-     * Get the authenticated user's profile.
-     */
+    #[OA\Get(
+        path: '/api/profile',
+        summary: 'Get authenticated user profile',
+        tags: ['Profile'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'User profile data'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function show(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -26,9 +34,34 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Update the authenticated user's profile.
-     */
+    #[OA\Put(
+        path: '/api/profile',
+        summary: 'Update user profile',
+        tags: ['Profile'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'name', type: 'string'),
+                    new OA\Property(property: 'phone', type: 'string'),
+                    new OA\Property(property: 'company', type: 'string'),
+                    new OA\Property(property: 'address', type: 'string'),
+                    new OA\Property(property: 'city', type: 'string'),
+                    new OA\Property(property: 'state', type: 'string'),
+                    new OA\Property(property: 'country', type: 'string'),
+                    new OA\Property(property: 'zip_code', type: 'string'),
+                    new OA\Property(property: 'bio', type: 'string'),
+                    new OA\Property(property: 'website', type: 'string'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Profile updated'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
     public function update(UpdateProfileRequest $request): JsonResponse
     {
         $user = $request->user();
@@ -41,7 +74,7 @@ class ProfileController extends Controller
         }
 
         // Update or create profile
-        if (!empty($validated)) {
+        if (! empty($validated)) {
             $user->profile()->updateOrCreate(
                 ['user_id' => $user->id],
                 $validated
@@ -57,9 +90,29 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Upload or update avatar.
-     */
+    #[OA\Post(
+        path: '/api/profile/avatar',
+        summary: 'Upload avatar',
+        tags: ['Profile'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['avatar'],
+                    properties: [
+                        new OA\Property(property: 'avatar', type: 'string', format: 'binary', description: 'Image file (jpeg,png,jpg,gif,webp, max 2MB)'),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Avatar uploaded'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
     public function uploadAvatar(Request $request): JsonResponse
     {
         $request->validate([
@@ -78,7 +131,7 @@ class ProfileController extends Controller
 
         // Store new avatar
         $path = $request->file('avatar')->store('avatars', 'public');
-        $avatarUrl = '/storage/' . $path;
+        $avatarUrl = '/storage/'.$path;
 
         // Update profile
         $user->profile()->updateOrCreate(
@@ -95,9 +148,16 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Delete avatar.
-     */
+    #[OA\Delete(
+        path: '/api/profile/avatar',
+        summary: 'Delete avatar',
+        tags: ['Profile'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Avatar deleted'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function deleteAvatar(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -116,9 +176,28 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Change user password.
-     */
+    #[OA\Post(
+        path: '/api/profile/password',
+        summary: 'Change password',
+        tags: ['Profile'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['current_password', 'password', 'password_confirmation'],
+                properties: [
+                    new OA\Property(property: 'current_password', type: 'string', format: 'password'),
+                    new OA\Property(property: 'password', type: 'string', format: 'password'),
+                    new OA\Property(property: 'password_confirmation', type: 'string', format: 'password'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Password changed'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
         $user = $request->user();

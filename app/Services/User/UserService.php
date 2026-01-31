@@ -22,7 +22,8 @@ class UserService
 
     public function getUser(User $user): User
     {
-        $user->load('roles', 'permissions');
+        $user->load('roles.permissions');
+
         return $user;
     }
 
@@ -35,7 +36,7 @@ class UserService
                 'password' => Hash::make($data['password']),
             ]);
 
-            if (!empty($data['roles'])) {
+            if (! empty($data['roles'])) {
                 $user->syncRoles($data['roles']);
             } else {
                 $user->assignRole('user');
@@ -45,9 +46,10 @@ class UserService
                 ->causedBy(Auth::user())
                 ->performedOn($user)
                 ->withProperties(['roles' => $user->getRoleNames()])
-                ->log('Created user: ' . $user->name);
+                ->log('Created user: '.$user->name);
 
             $user->load('roles');
+
             return $user;
         });
     }
@@ -58,13 +60,13 @@ class UserService
             $updateData = array_filter([
                 'name' => $data['name'] ?? null,
                 'email' => $data['email'] ?? null,
-            ], fn($value) => $value !== null);
+            ], fn ($value) => $value !== null);
 
-            if (!empty($data['password'])) {
+            if (! empty($data['password'])) {
                 $updateData['password'] = Hash::make($data['password']);
             }
 
-            if (!empty($updateData)) {
+            if (! empty($updateData)) {
                 $this->userRepository->update($user, $updateData);
             }
 
@@ -76,9 +78,10 @@ class UserService
                 ->causedBy(Auth::user())
                 ->performedOn($user)
                 ->withProperties(['roles' => $user->getRoleNames()])
-                ->log('Updated user: ' . $user->name);
+                ->log('Updated user: '.$user->name);
 
             $user->load('roles');
+
             return $user;
         });
     }
@@ -100,7 +103,7 @@ class UserService
             ->causedBy($currentUser)
             ->performedOn($user)
             ->withProperties(['deleted_user' => $user->email])
-            ->log('Deleted user: ' . $user->name);
+            ->log('Deleted user: '.$user->name);
 
         $this->userRepository->delete($user);
     }
@@ -119,7 +122,7 @@ class UserService
         activity()
             ->causedBy($currentUser)
             ->withProperties(['deleted_ids' => $ids])
-            ->log('Bulk deleted ' . count($ids) . ' users');
+            ->log('Bulk deleted '.count($ids).' users');
 
         return $this->userRepository->bulkDelete($ids);
     }

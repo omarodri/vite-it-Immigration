@@ -3,7 +3,6 @@
 namespace Tests\Feature\Api;
 
 use App\Models\User;
-use App\Models\UserProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -149,7 +148,7 @@ class ProfileControllerTest extends TestCase
             ]);
 
         $this->assertNotNull($this->user->fresh()->profile->avatar_url);
-        Storage::disk('public')->assertExists('avatars/' . $file->hashName());
+        Storage::disk('public')->assertExists('avatars/'.$file->hashName());
     }
 
     public function test_avatar_upload_rejects_invalid_file_type(): void
@@ -185,7 +184,7 @@ class ProfileControllerTest extends TestCase
         $this->actingAs($this->user)
             ->postJson('/api/profile/avatar', ['avatar' => $file]);
 
-        $avatarPath = 'avatars/' . $file->hashName();
+        $avatarPath = 'avatars/'.$file->hashName();
         Storage::disk('public')->assertExists($avatarPath);
 
         // Then delete it

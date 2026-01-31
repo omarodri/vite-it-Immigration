@@ -28,7 +28,7 @@ class RoleRepository implements RoleRepositoryInterface
             'guard_name' => $data['guard_name'] ?? 'web',
         ]);
 
-        if (!empty($data['permissions'])) {
+        if (! empty($data['permissions'])) {
             $role->syncPermissions($data['permissions']);
         }
 

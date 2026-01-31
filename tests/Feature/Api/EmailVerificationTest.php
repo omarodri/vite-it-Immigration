@@ -121,7 +121,7 @@ class EmailVerificationTest extends TestCase
     {
         $user = User::factory()->unverified()->create();
 
-        $response = $this->getJson("/api/email/verify/{$user->id}/" . sha1($user->email) . '?signature=invalid');
+        $response = $this->getJson("/api/email/verify/{$user->id}/".sha1($user->email).'?signature=invalid');
 
         $response->assertStatus(403);
 
@@ -213,7 +213,7 @@ class EmailVerificationTest extends TestCase
         $user = User::factory()->unverified()->create();
 
         // Test using the middleware directly via a mock request
-        $middleware = new \App\Http\Middleware\EnsureEmailIsVerified();
+        $middleware = new \App\Http\Middleware\EnsureEmailIsVerified;
 
         $request = \Illuminate\Http\Request::create('/api/test', 'GET');
         $request->setUserResolver(fn () => $user);
@@ -235,7 +235,7 @@ class EmailVerificationTest extends TestCase
         $user = User::factory()->create(); // verified by default
 
         // Test using the middleware directly
-        $middleware = new \App\Http\Middleware\EnsureEmailIsVerified();
+        $middleware = new \App\Http\Middleware\EnsureEmailIsVerified;
 
         $request = \Illuminate\Http\Request::create('/api/test', 'GET');
         $request->setUserResolver(fn () => $user);

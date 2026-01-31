@@ -36,7 +36,7 @@ class PasswordResetService
     {
         $user = User::where('email', $email)->first();
 
-        if (!$user) {
+        if (! $user) {
             return ['valid' => false, 'message' => 'User not found.', 'status' => 404];
         }
 
@@ -44,11 +44,11 @@ class PasswordResetService
             ->where('email', $email)
             ->first();
 
-        if (!$tokenExists) {
+        if (! $tokenExists) {
             return ['valid' => false, 'message' => 'Invalid or expired token.', 'status' => 422];
         }
 
-        if (!Hash::check($token, $tokenExists->token)) {
+        if (! Hash::check($token, $tokenExists->token)) {
             return ['valid' => false, 'message' => 'Invalid token.', 'status' => 422];
         }
 

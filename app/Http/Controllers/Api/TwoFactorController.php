@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class TwoFactorController extends Controller
 {
@@ -19,9 +20,17 @@ class TwoFactorController extends Controller
         $this->twoFactorService = $twoFactorService;
     }
 
-    /**
-     * Enable two-factor authentication for the user.
-     */
+    #[OA\Post(
+        path: '/api/two-factor/enable',
+        summary: 'Enable two-factor authentication',
+        description: 'Generate QR code, secret, and recovery codes for 2FA setup',
+        tags: ['Two-Factor'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: '2FA setup initiated with QR code and recovery codes'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function enable(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -42,20 +51,38 @@ class TwoFactorController extends Controller
         ]);
     }
 
-    /**
-     * Confirm two-factor authentication with a valid code.
-     */
+    #[OA\Post(
+        path: '/api/two-factor/confirm',
+        summary: 'Confirm two-factor authentication',
+        description: 'Verify TOTP code to complete 2FA setup',
+        tags: ['Two-Factor'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['code'],
+                properties: [
+                    new OA\Property(property: 'code', type: 'string', example: '123456', description: 'TOTP code (6 digits)'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: '2FA confirmed successfully'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 422, description: 'Invalid code or 2FA not enabled'),
+        ]
+    )]
     public function confirm(TwoFactorConfirmRequest $request): JsonResponse
     {
         $user = $request->user();
 
-        if (!$user->two_factor_secret) {
+        if (! $user->two_factor_secret) {
             throw ValidationException::withMessages([
                 'code' => ['Two-factor authentication is not enabled.'],
             ]);
         }
 
-        if (!$this->twoFactorService->verifyCode($user->two_factor_secret, $request->code)) {
+        if (! $this->twoFactorService->verifyCode($user->two_factor_secret, $request->code)) {
             throw ValidationException::withMessages([
                 'code' => ['The provided code is invalid.'],
             ]);
@@ -69,9 +96,26 @@ class TwoFactorController extends Controller
         ]);
     }
 
-    /**
-     * Disable two-factor authentication for the user.
-     */
+    #[OA\Delete(
+        path: '/api/two-factor/disable',
+        summary: 'Disable two-factor authentication',
+        tags: ['Two-Factor'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['current_password'],
+                properties: [
+                    new OA\Property(property: 'current_password', type: 'string', format: 'password'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: '2FA disabled successfully'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 422, description: 'Incorrect password'),
+        ]
+    )]
     public function disable(Request $request): JsonResponse
     {
         $request->validate([
@@ -80,7 +124,7 @@ class TwoFactorController extends Controller
 
         $user = $request->user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             throw ValidationException::withMessages([
                 'current_password' => ['The provided password is incorrect.'],
             ]);
@@ -96,9 +140,16 @@ class TwoFactorController extends Controller
         ]);
     }
 
-    /**
-     * Get recovery codes for the user.
-     */
+    #[OA\Get(
+        path: '/api/two-factor/recovery-codes',
+        summary: 'Get recovery codes',
+        tags: ['Two-Factor'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Recovery codes retrieved'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function recoveryCodes(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -108,9 +159,26 @@ class TwoFactorController extends Controller
         ]);
     }
 
-    /**
-     * Regenerate recovery codes for the user.
-     */
+    #[OA\Post(
+        path: '/api/two-factor/recovery-codes',
+        summary: 'Regenerate recovery codes',
+        tags: ['Two-Factor'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['current_password'],
+                properties: [
+                    new OA\Property(property: 'current_password', type: 'string', format: 'password'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Recovery codes regenerated'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 422, description: 'Incorrect password'),
+        ]
+    )]
     public function regenerateRecoveryCodes(Request $request): JsonResponse
     {
         $request->validate([
@@ -119,7 +187,7 @@ class TwoFactorController extends Controller
 
         $user = $request->user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             throw ValidationException::withMessages([
                 'current_password' => ['The provided password is incorrect.'],
             ]);

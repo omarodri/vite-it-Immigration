@@ -7,12 +7,21 @@ use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class EmailVerificationController extends Controller
 {
-    /**
-     * Send a new email verification notification.
-     */
+    #[OA\Post(
+        path: '/api/email/verification-notification',
+        summary: 'Send email verification notification',
+        tags: ['Email Verification'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Verification link sent'),
+            new OA\Response(response: 400, description: 'Email already verified'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function send(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -30,9 +39,20 @@ class EmailVerificationController extends Controller
         ]);
     }
 
-    /**
-     * Mark the authenticated user's email address as verified.
-     */
+    #[OA\Get(
+        path: '/api/email/verify/{id}/{hash}',
+        summary: 'Verify email address',
+        tags: ['Email Verification'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'), description: 'User ID'),
+            new OA\Parameter(name: 'hash', in: 'path', required: true, schema: new OA\Schema(type: 'string'), description: 'Verification hash'),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Email verified successfully'),
+            new OA\Response(response: 403, description: 'Invalid or expired verification link'),
+            new OA\Response(response: 404, description: 'User not found'),
+        ]
+    )]
     public function verify(Request $request, int $id, string $hash): JsonResponse
     {
         $user = User::findOrFail($id);
@@ -68,9 +88,16 @@ class EmailVerificationController extends Controller
         ]);
     }
 
-    /**
-     * Check the verification status of the authenticated user.
-     */
+    #[OA\Get(
+        path: '/api/email/verification-status',
+        summary: 'Check email verification status',
+        tags: ['Email Verification'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Verification status'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function status(Request $request): JsonResponse
     {
         return response()->json([

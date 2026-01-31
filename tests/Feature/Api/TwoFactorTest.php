@@ -14,6 +14,7 @@ class TwoFactorTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Google2FA $google2fa;
 
     protected function setUp(): void
@@ -26,7 +27,7 @@ class TwoFactorTest extends TestCase
             'password' => Hash::make('password123'),
         ]);
 
-        $this->google2fa = new Google2FA();
+        $this->google2fa = new Google2FA;
 
         // Enable session and set proper headers for Sanctum stateful requests
         $this->withSession([]);

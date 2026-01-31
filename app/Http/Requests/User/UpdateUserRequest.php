@@ -36,7 +36,7 @@ class UpdateUserRequest extends FormRequest
             ],
             'password' => ['sometimes', 'confirmed', Password::defaults()],
             'roles' => ['sometimes', 'array'],
-            'roles.*' => ['exists:roles,id'],
+            'roles.*' => ['exists:roles,name'],
         ];
     }
 

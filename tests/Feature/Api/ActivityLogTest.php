@@ -14,7 +14,9 @@ class ActivityLogTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected User $editor;
+
     protected User $regularUser;
 
     protected function setUp(): void
@@ -100,7 +102,7 @@ class ActivityLogTest extends TestCase
         $this->deleteJson("/api/users/{$user->id}");
 
         $this->assertDatabaseHas('activity_log', [
-            'description' => 'Deleted user: ' . $user->name,
+            'description' => 'Deleted user: '.$user->name,
             'causer_id' => $this->admin->id,
         ]);
     }
@@ -230,7 +232,7 @@ class ActivityLogTest extends TestCase
         activity('test')->causedBy($this->editor)->log('Editor action');
 
         $response = $this->actingAs($this->admin)
-            ->getJson('/api/activity-logs?causer_id=' . $this->admin->id);
+            ->getJson('/api/activity-logs?causer_id='.$this->admin->id);
 
         $response->assertStatus(200);
 
