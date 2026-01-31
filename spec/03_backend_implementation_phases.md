@@ -412,7 +412,10 @@ database/factories/UserFactory.php (withTwoFactor state)
 
 ---
 
-## FASE 6: Service Layer y Repository Pattern
+## FASE 6: Service Layer y Repository Pattern ✅ COMPLETADA
+
+**Fecha de Completado:** 2026-01-30
+**Tests:** 104/105 tests pasando (1 fallo pre-existente no relacionado con refactoring)
 
 ### Objetivo
 Refactorizar codigo existente para implementar arquitectura Clean con capas de servicio y repositorios.
@@ -423,41 +426,42 @@ Refactorizar codigo existente para implementar arquitectura Clean con capas de s
 
 ### Tareas
 
-#### 6.1 Estructura de Carpetas (1h)
-- [ ] Crear estructura `app/Services/`
-- [ ] Crear estructura `app/Repositories/Contracts/`
-- [ ] Crear estructura `app/Repositories/Eloquent/`
+#### 6.1 Estructura de Carpetas (1h) ✅ COMPLETADO
+- [x] Crear estructura `app/Services/User/`, `app/Services/Auth/`
+- [x] Crear estructura `app/Repositories/Contracts/`
+- [x] Crear estructura `app/Repositories/Eloquent/`
 
-#### 6.2 Repository Interfaces (3h)
-- [ ] Crear `UserRepositoryInterface.php`
-- [ ] Crear `RoleRepositoryInterface.php`
-- [ ] Definir contratos: findById, findByEmail, create, update, delete, paginate
+#### 6.2 Repository Interfaces (3h) ✅ COMPLETADO
+- [x] Crear `UserRepositoryInterface.php` (findById, findByEmail, create, update, delete, paginate, bulkDelete, countByRole, getAdminIdsFromList)
+- [x] Crear `RoleRepositoryInterface.php` (all, findById, create, update, delete, allPermissions, permissionsGrouped, isProtected)
 
-#### 6.3 Eloquent Repositories (4h)
-- [ ] Crear `UserRepository.php` implementando interface
-- [ ] Crear `RoleRepository.php` implementando interface
-- [ ] Implementar todos los metodos
+#### 6.3 Eloquent Repositories (4h) ✅ COMPLETADO
+- [x] Crear `UserRepository.php` implementando interface con search, role filter, sorting, pagination
+- [x] Crear `RoleRepository.php` implementando interface con protected roles logic
+- [x] Implementar todos los metodos
 
-#### 6.4 Service Provider (2h)
-- [ ] Crear `app/Providers/RepositoryServiceProvider.php`
-- [ ] Registrar bindings de interfaces a implementaciones
-- [ ] Registrar provider en `config/app.php`
+#### 6.4 Service Provider (2h) ✅ COMPLETADO
+- [x] Crear `app/Providers/RepositoryServiceProvider.php`
+- [x] Registrar bindings: UserRepositoryInterface → UserRepository, RoleRepositoryInterface → RoleRepository
+- [x] Registrar provider en `AppServiceProvider::register()`
 
-#### 6.5 User Service (3h)
-- [ ] Crear `app/Services/User/UserService.php`
-- [ ] Mover logica de negocio de controllers
-- [ ] Inyectar repositorios
-- [ ] Implementar transacciones DB
+#### 6.5 User Service (3h) ✅ COMPLETADO
+- [x] Crear `app/Services/User/UserService.php`
+- [x] Mover logica de negocio: listUsers, createUser, updateUser, deleteUser, bulkDeleteUsers, getUser
+- [x] Inyectar UserRepositoryInterface via constructor
+- [x] Implementar transacciones DB en createUser y updateUser
 
-#### 6.6 Auth Service (2h)
-- [ ] Crear `app/Services/Auth/AuthService.php`
-- [ ] Crear `app/Services/Auth/PasswordResetService.php`
-- [ ] Refactorizar AuthController
+#### 6.6 Auth Service (2h) ✅ COMPLETADO
+- [x] Crear `app/Services/Auth/AuthService.php` (register, login, twoFactorChallenge, logout, getAuthenticatedUser)
+- [x] Crear `app/Services/Auth/PasswordResetService.php` (sendResetLink, resetPassword, verifyToken)
+- [x] Refactorizar AuthController y PasswordResetController
 
-#### 6.7 Refactorizar Controllers (1h)
-- [ ] Adelgazar UserController
-- [ ] Adelgazar AuthController
-- [ ] Controllers solo manejan HTTP
+#### 6.7 Refactorizar Controllers (1h) ✅ COMPLETADO
+- [x] Adelgazar UserController (inyecta UserService, metodos < 15 lineas)
+- [x] Adelgazar AuthController (inyecta AuthService, metodos < 15 lineas)
+- [x] Adelgazar PasswordResetController (inyecta PasswordResetService)
+- [x] Adelgazar RoleController (inyecta RoleRepositoryInterface)
+- [x] Controllers solo manejan HTTP request/response
 
 ### Archivos Afectados
 
@@ -475,17 +479,19 @@ app/Services/Auth/PasswordResetService.php
 
 **Modificados:**
 ```
-app/Http/Controllers/Api/UserController.php
-app/Http/Controllers/Api/AuthController.php
-config/app.php
+app/Http/Controllers/Api/UserController.php (inyecta UserService)
+app/Http/Controllers/Api/AuthController.php (inyecta AuthService)
+app/Http/Controllers/Api/PasswordResetController.php (inyecta PasswordResetService)
+app/Http/Controllers/Api/RoleController.php (inyecta RoleRepositoryInterface)
+app/Providers/AppServiceProvider.php (registra RepositoryServiceProvider)
 ```
 
 ### Criterios de Aceptacion
-- [ ] Todos los tests existentes siguen pasando
-- [ ] Controllers tienen < 20 lineas por metodo
-- [ ] Business logic en Services
-- [ ] Data access en Repositories
-- [ ] Dependency Injection funcionando
+- [x] Todos los tests existentes siguen pasando (104/105, 1 pre-existente)
+- [x] Controllers tienen < 20 lineas por metodo
+- [x] Business logic en Services
+- [x] Data access en Repositories
+- [x] Dependency Injection funcionando
 
 ### Dependencias para Siguiente Fase
 - Arquitectura limpia establecida
