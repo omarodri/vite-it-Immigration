@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\PasswordResetController;
@@ -73,6 +74,10 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::put('/roles/{role}', [RoleController::class, 'update']);
     Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
     Route::get('/permissions', [RoleController::class, 'permissions']);
+
+    // Activity log routes
+    Route::get('/activity-logs', [ActivityLogController::class, 'index']);
+    Route::get('/activity-logs/{activity}', [ActivityLogController::class, 'show']);
 
     // Two-factor authentication management routes
     Route::post('/two-factor/enable', [TwoFactorController::class, 'enable']);

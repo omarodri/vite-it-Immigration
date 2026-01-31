@@ -5,6 +5,7 @@ namespace App\Services\User;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -40,6 +41,12 @@ class UserService
                 $user->assignRole('user');
             }
 
+            activity()
+                ->causedBy(Auth::user())
+                ->performedOn($user)
+                ->withProperties(['roles' => $user->getRoleNames()])
+                ->log('Created user: ' . $user->name);
+
             $user->load('roles');
             return $user;
         });
@@ -65,6 +72,12 @@ class UserService
                 $user->syncRoles($data['roles']);
             }
 
+            activity()
+                ->causedBy(Auth::user())
+                ->performedOn($user)
+                ->withProperties(['roles' => $user->getRoleNames()])
+                ->log('Updated user: ' . $user->name);
+
             $user->load('roles');
             return $user;
         });
@@ -83,6 +96,12 @@ class UserService
             }
         }
 
+        activity()
+            ->causedBy($currentUser)
+            ->performedOn($user)
+            ->withProperties(['deleted_user' => $user->email])
+            ->log('Deleted user: ' . $user->name);
+
         $this->userRepository->delete($user);
     }
 
@@ -96,6 +115,11 @@ class UserService
         if (count($adminIdsToDelete) >= $adminCount) {
             throw new \InvalidArgumentException('Cannot delete all administrators');
         }
+
+        activity()
+            ->causedBy($currentUser)
+            ->withProperties(['deleted_ids' => $ids])
+            ->log('Bulk deleted ' . count($ids) . ' users');
 
         return $this->userRepository->bulkDelete($ids);
     }

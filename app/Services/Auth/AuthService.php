@@ -28,6 +28,12 @@ class AuthService
 
         Auth::login($user);
 
+        activity('auth')
+            ->causedBy($user)
+            ->performedOn($user)
+            ->withProperties(['ip' => request()->ip()])
+            ->log('User registered');
+
         return $user;
     }
 
@@ -60,6 +66,12 @@ class AuthService
 
             return ['two_factor_required' => true];
         }
+
+        activity('auth')
+            ->causedBy($user)
+            ->performedOn($user)
+            ->withProperties(['ip' => $ipAddress])
+            ->log('User logged in');
 
         if ($request->hasSession()) {
             $request->session()->regenerate();
@@ -120,11 +132,27 @@ class AuthService
         Auth::login($user);
         $request->session()->regenerate();
 
+        activity('auth')
+            ->causedBy($user)
+            ->performedOn($user)
+            ->withProperties(['ip' => $request->ip(), 'method' => $request->filled('code') ? 'totp' : 'recovery_code'])
+            ->log('User logged in via 2FA');
+
         return $this->loadUserWithPermissions($user);
     }
 
     public function logout(Request $request): void
     {
+        $user = Auth::user();
+
+        if ($user) {
+            activity('auth')
+                ->causedBy($user)
+                ->performedOn($user)
+                ->withProperties(['ip' => $request->ip()])
+                ->log('User logged out');
+        }
+
         Auth::guard('web')->logout();
 
         if ($request->hasSession()) {
