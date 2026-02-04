@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(composer require:*)"
+      "Bash(composer require:*)",
+      "Bash(npm run build:*)",
+      "Bash(php artisan config:clear:*)",
+      "Bash(php artisan cache:clear:*)",
+      "Bash(php artisan migrate:*)",
+      "Bash(./vendor/bin/phpunit:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(php artisan vendor:publish:*)",
+      "Bash(php artisan deploy:optimize:*)",
+      "Bash(composer update:*)"
     ]
   }
 }

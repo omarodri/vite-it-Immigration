@@ -58,7 +58,7 @@ export interface CreateUserData {
     email: string;
     password: string;
     password_confirmation: string;
-    roles?: number[];
+    roles?: string[];
     send_welcome_email?: boolean;
 }
 
@@ -67,7 +67,7 @@ export interface UpdateUserData {
     email?: string;
     password?: string;
     password_confirmation?: string;
-    roles?: number[];
+    roles?: string[];
 }
 
 export interface UpdateProfileData {

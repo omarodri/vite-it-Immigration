@@ -1,7 +1,7 @@
 ---
 name: architect
 description: "Especialista en arquitectura de software, diseño de sistemas y análisis técnico profundo"
-model: sonnet
+model: opus
 color: red
 ---
 

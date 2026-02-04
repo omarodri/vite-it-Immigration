@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Vristo POC** is a full-stack sales admin dashboard combining Laravel 12 backend with Vue 3.5 + TypeScript frontend. It follows a **Single Page Application (SPA)** architecture where Laravel serves the initial HTML and acts as an API server, while Vue handles all client-side routing and UI rendering.
+**VITE-IT Immigration** is a full-stack sales admin dashboard combining Laravel 12 backend with Vue 3.5 + TypeScript frontend. It follows a **Single Page Application (SPA)** architecture where Laravel serves the initial HTML and acts as an API server, while Vue handles all client-side routing and UI rendering.
 
 ## Common Commands
 

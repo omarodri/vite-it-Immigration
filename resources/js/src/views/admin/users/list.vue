@@ -3,24 +3,24 @@
         <!-- Breadcrumb -->
         <ul class="flex space-x-2 rtl:space-x-reverse mb-5">
             <li>
-                <a href="javascript:;" class="text-primary hover:underline">Admin</a>
+                <a href="javascript:;" class="text-primary hover:underline">{{ $t('sidebar.admin') }}</a>
             </li>
             <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-                <span>Users</span>
+                <span>{{ $t('sidebar.users') }}</span>
             </li>
         </ul>
 
         <div class="panel">
             <!-- Header -->
             <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
-                <h5 class="font-semibold text-lg dark:text-white-light">User Management</h5>
+                <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('users.user_management') }}</h5>
                 <div class="flex items-center gap-2">
                     <!-- Bulk Actions Dropdown -->
                     <div v-if="selectedUsers?.length > 0" class="dropdown">
                         <Popper :placement="'bottom-end'" :offsetDistance="0" :arrow="true">
                             <button type="button" class="btn btn-outline-danger gap-2">
                                 <icon-trash-lines class="w-5 h-5" />
-                                Actions ({{ selectedUsers.length }})
+                                {{ $t('users.actions') }} ({{ selectedUsers.length }})
                                 <icon-caret-down class="w-4 h-4" />
                             </button>
                             <template #content="{ close }">
@@ -32,7 +32,7 @@
                                             @click="confirmBulkDelete(); close()"
                                         >
                                             <icon-trash-lines class="w-4.5 h-4.5 mr-2 shrink-0" />
-                                            Delete Selected
+                                            {{ $t('users.delete_selected') }}
                                         </button>
                                     </li>
                                 </ul>
@@ -42,7 +42,7 @@
 
                     <!-- Selected Counter -->
                     <span v-if="selectedUsers?.length > 0" class="text-sm text-gray-500">
-                        {{ selectedUsers.length }} selected
+                        {{ selectedUsers.length }} {{ $t('users.selected') }}
                     </span>
 
                     <router-link
@@ -51,13 +51,13 @@
                         class="btn btn-primary gap-2"
                     >
                         <icon-user-plus class="w-5 h-5" />
-                        Add User
+                        {{ $t('users.add_user') }}
                     </router-link>
                 </div>
             </div>
 
             <!-- Filters -->
-            <div class="flex flex-wrap items-center gap-4 mb-5">
+            <div class="flex flex-wrap items-center gap-4 mb-5" role="search" aria-label="Filter users">
                 <!-- Search -->
                 <div class="flex-1 min-w-[200px]">
                     <div class="relative">
@@ -65,19 +65,21 @@
                             v-model="searchQuery"
                             type="text"
                             class="form-input pl-10 pr-4"
-                            placeholder="Search by name or email..."
+                            :placeholder="$t('users.search_by_name_or_email')"
+                            aria-label="$t('users.search_by_name_or_email')"
                             @input="debouncedSearch"
                         />
                         <div class="absolute left-3 top-1/2 -translate-y-1/2">
-                            <icon-search class="w-5 h-5 text-gray-500" />
+                            <span v-if="isDebouncing" class="animate-spin border-2 border-primary border-l-transparent rounded-full w-4 h-4 inline-block"></span>
+                            <icon-search v-else class="w-5 h-5 text-gray-500" />
                         </div>
                     </div>
                 </div>
 
                 <!-- Role Filter -->
                 <div class="w-48">
-                    <select v-model="roleFilter" class="form-select" @change="applyRoleFilter">
-                        <option value="">All Roles</option>
+                    <select v-model="roleFilter" class="form-select" aria-label="Filter by role" @change="applyRoleFilter">
+                        <option value="">{{ $t('users.all_roles') }}</option>
                         <option v-for="role in userStore.roleOptions" :key="role.value" :value="role.value">
                             {{ role.label }}
                         </option>
@@ -86,11 +88,11 @@
 
                 <!-- Per Page -->
                 <div class="w-32">
-                    <select v-model="perPage" class="form-select" @change="changePerPage">
-                        <option :value="10">10 / page</option>
-                        <option :value="15">15 / page</option>
-                        <option :value="25">25 / page</option>
-                        <option :value="50">50 / page</option>
+                    <select v-model="perPage" class="form-select" aria-label="Results per page" @change="changePerPage">
+                        <option :value="10">{{ $t('users.10_per_page') }}</option>
+                        <option :value="15">{{ $t('users.15_per_page') }}</option>
+                        <option :value="25">{{ $t('users.25_per_page') }}</option>
+                        <option :value="50">{{ $t('users.50_per_page') }}</option>
                     </select>
                 </div>
 
@@ -101,131 +103,295 @@
                     class="btn btn-outline-secondary btn-sm"
                     @click="clearSelection"
                 >
-                    Clear Selection
+                    {{ $t('users.clear_selection') }}
                 </button>
             </div>
 
-            <!-- Table -->
-            <div class="datatable">
-                <vue3-datatable
-                    :rows="userStore.users"
-                    :columns="columns"
-                    :totalRows="userStore.totalUsers"
-                    :isServerMode="true"
-                    :loading="userStore.isLoading"
-                    :sortable="true"
-                    :sortColumn="sortColumn"
-                    :sortDirection="sortDirection"
-                    :pageSize="perPage"
-                    :page="currentPage"
-                    :hasCheckbox="true"
-                    :checkedRows="selectedUsers"
-                    @pageChange="handlePageChange"
-                    @pageSizeChange="handlePageSizeChange"
-                    @sortChange="handleSortChange"
-                    @rowSelect="handleRowSelect"
-                    skin="whitespace-nowrap bh-table-hover"
-                    firstArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M13 19L7 12L13 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> <path opacity="0.5" d="M16.9998 19L10.9998 12L16.9998 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
-                    lastArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M11 19L17 12L11 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> <path opacity="0.5" d="M6.99976 19L12.9998 12L6.99976 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
-                    previousArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M15 5L9 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
-                    nextArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M9 5L15 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
-                >
-                    <!-- ID Column -->
-                    <template #id="data">
-                        <span class="text-primary font-semibold">#{{ data.value.id }}</span>
-                    </template>
+            <!-- Skeleton Loader (initial load) -->
+            <div v-if="showSkeleton" class="animate-pulse">
+                <div class="table-responsive">
+                    <table class="table-hover">
+                        <thead>
+                            <tr>
+                                <th class="w-10"><div class="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded"></div></th>
+                                <th class="w-20"><div class="h-4 w-8 bg-gray-200 dark:bg-gray-700 rounded"></div></th>
+                                <th><div class="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div></th>
+                                <th><div class="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div></th>
+                                <th><div class="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div></th>
+                                <th><div class="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div></th>
+                                <th><div class="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="i in 5" :key="i">
+                                <td><div class="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded"></div></td>
+                                <td><div class="h-4 w-10 bg-gray-200 dark:bg-gray-700 rounded"></div></td>
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                                        <div class="space-y-2">
+                                            <div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                            <div class="h-3 w-40 bg-gray-100 dark:bg-gray-800 rounded"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><div class="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded-full"></div></td>
+                                <td><div class="h-5 w-20 bg-gray-200 dark:bg-gray-700 rounded-full"></div></td>
+                                <td><div class="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div></td>
+                                <td>
+                                    <div class="flex gap-2">
+                                        <div class="h-7 w-7 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                        <div class="h-7 w-7 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                        <div class="h-7 w-7 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-                    <!-- Name Column -->
-                    <template #name="data">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                                <span class="text-primary font-semibold text-sm">
-                                    {{ getInitials(data.value.name || '') }}
+            <!-- Results area -->
+            <div v-else-if="!showEmptyState" aria-live="polite">
+                <!-- Desktop Table -->
+                <div class="datatable hidden md:block">
+                    <vue3-datatable
+                        :key="`dt-${perPage}`"
+                        :rows="userStore.users"
+                        :columns="columns"
+                        :totalRows="userStore.totalUsers"
+                        :isServerMode="true"
+                        :loading="userStore.isLoading"
+                        :sortable="true"
+                        :sortColumn="sortColumn"
+                        :sortDirection="sortDirection"
+                        :pageSize="perPage"
+                        :page="currentPage"
+                        :hasCheckbox="true"
+                        @change="handleTableChange"
+                        @rowSelect="handleRowSelect"
+                        skin="whitespace-nowrap bh-table-hover"
+                        firstArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M13 19L7 12L13 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> <path opacity="0.5" d="M16.9998 19L10.9998 12L16.9998 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
+                        lastArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M11 19L17 12L11 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> <path opacity="0.5" d="M6.99976 19L12.9998 12L6.99976 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
+                        previousArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M15 5L9 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
+                        nextArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M9 5L15 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
+                    >
+                        <!-- ID Column -->
+                        <template #id="data">
+                            <span class="text-primary font-semibold">#{{ data.value.id }}</span>
+                        </template>
+
+                        <!-- Name Column -->
+                        <template #name="data">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <span class="text-primary font-semibold text-sm">
+                                        {{ getInitials(data.value.name || '') }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <div class="font-semibold">{{ data.value.name }}</div>
+                                    <div class="text-xs text-gray-500">{{ data.value.email }}</div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Roles Column -->
+                        <template #roles="data">
+                            <div class="flex flex-wrap gap-1">
+                                <span
+                                    v-for="role in data.value.roles"
+                                    :key="role.id"
+                                    class="badge"
+                                    :class="getRoleBadgeClass(role.name)"
+                                >
+                                    {{ role.name }}
                                 </span>
+                                <span v-if="!data.value.roles?.length" class="text-gray-400 text-sm">No roles</span>
                             </div>
-                            <div>
-                                <div class="font-semibold">{{ data.value.name }}</div>
-                                <div class="text-xs text-gray-500">{{ data.value.email }}</div>
-                            </div>
-                        </div>
-                    </template>
+                        </template>
 
-                    <!-- Roles Column -->
-                    <template #roles="data">
-                        <div class="flex flex-wrap gap-1">
+                        <!-- Email Verified Column -->
+                        <template #email_verified_at="data">
+                            <span v-if="data.value.email_verified_at" class="badge badge-outline-success gap-1">
+                                <icon-circle-check class="w-3.5 h-3.5" />
+                                {{ $t('users.verified') }}
+                            </span>
+                            <span v-else class="badge badge-outline-warning gap-1">
+                                <icon-info-triangle class="w-3.5 h-3.5" />
+                                {{ $t('users.pending') }}
+                            </span>
+                        </template>
+
+                        <!-- Created At Column -->
+                        <template #created_at="data">
+                            <span>{{ formatDate(data.value.created_at) }}</span>
+                        </template>
+
+                        <!-- Actions Column -->
+                        <template #actions="data">
+                            <div class="flex items-center gap-2">
+                                <tippy content="View">
+                                    <router-link
+                                        :to="`/admin/users/${data.value.id}`"
+                                        class="btn btn-sm btn-outline-info p-1.5"
+                                        :aria-label="`View ${data.value.name}`"
+                                    >
+                                        <icon-eye class="w-4 h-4" />
+                                    </router-link>
+                                </tippy>
+                                <tippy v-can="'users.update'" content="Edit">
+                                    <router-link
+                                        :to="`/admin/users/${data.value.id}/edit`"
+                                        class="btn btn-sm btn-outline-primary p-1.5"
+                                        :aria-label="`Edit ${data.value.name}`"
+                                    >
+                                        <icon-pencil class="w-4 h-4" />
+                                    </router-link>
+                                </tippy>
+                                <tippy v-can="'users.delete'" content="Delete">
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-danger p-1.5"
+                                        :aria-label="`Delete ${data.value.name}`"
+                                        @click="confirmDelete(data.value)"
+                                    >
+                                        <icon-trash-lines class="w-4 h-4" />
+                                    </button>
+                                </tippy>
+                            </div>
+                        </template>
+                    </vue3-datatable>
+                </div>
+
+                <!-- Mobile Cards -->
+                <div class="md:hidden space-y-3">
+                    <div v-if="userStore.isLoading" class="text-center py-4">
+                        <span class="animate-spin border-2 border-primary border-l-transparent rounded-full w-6 h-6 inline-block"></span>
+                    </div>
+                    <div
+                        v-for="user in userStore.users"
+                        :key="user.id"
+                        class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3"
+                    >
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <span class="text-primary font-semibold text-sm" aria-hidden="true">
+                                        {{ getInitials(user.name || '') }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <div class="font-semibold dark:text-white-light">{{ user.name }}</div>
+                                    <div class="text-xs text-gray-500">{{ user.email }}</div>
+                                </div>
+                            </div>
+                            <span class="text-primary font-semibold text-sm">#{{ user.id }}</span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
                             <span
-                                v-for="role in data.value.roles"
+                                v-for="role in user.roles"
                                 :key="role.id"
                                 class="badge"
                                 :class="getRoleBadgeClass(role.name)"
                             >
                                 {{ role.name }}
                             </span>
-                            <span v-if="!data.value.roles?.length" class="text-gray-400 text-sm">No roles</span>
+                            <span v-if="user.email_verified_at" class="badge badge-outline-success gap-1">
+                                <icon-circle-check class="w-3 h-3" />
+                                {{ $t('users.verified') }}
+                            </span>
+                            <span v-else class="badge badge-outline-warning gap-1">
+                                <icon-info-triangle class="w-3 h-3" />
+                                {{ $t('users.pending') }}
+                            </span>
                         </div>
-                    </template>
 
-                    <!-- Email Verified Column -->
-                    <template #email_verified_at="data">
-                        <span v-if="data.value.email_verified_at" class="badge badge-outline-success gap-1">
-                            <icon-circle-check class="w-3.5 h-3.5" />
-                            Verified
-                        </span>
-                        <span v-else class="badge badge-outline-warning gap-1">
-                            <icon-info-triangle class="w-3.5 h-3.5" />
-                            Pending
-                        </span>
-                    </template>
-
-                    <!-- Created At Column -->
-                    <template #created_at="data">
-                        <span>{{ formatDate(data.value.created_at) }}</span>
-                    </template>
-
-                    <!-- Actions Column -->
-                    <template #actions="data">
-                        <div class="flex items-center gap-2">
-                            <tippy content="View">
+                        <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+                            <span class="text-xs text-gray-500">{{ formatDate(user.created_at) }}</span>
+                            <div class="flex items-center gap-2">
                                 <router-link
-                                    :to="`/admin/users/${data.value.id}`"
+                                    :to="`/admin/users/${user.id}`"
                                     class="btn btn-sm btn-outline-info p-1.5"
+                                    :aria-label="`View ${user.name}`"
                                 >
                                     <icon-eye class="w-4 h-4" />
                                 </router-link>
-                            </tippy>
-                            <tippy v-can="'users.update'" content="Edit">
                                 <router-link
-                                    :to="`/admin/users/${data.value.id}/edit`"
+                                    v-can="'users.update'"
+                                    :to="`/admin/users/${user.id}/edit`"
                                     class="btn btn-sm btn-outline-primary p-1.5"
+                                    :aria-label="`Edit ${user.name}`"
                                 >
                                     <icon-pencil class="w-4 h-4" />
                                 </router-link>
-                            </tippy>
-                            <tippy v-can="'users.delete'" content="Delete">
                                 <button
+                                    v-can="'users.delete'"
                                     type="button"
                                     class="btn btn-sm btn-outline-danger p-1.5"
-                                    @click="confirmDelete(data.value)"
+                                    :aria-label="`Delete ${user.name}`"
+                                    @click="confirmDelete(user)"
                                 >
                                     <icon-trash-lines class="w-4 h-4" />
                                 </button>
-                            </tippy>
+                            </div>
                         </div>
-                    </template>
-                </vue3-datatable>
+                    </div>
+
+                    <!-- Mobile Pagination -->
+                    <div v-if="userStore.totalUsers > perPage" class="flex items-center justify-between pt-3">
+                        <span class="text-sm text-gray-500">
+                            {{ $t('users.page') }} {{ currentPage }} {{ $t('users.of') }} {{ Math.ceil(userStore.totalUsers / perPage) }}
+                        </span>
+                        <div class="flex gap-2">
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-primary"
+                                :disabled="currentPage <= 1"
+                                @click="handlePageChange(currentPage - 1)"
+                            >
+                                {{ $t('users.previous') }}
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-primary"
+                                :disabled="currentPage >= Math.ceil(userStore.totalUsers / perPage)"
+                                @click="handlePageChange(currentPage + 1)"
+                            >
+                                {{ $t('users.next') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Empty State -->
-            <div v-if="!userStore.isLoading && userStore.users.length === 0" class="text-center py-10">
-                <icon-users class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-                <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">No users found</h3>
-                <p class="text-gray-500 dark:text-gray-500 mb-4">
-                    {{ searchQuery || roleFilter ? 'Try adjusting your search or filter.' : 'Get started by adding a new user.' }}
-                </p>
-                <router-link v-can="'users.create'" to="/admin/users/create" class="btn btn-primary">
-                    <icon-user-plus class="w-5 h-5 mr-2" />
-                    Add First User
-                </router-link>
+            <div v-if="showEmptyState" class="text-center py-10" aria-live="polite">
+                <!-- With active filters -->
+                <template v-if="hasActiveFilters">
+                    <icon-search class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                    <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">{{ $t('users.no_results_found') }}</h3>
+                    <p class="text-gray-500 dark:text-gray-500 mb-4">
+                        {{ $t('users.no_users_match_your_current_search_or_filter_criteria') }}
+                    </p>
+                    <button type="button" class="btn btn-outline-primary gap-2" @click="clearFilters">
+                        <icon-x class="w-4 h-4" />
+                        {{ $t('users.clear_filters') }}
+                    </button>
+                </template>
+                <!-- No data at all -->
+                <template v-else>
+                    <icon-users class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                    <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">{{ $t('users.no_users_yet') }}</h3>
+                    <p class="text-gray-500 dark:text-gray-500 mb-4">
+                        {{ $t('users.get_started_by_adding_your_first_user') }}
+                    </p>
+                    <router-link v-can="'users.create'" to="/admin/users/create" class="btn btn-primary gap-2">
+                        <icon-user-plus class="w-5 h-5" />
+                        {{ $t('users.add_first_user') }}
+                    </router-link>
+                </template>
             </div>
         </div>
     </div>
@@ -238,6 +404,7 @@ import { useMeta } from '@/composables/use-meta';
 import { useUserStore } from '@/stores/user';
 import { useAuthStore } from '@/stores/auth';
 import { useNotification } from '@/composables/useNotification';
+import { useDebounce } from '@/composables/useDebounce';
 import { formatDate } from '@/utils/formatters';
 import type { User } from '@/types/user';
 
@@ -251,12 +418,14 @@ import IconUsers from '@/components/icon/icon-users.vue';
 import IconCircleCheck from '@/components/icon/icon-circle-check.vue';
 import IconInfoTriangle from '@/components/icon/icon-info-triangle.vue';
 import IconCaretDown from '@/components/icon/icon-caret-down.vue';
+import IconX from '@/components/icon/icon-x.vue';
 
 useMeta({ title: 'User Management' });
 
 const userStore = useUserStore();
 const authStore = useAuthStore();
 const { confirmDelete: confirmDeleteDialog, success, error, warning } = useNotification();
+const { debounce, isDebouncing } = useDebounce(300);
 
 // Local state
 const searchQuery = ref('');
@@ -266,7 +435,12 @@ const currentPage = ref(1);
 const sortColumn = ref('created_at');
 const sortDirection = ref<'asc' | 'desc'>('desc');
 const selectedUsers = ref<User[]>([]);
-let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+const initialLoading = ref(true);
+
+// Computed
+const hasActiveFilters = computed(() => !!searchQuery.value || !!roleFilter.value);
+const showSkeleton = computed(() => initialLoading.value && userStore.users.length === 0);
+const showEmptyState = computed(() => !userStore.isLoading && !initialLoading.value && userStore.users.length === 0);
 
 // Table columns
 const columns = computed(() => [
@@ -298,14 +472,19 @@ const getRoleBadgeClass = (roleName: string): string => {
 };
 
 const debouncedSearch = () => {
-    if (searchTimeout) {
-        clearTimeout(searchTimeout);
-    }
-    searchTimeout = setTimeout(() => {
+    debounce(() => {
         currentPage.value = 1;
         clearSelection();
         fetchUsers();
-    }, 300);
+    });
+};
+
+const clearFilters = () => {
+    searchQuery.value = '';
+    roleFilter.value = '';
+    currentPage.value = 1;
+    clearSelection();
+    fetchUsers();
 };
 
 const applyRoleFilter = () => {
@@ -320,6 +499,29 @@ const changePerPage = () => {
     fetchUsers();
 };
 
+// Server mode unified change handler
+// vue3-datatable in isServerMode emits @change instead of individual events
+interface TableChangePayload {
+    current_page: number;
+    pagesize: number;
+    offset: number;
+    sort_column: string;
+    sort_direction: string;
+    search: string;
+    column_filters: any[];
+    change_type: string;
+}
+
+const handleTableChange = (data: TableChangePayload) => {
+    sortColumn.value = data.sort_column;
+    sortDirection.value = data.sort_direction as 'asc' | 'desc';
+    currentPage.value = data.current_page;
+    perPage.value = data.pagesize;
+    clearSelection();
+    fetchUsers();
+};
+
+// Mobile pagination handler (datatable not used on mobile)
 const handlePageChange = (page: number) => {
     if (page !== currentPage.value) {
         currentPage.value = page;
@@ -328,23 +530,9 @@ const handlePageChange = (page: number) => {
     }
 };
 
-const handlePageSizeChange = (size: number) => {
-    perPage.value = size;
-    currentPage.value = 1;
-    clearSelection();
-    fetchUsers();
-};
-
-const handleSortChange = (data: { column: string; direction: 'asc' | 'desc' }) => {
-    if (data.column !== sortColumn.value || data.direction !== sortDirection.value) {
-        sortColumn.value = data.column;
-        sortDirection.value = data.direction;
-        fetchUsers();
-    }
-};
-
-const handleRowSelect = (data: { selectedRows: User[] }) => {
-    selectedUsers.value = data.selectedRows;
+// rowSelect emits User[] directly in vue3-datatable (not wrapped in object)
+const handleRowSelect = (rows: User[]) => {
+    selectedUsers.value = rows;
 };
 
 const clearSelection = () => {
@@ -436,9 +624,13 @@ const confirmBulkDelete = async () => {
 
 // Initialize
 onMounted(async () => {
-    await Promise.all([
-        fetchUsers(),
-        userStore.fetchRoles(),
-    ]);
+    try {
+        await Promise.all([
+            fetchUsers(),
+            userStore.fetchRoles(),
+        ]);
+    } finally {
+        initialLoading.value = false;
+    }
 });
 </script>

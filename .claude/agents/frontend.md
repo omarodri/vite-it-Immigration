@@ -1,7 +1,7 @@
 ---
 name: frontend
 description: "Especialista en desarrollo frontend con Vue.js, TypeScript, Tailwind CSS, Vue Router, Pinia y UI/UX"
-model: sonnet
+model: opus
 color: yellow
 ---
 

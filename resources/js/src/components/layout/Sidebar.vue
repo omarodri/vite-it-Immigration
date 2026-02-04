@@ -1,6 +1,6 @@
 <template>
     <div :class="{ 'dark text-white-dark': store.semidark }">
-        <nav class="sidebar fixed min-h-screen h-full top-0 bottom-0 w-[260px] shadow-[5px_0_25px_0_rgba(94,92,154,0.1)] z-50 transition-all duration-300">
+        <nav class="sidebar fixed min-h-screen h-full top-0 bottom-0 w-[260px] shadow-[5px_0_25px_0_rgba(94,92,154,0.1)] z-50 transition-all duration-300" aria-label="Main navigation">
             <div class="bg-white dark:bg-[#0e1726] h-full">
                 <div class="flex justify-between items-center px-4 py-3">
                     <router-link to="/" class="main-logo flex items-center shrink-0">
@@ -11,6 +11,7 @@
                     <a
                         href="javascript:;"
                         class="collapse-icon w-8 h-8 rounded-full flex items-center hover:bg-gray-500/10 dark:hover:bg-dark-light/10 dark:text-white-light transition duration-300 rtl:rotate-180 hover:text-primary"
+                        aria-label="Toggle sidebar"
                         @click="store.toggleSidebar()"
                     >
                         <icon-carets-down class="m-auto rotate-90" />
@@ -23,12 +24,43 @@
                     }"
                     class="h-[calc(100vh-80px)] relative"
                 >
+
+
                     <ul class="relative font-semibold space-y-0.5 p-4 py-0">
+                        <!-- Admin Section (visible only for users with permission) -->
+                        <template v-if="canViewUsers">
+                            <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
+                                <icon-minus class="w-4 h-5 flex-none hidden" />
+                                <span>{{ $t('sidebar.admin') }}</span>
+                            </h2>
+
+                            <li class="nav-item">
+                                <ul>
+                                    <li class="nav-item">
+                                        <router-link to="/admin/users" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-users class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('sidebar.users') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                </ul>
+                            </li>
+                        </template>
+
+                        <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
+                            <icon-minus class="w-4 h-5 flex-none hidden" />
+                            <span>{{ $t('apps') }}</span>
+                        </h2>
+
                         <li class="menu nav-item">
                             <button
                                 type="button"
                                 class="nav-link group w-full"
                                 :class="{ active: activeDropdown === 'dashboard' }"
+                                :aria-expanded="activeDropdown === 'dashboard'"
                                 @click="activeDropdown === 'dashboard' ? (activeDropdown = null) : (activeDropdown = 'dashboard')"
                             >
                                 <div class="flex items-center">
@@ -58,34 +90,6 @@
                                 </ul>
                             </vue-collapsible>
                         </li>
-
-                        <!-- Admin Section (visible only for users with permission) -->
-                        <template v-if="canViewUsers">
-                            <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
-                                <icon-minus class="w-4 h-5 flex-none hidden" />
-                                <span>Admin</span>
-                            </h2>
-
-                            <li class="nav-item">
-                                <ul>
-                                    <li class="nav-item">
-                                        <router-link to="/admin/users" class="group" @click="toggleMobileMenu">
-                                            <div class="flex items-center">
-                                                <icon-users class="group-hover:!text-primary shrink-0" />
-                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
-                                                    User Management
-                                                </span>
-                                            </div>
-                                        </router-link>
-                                    </li>
-                                </ul>
-                            </li>
-                        </template>
-
-                        <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
-                            <icon-minus class="w-4 h-5 flex-none hidden" />
-                            <span>{{ $t('apps') }}</span>
-                        </h2>
 
                         <li class="nav-item">
                             <ul>
@@ -161,6 +165,7 @@
                                         type="button"
                                         class="nav-link group w-full"
                                         :class="{ active: activeDropdown === 'invoice' }"
+                                        :aria-expanded="activeDropdown === 'invoice'"
                                         @click="activeDropdown === 'invoice' ? (activeDropdown = null) : (activeDropdown = 'invoice')"
                                     >
                                         <div class="flex items-center">
@@ -216,6 +221,7 @@
                                 type="button"
                                 class="nav-link group w-full"
                                 :class="{ active: activeDropdown === 'components' }"
+                                :aria-expanded="activeDropdown === 'components'"
                                 @click="activeDropdown === 'components' ? (activeDropdown = null) : (activeDropdown = 'components')"
                             >
                                 <div class="flex items-center">
@@ -282,6 +288,7 @@
                                 type="button"
                                 class="nav-link group w-full"
                                 :class="{ active: activeDropdown === 'elements' }"
+                                :aria-expanded="activeDropdown === 'elements'"
                                 @click="activeDropdown === 'elements' ? (activeDropdown = null) : (activeDropdown = 'elements')"
                             >
                                 <div class="flex items-center">
@@ -417,6 +424,7 @@
                                 type="button"
                                 class="nav-link group w-full"
                                 :class="{ active: activeDropdown === 'datatables' }"
+                                :aria-expanded="activeDropdown === 'datatables'"
                                 @click="activeDropdown === 'datatables' ? (activeDropdown = null) : (activeDropdown = 'datatables')"
                             >
                                 <div class="flex items-center">
@@ -483,6 +491,7 @@
                                 type="button"
                                 class="nav-link group w-full"
                                 :class="{ active: activeDropdown === 'forms' }"
+                                :aria-expanded="activeDropdown === 'forms'"
                                 @click="activeDropdown === 'forms' ? (activeDropdown = null) : (activeDropdown = 'forms')"
                             >
                                 <div class="flex items-center">
@@ -555,6 +564,7 @@
                                 type="button"
                                 class="nav-link group w-full"
                                 :class="{ active: activeDropdown === 'users' }"
+                                :aria-expanded="activeDropdown === 'users'"
                                 @click="activeDropdown === 'users' ? (activeDropdown = null) : (activeDropdown = 'users')"
                             >
                                 <div class="flex items-center">
@@ -583,6 +593,7 @@
                                 type="button"
                                 class="nav-link group w-full"
                                 :class="{ active: activeDropdown === 'pages' }"
+                                :aria-expanded="activeDropdown === 'pages'"
                                 @click="activeDropdown === 'pages' ? (activeDropdown = null) : (activeDropdown = 'pages')"
                             >
                                 <div class="flex items-center">
@@ -652,6 +663,7 @@
                                 type="button"
                                 class="nav-link group w-full"
                                 :class="{ active: activeDropdown === 'authentication' }"
+                                :aria-expanded="activeDropdown === 'authentication'"
                                 @click="activeDropdown === 'authentication' ? (activeDropdown = null) : (activeDropdown = 'authentication')"
                             >
                                 <div class="flex items-center">

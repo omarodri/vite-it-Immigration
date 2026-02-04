@@ -5,7 +5,7 @@
                 <a href="javascript:;" class="text-primary hover:underline">Users</a>
             </li>
             <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-                <span>Account Settings</span>
+                <span>{{ $t('profile.account_settings') }}</span>
             </li>
         </ul>
 
@@ -20,10 +20,10 @@
 
         <div v-else class="pt-5">
             <div class="flex items-center justify-between mb-5">
-                <h5 class="font-semibold text-lg dark:text-white-light">Settings</h5>
+                <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('profile.settings') }}</h5>
             </div>
             <TabGroup :selectedIndex="selectedTab" @change="changeTab">
-                <TabList class="flex font-semibold border-b border-[#ebedf2] dark:border-[#191e3a] mb-5 whitespace-nowrap overflow-y-auto">
+                <TabList class="flex font-semibold border-b border-[#ebedf2] dark:border-[#191e3a] mb-5 whitespace-nowrap overflow-y-auto" aria-label="Account settings sections">
                     <Tab as="template" v-slot="{ selected }">
                         <a
                             href="javascript:;"
@@ -31,7 +31,7 @@
                             :class="{ '!border-primary text-primary': selected }"
                         >
                             <icon-user class="w-5 h-5" />
-                            General
+                            {{ $t('profile.general') }}
                         </a>
                     </Tab>
                     <Tab as="template" v-slot="{ selected }">
@@ -41,7 +41,7 @@
                             :class="{ '!border-primary text-primary': selected }"
                         >
                             <icon-lock-dots class="w-5 h-5" />
-                            Security
+                            {{ $t('profile.security') }}
                         </a>
                     </Tab>
                     <Tab as="template" v-slot="{ selected }">
@@ -51,7 +51,7 @@
                             :class="{ '!border-primary text-primary': selected }"
                         >
                             <icon-settings class="w-5 h-5" />
-                            Preferences
+                            {{ $t('profile.preferences') }}
                         </a>
                     </Tab>
                     <Tab as="template" v-slot="{ selected }">
@@ -61,7 +61,7 @@
                             :class="{ '!border-primary text-primary': selected }"
                         >
                             <icon-trash-lines class="w-5 h-5" />
-                            Danger Zone
+                            {{ $t('profile.danger_zone') }}
                         </a>
                     </Tab>
                 </TabList>
@@ -70,7 +70,7 @@
                     <TabPanel>
                         <div>
                             <form @submit.prevent="saveProfile" class="border border-[#ebedf2] dark:border-[#191e3a] rounded-md p-4 mb-5 bg-white dark:bg-[#0e1726]">
-                                <h6 class="text-lg font-bold mb-5">General Information</h6>
+                                <h6 class="text-lg font-bold mb-5">{{ $t('profile.general_information') }}</h6>
                                 <div class="flex flex-col sm:flex-row">
                                     <!-- Avatar Section -->
                                     <div class="ltr:sm:mr-4 rtl:sm:ml-4 w-full sm:w-2/12 mb-5">
@@ -87,7 +87,7 @@
                                             <div class="flex gap-2">
                                                 <label class="btn btn-primary btn-sm cursor-pointer">
                                                     <icon-camera class="w-4 h-4 ltr:mr-1 rtl:ml-1" />
-                                                    <span v-if="!profileStore.isUploadingAvatar">Upload</span>
+                                                    <span v-if="!profileStore.isUploadingAvatar">{{ $t('profile.upload') }}</span>
                                                     <span v-else class="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4"></span>
                                                     <input
                                                         type="file"
@@ -95,6 +95,7 @@
                                                         accept="image/jpeg,image/png,image/gif,image/webp"
                                                         @change="handleAvatarUpload"
                                                         :disabled="profileStore.isUploadingAvatar"
+                                                        aria-label="Upload profile photo"
                                                     />
                                                 </label>
                                                 <button
@@ -103,6 +104,7 @@
                                                     class="btn btn-outline-danger btn-sm"
                                                     @click="deleteAvatar"
                                                     :disabled="profileStore.isUploadingAvatar"
+                                                    aria-label="Remove profile photo"
                                                 >
                                                     <icon-trash-lines class="w-4 h-4" />
                                                 </button>
@@ -114,7 +116,7 @@
                                     <!-- Form Fields -->
                                     <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
                                         <div>
-                                            <label for="name">Full Name <span class="text-danger">*</span></label>
+                                            <label for="name">{{ $t('profile.full_name') }} <span class="text-danger">*</span></label>
                                             <input
                                                 id="name"
                                                 v-model="profileForm.name"
@@ -122,11 +124,13 @@
                                                 placeholder="Enter your name"
                                                 class="form-input"
                                                 :class="{ 'border-danger': v$.name.$error }"
+                                                :aria-invalid="v$.name.$error"
+                                                :aria-describedby="v$.name.$error ? 'name-error' : undefined"
                                             />
-                                            <span v-if="v$.name.$error" class="text-danger text-xs mt-1">{{ v$.name.$errors[0].$message }}</span>
+                                            <span v-if="v$.name.$error" id="name-error" role="alert" class="text-danger text-xs mt-1">{{ v$.name.$errors[0].$message }}</span>
                                         </div>
                                         <div>
-                                            <label for="email">Email</label>
+                                            <label for="email">{{ $t('profile.email') }}</label>
                                             <input
                                                 id="email"
                                                 :value="profileStore.email"
@@ -134,10 +138,10 @@
                                                 class="form-input bg-gray-100 dark:bg-gray-800"
                                                 disabled
                                             />
-                                            <span class="text-xs text-gray-500">Contact admin to change email</span>
+                                            <span class="text-xs text-gray-500">{{ $t('profile.contact_admin_to_change_email') }}</span>
                                         </div>
                                         <div>
-                                            <label for="phone">Phone</label>
+                                            <label for="phone">{{ $t('profile.phone') }}</label>
                                             <input
                                                 id="phone"
                                                 v-model="profileForm.phone"
@@ -147,34 +151,37 @@
                                             />
                                         </div>
                                         <div>
-                                            <label for="date_of_birth">Date of Birth</label>
+                                            <label for="date_of_birth">{{ $t('profile.date_of_birth') }}</label>
                                             <flat-pickr
                                                 id="date_of_birth"
-                                                v-model="profileForm.date_of_birth"
+                                                v-model="profileForm.date_of_birth as DateOption | DateOption[]"
                                                 class="form-input"
                                                 :config="datePickerConfig"
                                                 placeholder="Select date"
+                                                :value="profileForm.date_of_birth ? new Date(profileForm.date_of_birth) : null"
                                             />
                                         </div>
                                         <div>
-                                            <label for="website">Website</label>
+                                            <label for="website">{{ $t('profile.website') }}</label>
                                             <input
                                                 id="website"
                                                 v-model="profileForm.website"
                                                 type="url"
-                                                placeholder="https://example.com"
+                                                placeholder="https://ejemplo.com"
                                                 class="form-input"
                                                 :class="{ 'border-danger': v$.website.$error }"
+                                                :aria-invalid="v$.website.$error"
+                                                :aria-describedby="v$.website.$error ? 'website-error' : undefined"
                                             />
-                                            <span v-if="v$.website.$error" class="text-danger text-xs mt-1">{{ v$.website.$errors[0].$message }}</span>
+                                            <span v-if="v$.website.$error" id="website-error" role="alert" class="text-danger text-xs mt-1">{{ v$.website.$errors[0].$message }}</span>
                                         </div>
                                         <div class="sm:col-span-2">
-                                            <label for="bio">Bio</label>
+                                            <label for="bio">{{ $t('profile.bio') }}</label>
                                             <textarea
                                                 id="bio"
                                                 v-model="profileForm.bio"
                                                 rows="3"
-                                                placeholder="Tell us about yourself..."
+                                                placeholder="Cuéntanos sobre ti..."
                                                 class="form-textarea"
                                                 maxlength="500"
                                             ></textarea>
@@ -186,10 +193,10 @@
 
                             <!-- Address Information -->
                             <form @submit.prevent="saveProfile" class="border border-[#ebedf2] dark:border-[#191e3a] rounded-md p-4 mb-5 bg-white dark:bg-[#0e1726]">
-                                <h6 class="text-lg font-bold mb-5">Address Information</h6>
+                                <h6 class="text-lg font-bold mb-5">{{ $t('profile.address_information') }}</h6>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                     <div class="sm:col-span-2">
-                                        <label for="address">Address</label>
+                                        <label for="address">{{ $t('profile.address') }}</label>
                                         <input
                                             id="address"
                                             v-model="profileForm.address"
@@ -199,7 +206,7 @@
                                         />
                                     </div>
                                     <div>
-                                        <label for="city">City</label>
+                                        <label for="city">{{ $t('profile.city') }}</label>
                                         <input
                                             id="city"
                                             v-model="profileForm.city"
@@ -209,7 +216,7 @@
                                         />
                                     </div>
                                     <div>
-                                        <label for="state">State/Province</label>
+                                        <label for="state">{{ $t('profile.state') }}</label>
                                         <input
                                             id="state"
                                             v-model="profileForm.state"
@@ -219,7 +226,7 @@
                                         />
                                     </div>
                                     <div>
-                                        <label for="country">Country</label>
+                                        <label for="country">{{ $t('profile.country') }}</label>
                                         <input
                                             id="country"
                                             v-model="profileForm.country"
@@ -229,7 +236,7 @@
                                         />
                                     </div>
                                     <div>
-                                        <label for="postal_code">Postal Code</label>
+                                        <label for="postal_code">{{ $t('profile.postal_code') }}</label>
                                         <input
                                             id="postal_code"
                                             v-model="profileForm.postal_code"
@@ -294,24 +301,24 @@
 
                             <!-- Preferences -->
                             <form @submit.prevent="saveProfile" class="border border-[#ebedf2] dark:border-[#191e3a] rounded-md p-4 mb-5 bg-white dark:bg-[#0e1726]">
-                                <h6 class="text-lg font-bold mb-5">Preferences</h6>
+                                <h6 class="text-lg font-bold mb-5">{{ $t('profile.preferences') }}</h6>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                     <div>
-                                        <label for="timezone">Timezone</label>
+                                        <label for="timezone">{{ $t('profile.timezone') }}</label>
                                         <select id="timezone" v-model="profileForm.timezone" class="form-select">
-                                            <option value="">Select timezone</option>
+                                            <option value="">{{ $t('profile.select_timezone') }}</option>
                                             <option v-for="tz in timezones" :key="tz" :value="tz">{{ tz }}</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label for="language">Language</label>
+                                        <label for="language">{{ $t('profile.language') }}</label>
                                         <select id="language" v-model="profileForm.language" class="form-select">
-                                            <option value="">Select language</option>
-                                            <option value="en">English</option>
-                                            <option value="es">Spanish</option>
-                                            <option value="fr">French</option>
-                                            <option value="de">German</option>
-                                            <option value="pt">Portuguese</option>
+                                            <option value="">{{ $t('profile.select_language') }}</option>
+                                            <option value="en">{{ $t('profile.english') }}</option>
+                                            <option value="es">{{ $t('profile.spanish') }}</option>
+                                            <option value="fr">{{ $t('profile.french') }}</option>
+                                            <option value="de">{{ $t('profile.german') }}</option>
+                                            <option value="pt">{{ $t('profile.portuguese') }}</option>
                                         </select>
                                     </div>
                                 </div>
@@ -325,10 +332,10 @@
                                     @click="saveProfile"
                                     :disabled="profileStore.isSaving"
                                 >
-                                    <span v-if="!profileStore.isSaving">Save Changes</span>
+                                    <span v-if="!profileStore.isSaving">{{ $t('profile.save_changes') }}</span>
                                     <span v-else class="flex items-center">
                                         <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4 ltr:mr-2 rtl:ml-2"></span>
-                                        Saving...
+                                        {{ $t('profile.saving') }}...
                                     </span>
                                 </button>
                             </div>
@@ -339,74 +346,83 @@
                     <TabPanel>
                         <div>
                             <form @submit.prevent="changePassword" class="border border-[#ebedf2] dark:border-[#191e3a] rounded-md p-4 mb-5 bg-white dark:bg-[#0e1726]">
-                                <h6 class="text-lg font-bold mb-5">Change Password</h6>
+                                <h6 class="text-lg font-bold mb-5">{{ $t('profile.change_password') }}</h6>
                                 <div class="max-w-md space-y-5">
                                     <div>
-                                        <label for="current_password">Current Password <span class="text-danger">*</span></label>
+                                        <label for="current_password">{{ $t('profile.current_password') }} <span class="text-danger">*</span></label>
                                         <div class="relative">
                                             <input
                                                 id="current_password"
                                                 v-model="passwordForm.current_password"
                                                 :type="showCurrentPassword ? 'text' : 'password'"
-                                                placeholder="Enter current password"
+                                                :placeholder="$t('profile.enter_current_password')"
                                                 class="form-input pr-10"
                                                 :class="{ 'border-danger': vPassword$.current_password.$error }"
+                                                :aria-invalid="vPassword$.current_password.$error"
+                                                :aria-describedby="vPassword$.current_password.$error ? 'current_password-error' : undefined"
                                             />
                                             <button
                                                 type="button"
                                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                                                 @click="showCurrentPassword = !showCurrentPassword"
+                                                aria-label="Toggle password visibility"
                                             >
                                                 <icon-eye v-if="!showCurrentPassword" class="w-5 h-5" />
                                                 <icon-eye-off v-else class="w-5 h-5" />
                                             </button>
                                         </div>
-                                        <span v-if="vPassword$.current_password.$error" class="text-danger text-xs mt-1">{{ vPassword$.current_password.$errors[0].$message }}</span>
+                                        <span v-if="vPassword$.current_password.$error" id="current_password-error" role="alert" class="text-danger text-xs mt-1">{{ vPassword$.current_password.$errors[0].$message }}</span>
                                     </div>
                                     <div>
-                                        <label for="new_password">New Password <span class="text-danger">*</span></label>
+                                        <label for="new_password">{{ $t('profile.new_password') }} <span class="text-danger">*</span></label>
                                         <div class="relative">
                                             <input
                                                 id="new_password"
                                                 v-model="passwordForm.password"
                                                 :type="showNewPassword ? 'text' : 'password'"
-                                                placeholder="Enter new password"
+                                                :placeholder="$t('profile.enter_new_password')"
                                                 class="form-input pr-10"
                                                 :class="{ 'border-danger': vPassword$.password.$error }"
+                                                :aria-invalid="vPassword$.password.$error"
+                                                :aria-describedby="vPassword$.password.$error ? 'new_password-error' : 'new_password-hint'"
                                             />
                                             <button
                                                 type="button"
                                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                                                 @click="showNewPassword = !showNewPassword"
+                                                aria-label="Toggle password visibility"
                                             >
                                                 <icon-eye v-if="!showNewPassword" class="w-5 h-5" />
                                                 <icon-eye-off v-else class="w-5 h-5" />
                                             </button>
                                         </div>
-                                        <span v-if="vPassword$.password.$error" class="text-danger text-xs mt-1">{{ vPassword$.password.$errors[0].$message }}</span>
-                                        <p class="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+                                        <span v-if="vPassword$.password.$error" id="new_password-error" role="alert" class="text-danger text-xs mt-1">{{ vPassword$.password.$errors[0].$message }}</span>
+                                        <p id="new_password-hint" class="text-xs text-gray-500 mt-1">{{ $t('profile.minimum_8_characters') }}</p>
                                     </div>
                                     <div>
-                                        <label for="password_confirmation">Confirm New Password <span class="text-danger">*</span></label>
+                                        <label for="password_confirmation">{{ $t('profile.confirm_new_password') }} <span class="text-danger">*</span></label>
                                         <div class="relative">
                                             <input
                                                 id="password_confirmation"
                                                 v-model="passwordForm.password_confirmation"
                                                 :type="showConfirmPassword ? 'text' : 'password'"
-                                                placeholder="Confirm new password"
+                                                :placeholder="$t('profile.confirm_new_password')"
                                                 class="form-input pr-10"
                                                 :class="{ 'border-danger': vPassword$.password_confirmation.$error }"
+                                                :aria-invalid="vPassword$.password_confirmation.$error"
+                                                :aria-describedby="vPassword$.password_confirmation.$error ? 'password_confirmation-error' : undefined"
                                             />
                                             <button
                                                 type="button"
                                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
                                                 @click="showConfirmPassword = !showConfirmPassword"
+                                                aria-label="Toggle password visibility"
                                             >
                                                 <icon-eye v-if="!showConfirmPassword" class="w-5 h-5" />
                                                 <icon-eye-off v-else class="w-5 h-5" />
                                             </button>
                                         </div>
-                                        <span v-if="vPassword$.password_confirmation.$error" class="text-danger text-xs mt-1">{{ vPassword$.password_confirmation.$errors[0].$message }}</span>
+                                        <span v-if="vPassword$.password_confirmation.$error" id="password_confirmation-error" role="alert" class="text-danger text-xs mt-1">{{ vPassword$.password_confirmation.$errors[0].$message }}</span>
                                     </div>
                                     <div class="pt-3">
                                         <button
@@ -414,10 +430,10 @@
                                             class="btn btn-primary"
                                             :disabled="isChangingPassword"
                                         >
-                                            <span v-if="!isChangingPassword">Update Password</span>
+                                            <span v-if="!isChangingPassword">{{ $t('profile.update_password') }}</span>
                                             <span v-else class="flex items-center">
                                                 <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4 ltr:mr-2 rtl:ml-2"></span>
-                                                Updating...
+                                                {{ $t('profile.updating') }}...
                                             </span>
                                         </button>
                                     </div>
@@ -428,28 +444,29 @@
                             <div class="border border-[#ebedf2] dark:border-[#191e3a] rounded-md p-4 mb-5 bg-white dark:bg-[#0e1726]">
                                 <div class="flex items-center justify-between mb-5">
                                     <div>
-                                        <h6 class="text-lg font-bold">Two-Factor Authentication</h6>
-                                        <p class="text-sm text-gray-500">Add additional security to your account using TOTP authentication.</p>
+                                        <h6 class="text-lg font-bold">{{ $t('profile.two_factor_authentication') }}</h6>
+                                        <p class="text-sm text-gray-500">{{ $t('profile.add_additional_security_to_your_account_using_totp_authentication') }}</p>
                                     </div>
-                                    <span v-if="isTwoFactorEnabled" class="badge badge-outline-success">Enabled</span>
-                                    <span v-else class="badge badge-outline-warning">Disabled</span>
+                                    <span v-if="isTwoFactorEnabled" class="badge badge-outline-success">{{ $t('profile.enabled') }}</span>
+                                    <span v-else class="badge badge-outline-warning">{{ $t('profile.disabled') }}</span>
                                 </div>
 
                                 <!-- 2FA Not Enabled: Show Enable Button -->
                                 <div v-if="!isTwoFactorEnabled && !twoFactorSetup.showSetup">
                                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                        Two-factor authentication adds an extra layer of security by requiring a code from your authenticator app when you sign in.
+                                        {{ $t('profile.two_factor_authentication_adds_an_extra_layer_of_security_by_requiring_a_code_from_your_authenticator_app_when_you_sign_in') }}
                                     </p>
                                     <button
                                         type="button"
                                         class="btn btn-primary"
                                         @click="enableTwoFactor"
                                         :disabled="twoFactorSetup.isLoading"
+                                        aria-label="Enable two-factor authentication"
                                     >
-                                        <span v-if="!twoFactorSetup.isLoading">Enable Two-Factor Authentication</span>
+                                        <span v-if="!twoFactorSetup.isLoading">{{ $t('profile.enable_two_factor_authentication') }}</span>
                                         <span v-else class="flex items-center gap-2">
                                             <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4"></span>
-                                            Setting up...
+                                            {{ $t('profile.setting_up') }}...
                                         </span>
                                     </button>
                                 </div>
@@ -458,20 +475,20 @@
                                 <div v-if="twoFactorSetup.showSetup && !isTwoFactorEnabled">
                                     <div class="space-y-5">
                                         <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-900">
-                                            <p class="text-sm font-semibold mb-3">1. Scan this QR code with your authenticator app:</p>
+                                            <p class="text-sm font-semibold mb-3">{{ $t('profile.scan_this_qr_code_with_your_authenticator_app') }}:</p>
                                             <div class="flex justify-center mb-3" v-html="twoFactorSetup.qrCode"></div>
-                                            <p class="text-xs text-gray-500 text-center">Google Authenticator, Authy, or any TOTP app</p>
+                                            <p class="text-xs text-gray-500 text-center">{{ $t('profile.google_authenticator_authy_or_any_totp_app') }}</p>
                                         </div>
 
                                         <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-900">
-                                            <p class="text-sm font-semibold mb-2">Or enter this secret manually:</p>
+                                            <p class="text-sm font-semibold mb-2">{{ $t('profile.or_enter_this_secret_manually') }}:</p>
                                             <code class="block text-center text-sm bg-white dark:bg-black p-2 rounded border font-mono select-all">
                                                 {{ twoFactorSetup.secret }}
                                             </code>
                                         </div>
 
                                         <div>
-                                            <p class="text-sm font-semibold mb-2">2. Enter the 6-digit code from your app to confirm:</p>
+                                            <p class="text-sm font-semibold mb-2">{{ $t('profile.enter_the_6_digit_code_from_your_app_to_confirm') }}:</p>
                                             <div class="flex gap-3 items-end">
                                                 <input
                                                     v-model="twoFactorSetup.confirmCode"
@@ -479,8 +496,8 @@
                                                     inputmode="numeric"
                                                     pattern="[0-9]*"
                                                     maxlength="6"
-                                                    class="form-input w-48 text-center text-lg tracking-widest font-mono"
-                                                    placeholder="000000"
+                                                    class="form-input w-60 text-center text-sm tracking-widest font-mono"
+                                                    :placeholder="$t('profile.enter_the_6_digit_code_from_your_app_to_confirm')" 
                                                     @input="twoFactorSetup.confirmCode = twoFactorSetup.confirmCode.replace(/\D/g, '')"
                                                 />
                                                 <button
@@ -489,10 +506,10 @@
                                                     :disabled="twoFactorSetup.confirmCode.length !== 6 || twoFactorSetup.isLoading"
                                                     @click="confirmTwoFactor"
                                                 >
-                                                    <span v-if="!twoFactorSetup.isLoading">Confirm & Enable</span>
+                                                    <span v-if="!twoFactorSetup.isLoading">{{ $t('profile.confirm_and_enable') }}</span>
                                                     <span v-else class="flex items-center gap-2">
                                                         <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4"></span>
-                                                        Confirming...
+                                                        {{ $t('profile.confirming') }}...
                                                     </span>
                                                 </button>
                                                 <button
@@ -500,7 +517,7 @@
                                                     class="btn btn-outline-danger"
                                                     @click="cancelTwoFactorSetup"
                                                 >
-                                                    Cancel
+                                                    {{ $t('profile.cancel') }}
                                                 </button>
                                             </div>
                                         </div>
@@ -510,7 +527,7 @@
                                 <!-- 2FA Enabled: Show management options -->
                                 <div v-if="isTwoFactorEnabled">
                                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                        Two-factor authentication is currently enabled. You will be asked for a code from your authenticator app when you sign in.
+                                        {{ $t('profile.two_factor_authentication_is_currently_enabled_you_will_be_asked_for_a_code_from_your_authenticator_app_when_you_sign_in') }}
                                     </p>
                                     <div class="flex flex-wrap gap-3">
                                         <button
@@ -519,15 +536,16 @@
                                             @click="viewRecoveryCodes"
                                             :disabled="twoFactorSetup.isLoading"
                                         >
-                                            View Recovery Codes
+                                            {{ $t('profile.view_recovery_codes') }}
                                         </button>
                                         <button
                                             type="button"
                                             class="btn btn-outline-danger"
                                             @click="disableTwoFactor"
                                             :disabled="twoFactorSetup.isLoading"
+                                            aria-label="Disable two-factor authentication"
                                         >
-                                            Disable Two-Factor Authentication
+                                            {{ $t('profile.disable_two_factor_authentication') }}
                                         </button>
                                     </div>
                                 </div>
@@ -535,22 +553,22 @@
 
                             <!-- Session Information -->
                             <div class="border border-[#ebedf2] dark:border-[#191e3a] rounded-md p-4 bg-white dark:bg-[#0e1726]">
-                                <h6 class="text-lg font-bold mb-5">Account Security</h6>
+                                <h6 class="text-lg font-bold mb-5">{{ $t('profile.account_security') }}</h6>
                                 <div class="space-y-4">
                                     <div class="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
                                         <div>
-                                            <h6 class="font-semibold">Email Verification</h6>
-                                            <p class="text-sm text-gray-500">Your email address verification status</p>
+                                            <h6 class="font-semibold">{{ $t('profile.email_verification') }}</h6>
+                                            <p class="text-sm text-gray-500">{{ $t('profile.your_email_address_verification_status') }}</p>
                                         </div>
                                         <div>
-                                            <span v-if="authStore.isEmailVerified" class="badge badge-outline-success">Verified</span>
-                                            <span v-else class="badge badge-outline-warning">Not Verified</span>
+                                            <span v-if="authStore.isEmailVerified" class="badge badge-outline-success">{{ $t('profile.verified') }}</span>
+                                            <span v-else class="badge badge-outline-warning">{{ $t('profile.not_verified') }}</span>
                                         </div>
                                     </div>
                                     <div class="flex items-center justify-between py-3">
                                         <div>
-                                            <h6 class="font-semibold">Last Password Change</h6>
-                                            <p class="text-sm text-gray-500">When your password was last updated</p>
+                                            <h6 class="font-semibold">{{ $t('profile.last_password_change') }}</h6>
+                                            <p class="text-sm text-gray-500">{{ $t('profile.when_your_password_was_last_updated') }}</p>
                                         </div>
                                         <div>
                                             <span class="text-gray-600 dark:text-gray-400">{{ lastPasswordChange }}</span>
@@ -566,7 +584,7 @@
                         <div class="switch">
                             <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
                                 <div class="panel space-y-5">
-                                    <h5 class="font-semibold text-lg mb-4">Choose Theme</h5>
+                                    <h5 class="font-semibold text-lg mb-4">{{ $t('profile.choose_theme') }}</h5>
                                     <div class="flex justify-around">
                                         <label class="inline-flex cursor-pointer">
                                             <input
@@ -598,15 +616,15 @@
                                     </div>
                                 </div>
                                 <div class="panel space-y-5">
-                                    <h5 class="font-semibold text-lg mb-4">Activity data</h5>
-                                    <p>Download your Summary, Task and Payment History Data</p>
-                                    <button type="button" class="btn btn-primary">Download Data</button>
+                                    <h5 class="font-semibold text-lg mb-4">{{ $t('profile.activity_data') }}</h5>
+                                    <p>{{ $t('profile.download_your_summary_task_and_payment_history_data') }}</p>
+                                    <button type="button" class="btn btn-primary">{{ $t('profile.download_data') }}</button>
                                 </div>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                                 <div class="panel space-y-5">
-                                    <h5 class="font-semibold text-lg mb-4">Public Profile</h5>
-                                    <p>Your <span class="text-primary">Profile</span> will be visible to anyone on the network.</p>
+                                    <h5 class="font-semibold text-lg mb-4">{{ $t('profile.public_profile') }}</h5>
+                                    <p>{{ $t('profile.your_profile_will_be_visible_to_anyone_on_the_network') }}</p>
                                     <label class="w-12 h-6 relative">
                                         <input
                                             type="checkbox"
@@ -620,8 +638,8 @@
                                     </label>
                                 </div>
                                 <div class="panel space-y-5">
-                                    <h5 class="font-semibold text-lg mb-4">Show my email</h5>
-                                    <p>Your <span class="text-primary">Email</span> will be visible to anyone on the network.</p>
+                                        <h5 class="font-semibold text-lg mb-4">{{ $t('profile.show_my_email') }}</h5>
+                                    <p>{{ $t('profile.your_email_will_be_visible_to_anyone_on_the_network') }}</p>
                                     <label class="w-12 h-6 relative">
                                         <input
                                             type="checkbox"
@@ -635,8 +653,8 @@
                                     </label>
                                 </div>
                                 <div class="panel space-y-5">
-                                    <h5 class="font-semibold text-lg mb-4">Enable keyboard shortcuts</h5>
-                                    <p>When enabled, press <span class="text-primary">ctrl</span> for help</p>
+                                    <h5 class="font-semibold text-lg mb-4">{{ $t('profile.enable_keyboard_shortcuts') }}</h5>
+                                    <p>{{ $t('profile.when_enabled_press_ctrl_for_help') }}</p>
                                     <label class="w-12 h-6 relative">
                                         <input
                                             type="checkbox"
@@ -658,13 +676,13 @@
                         <div class="switch">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                                 <div class="panel space-y-5">
-                                    <h5 class="font-semibold text-lg mb-4">Purge Cache</h5>
-                                    <p>Remove the active resource from the cache without waiting for the predetermined cache expiry time.</p>
-                                    <button class="btn btn-secondary">Clear</button>
+                                    <h5 class="font-semibold text-lg mb-4">{{ $t('profile.purge_cache') }}</h5>
+                                    <p>{{ $t('profile.remove_the_active_resource_from_the_cache_without_waiting_for_the_predetermined_cache_expiry_time') }}</p>
+                                    <button class="btn btn-secondary">{{ $t('profile.clear') }}</button>
                                 </div>
                                 <div class="panel space-y-5">
-                                    <h5 class="font-semibold text-lg mb-4">Deactivate Account</h5>
-                                    <p>You will not be able to receive messages, notifications for up to 24 hours.</p>
+                                    <h5 class="font-semibold text-lg mb-4">{{ $t('profile.deactivate_account') }}</h5>
+                                    <p>{{ $t('profile.you_will_not_be_able_to_receive_messages_notifications_for_up_to_24_hours') }}</p>
                                     <label class="w-12 h-6 relative">
                                         <input
                                             type="checkbox"
@@ -678,9 +696,9 @@
                                     </label>
                                 </div>
                                 <div class="panel space-y-5">
-                                    <h5 class="font-semibold text-lg mb-4">Delete Account</h5>
-                                    <p>Once you delete the account, there is no going back. Please be certain.</p>
-                                    <button class="btn btn-danger btn-delete-account" @click="confirmDeleteAccount">Delete my account</button>
+                                    <h5 class="font-semibold text-lg mb-4">{{ $t('profile.delete_account') }}</h5>
+                                    <p>{{ $t('profile.once_you_delete_the_account_there_is_no_going_back_please_be_certain') }}</p>
+                                    <button class="btn btn-danger btn-delete-account" @click="confirmDeleteAccount">{{ $t('profile.delete_my_account') }}</button>
                                 </div>
                             </div>
                         </div>

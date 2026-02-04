@@ -284,25 +284,34 @@
                     <div class="dropdown shrink-0">
                         <Popper :placement="store.rtlClass === 'rtl' ? 'bottom-end' : 'bottom-start'" offsetDistance="8" class="!block">
                             <button type="button" class="relative group block">
-                                <img
+                                <!-- <img
                                     v-if="authStore.user"
                                     class="w-9 h-9 rounded-full object-cover saturate-50 group-hover:saturate-100"
                                     src="/assets/images/user-profile.jpeg"
                                     :alt="authStore.user.name"
-                                />
-                                <div v-else class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-semibold">
-                                    <icon-user class="w-5 h-5" />
-                                </div>
+                                /> -->
+                                <!-- Avatar -->
+                                <img v-if="profileStore.avatarUrl"
+                                :src="profileStore.avatarUrl" 
+                                :alt="`${profileStore.fullName}'s profile photo`" 
+                                class="w-9 h-9 rounded-full object-cover saturate-50 group-hover:saturate-100" />
+                                <span v-else class="w-9 h-9 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white mb-0 text-1xl font-bold" aria-hidden="true">{{ profileStore.initials }}</span>
+
                             </button>
                             <template #content="{ close }">
                                 <ul class="text-dark dark:text-white-dark !py-0 w-[230px] font-semibold dark:text-white-light/90">
                                     <li>
                                         <div class="flex items-center px-4 py-4">
                                             <div class="flex-none">
-                                                <img v-if="authStore.user" class="rounded-md w-10 h-10 object-cover" src="/assets/images/user-profile.jpeg" :alt="authStore.user.name" />
+                                                <img v-if="profileStore.avatarUrl"
+                                                :src="profileStore.avatarUrl" 
+                                                :alt="`${profileStore.fullName}'s profile photo`" 
+                                                class="w-9 h-9 rounded-full object-cover saturate-50 group-hover:saturate-100" />
+                                                <span v-else class="w-9 h-9 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white mb-0 text-1xl font-bold" aria-hidden="true">{{ profileStore.initials }}</span>
+                                                <!-- <img v-if="authStore.user" class="rounded-md w-10 h-10 object-cover" src="/assets/images/user-profile.jpeg" :alt="authStore.user.name" />
                                                 <div v-else class="rounded-md w-10 h-10 bg-primary flex items-center justify-center text-white font-semibold">
                                                     <icon-user class="w-6 h-6" />
-                                                </div>
+                                                </div> -->
                                             </div>
                                             <div class="ltr:pl-4 rtl:pr-4 truncate">
                                                 <h4 class="text-base">
@@ -876,6 +885,7 @@
     import { useRoute, useRouter } from 'vue-router';
     import { useAppStore } from '@/stores/index';
     import { useAuthStore } from '@/stores/auth';
+    import { useProfileStore } from '@/stores/profile';
 
     import IconMenu from '@/components/icon/icon-menu.vue';
     import IconCalendar from '@/components/icon/icon-calendar.vue';
@@ -909,6 +919,8 @@
     const route = useRoute();
     const router = useRouter();
     const search = ref(false);
+
+    const profileStore = useProfileStore();
 
     // Logout handler
     const handleLogout = async () => {

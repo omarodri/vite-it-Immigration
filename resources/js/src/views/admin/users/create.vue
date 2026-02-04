@@ -23,9 +23,9 @@
             <!-- Form -->
             <form @submit.prevent="handleSubmit" class="space-y-5">
                 <!-- Error Alert -->
-                <div v-if="errorMessage" class="flex items-center p-3.5 rounded text-danger bg-danger-light dark:bg-danger-dark-light">
+                <div v-if="errorMessage" role="alert" class="flex items-center p-3.5 rounded text-danger bg-danger-light dark:bg-danger-dark-light">
                     <span class="ltr:pr-2 rtl:pl-2">{{ errorMessage }}</span>
-                    <button type="button" class="ltr:ml-auto rtl:mr-auto hover:opacity-80" @click="errorMessage = ''">
+                    <button type="button" class="ltr:ml-auto rtl:mr-auto hover:opacity-80" aria-label="Dismiss error" @click="errorMessage = ''">
                         <icon-x class="w-4 h-4" />
                     </button>
                 </div>
@@ -44,13 +44,15 @@
                                 placeholder="Enter full name"
                                 class="form-input pl-10"
                                 :class="{ 'border-danger': v$.name.$error }"
+                                :aria-invalid="v$.name.$error"
+                                :aria-describedby="v$.name.$error ? 'name-error' : undefined"
                             />
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
                                 <icon-user class="w-5 h-5" />
                             </span>
                         </div>
                         <template v-if="v$.name.$error">
-                            <p class="text-danger mt-1 text-sm">{{ v$.name.$errors[0]?.$message }}</p>
+                            <p id="name-error" role="alert" class="text-danger mt-1 text-sm">{{ v$.name.$errors[0]?.$message }}</p>
                         </template>
                     </div>
 
@@ -67,13 +69,15 @@
                                 placeholder="Enter email address"
                                 class="form-input pl-10"
                                 :class="{ 'border-danger': v$.email.$error }"
+                                :aria-invalid="v$.email.$error"
+                                :aria-describedby="v$.email.$error ? 'email-error' : undefined"
                             />
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
                                 <icon-mail class="w-5 h-5" />
                             </span>
                         </div>
                         <template v-if="v$.email.$error">
-                            <p class="text-danger mt-1 text-sm">{{ v$.email.$errors[0]?.$message }}</p>
+                            <p id="email-error" role="alert" class="text-danger mt-1 text-sm">{{ v$.email.$errors[0]?.$message }}</p>
                         </template>
                     </div>
 
@@ -90,6 +94,8 @@
                                 placeholder="Enter password"
                                 class="form-input pl-10 pr-10"
                                 :class="{ 'border-danger': v$.password.$error }"
+                                :aria-invalid="v$.password.$error"
+                                :aria-describedby="v$.password.$error ? 'password-error' : 'password-hint'"
                             />
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
                                 <icon-lock-dots class="w-5 h-5" />
@@ -97,15 +103,16 @@
                             <button
                                 type="button"
                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                aria-label="Toggle password visibility"
                                 @click="showPassword = !showPassword"
                             >
                                 <icon-eye class="w-5 h-5" />
                             </button>
                         </div>
                         <template v-if="v$.password.$error">
-                            <p class="text-danger mt-1 text-sm">{{ v$.password.$errors[0]?.$message }}</p>
+                            <p id="password-error" role="alert" class="text-danger mt-1 text-sm">{{ v$.password.$errors[0]?.$message }}</p>
                         </template>
-                        <p class="text-gray-500 text-xs mt-1">Minimum 8 characters</p>
+                        <p id="password-hint" class="text-gray-500 text-xs mt-1">Minimum 8 characters</p>
                     </div>
 
                     <!-- Password Confirmation -->
@@ -121,6 +128,8 @@
                                 placeholder="Confirm password"
                                 class="form-input pl-10 pr-10"
                                 :class="{ 'border-danger': v$.password_confirmation.$error }"
+                                :aria-invalid="v$.password_confirmation.$error"
+                                :aria-describedby="v$.password_confirmation.$error ? 'password-confirm-error' : undefined"
                             />
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
                                 <icon-lock-dots class="w-5 h-5" />
@@ -128,27 +137,28 @@
                             <button
                                 type="button"
                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                aria-label="Toggle password confirmation visibility"
                                 @click="showPasswordConfirm = !showPasswordConfirm"
                             >
                                 <icon-eye class="w-5 h-5" />
                             </button>
                         </div>
                         <template v-if="v$.password_confirmation.$error">
-                            <p class="text-danger mt-1 text-sm">{{ v$.password_confirmation.$errors[0]?.$message }}</p>
+                            <p id="password-confirm-error" role="alert" class="text-danger mt-1 text-sm">{{ v$.password_confirmation.$errors[0]?.$message }}</p>
                         </template>
                     </div>
                 </div>
 
                 <!-- Roles -->
-                <div>
-                    <label class="mb-2 block">
+                <fieldset>
+                    <legend class="mb-2 block">
                         Roles <span class="text-danger">*</span>
-                    </label>
+                    </legend>
                     <div v-if="isLoadingRoles" class="flex items-center gap-2 text-gray-500">
                         <span class="animate-spin border-2 border-primary border-l-transparent rounded-full w-4 h-4"></span>
                         Loading roles...
                     </div>
-                    <div v-else class="flex flex-wrap gap-4">
+                    <div v-else class="flex flex-wrap gap-4" role="group" aria-label="User roles">
                         <label
                             v-for="role in roles"
                             :key="role.id"
@@ -156,7 +166,7 @@
                         >
                             <input
                                 type="checkbox"
-                                :value="role.id"
+                                :value="role.name"
                                 v-model="form.roles"
                                 class="form-checkbox"
                                 :class="getRoleCheckboxClass(role.name)"
@@ -167,9 +177,9 @@
                         </label>
                     </div>
                     <template v-if="v$.roles.$error">
-                        <p class="text-danger mt-1 text-sm">{{ v$.roles.$errors[0]?.$message }}</p>
+                        <p id="roles-error" role="alert" class="text-danger mt-1 text-sm">{{ v$.roles.$errors[0]?.$message }}</p>
                     </template>
-                </div>
+                </fieldset>
 
                 <!-- Send Welcome Email -->
                 <div>
@@ -252,7 +262,7 @@ const form = reactive({
     email: '',
     password: '',
     password_confirmation: '',
-    roles: [] as number[],
+    roles: [] as string[],
     send_welcome_email: true,
 });
 

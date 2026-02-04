@@ -2,18 +2,62 @@
     <div>
         <ul class="flex space-x-2 rtl:space-x-reverse">
             <li>
-                <a href="javascript:;" class="text-primary hover:underline">Users</a>
+                <a href="javascript:;" class="text-primary hover:underline">{{ $t('sidebar.users') }}</a>
             </li>
             <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-                <span>Profile</span>
+                <span>{{ $t('profile.title') }}</span>
             </li>
         </ul>
 
-        <!-- Loading State -->
-        <div v-if="profileStore.isLoading" class="pt-5">
-            <div class="panel">
-                <div class="flex items-center justify-center py-20">
-                    <span class="animate-spin border-4 border-primary border-l-transparent rounded-full w-10 h-10"></span>
+        <!-- Loading Skeleton -->
+        <div v-if="profileStore.isLoading" class="pt-5 animate-pulse">
+            <div class="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-5 mb-5">
+                <!-- Profile Card Skeleton -->
+                <div class="panel">
+                    <div class="flex items-center justify-between mb-5">
+                        <div class="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                        <div class="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 mb-5"></div>
+                        <div class="h-5 w-36 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                        <div class="h-4 w-44 bg-gray-100 dark:bg-gray-800 rounded mb-5"></div>
+                        <div class="space-y-3 w-full max-w-[200px]">
+                            <div v-for="i in 3" :key="i" class="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Info Card Skeleton -->
+                <div class="panel lg:col-span-2 xl:col-span-3">
+                    <div class="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-5"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="space-y-4">
+                            <div class="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                            <div v-for="i in 5" :key="i" class="flex border-b border-gray-100 dark:border-gray-800 pb-3">
+                                <div class="w-1/3"><div class="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div></div>
+                                <div class="w-2/3"><div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div></div>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                            <div v-for="i in 5" :key="i" class="flex border-b border-gray-100 dark:border-gray-800 pb-3">
+                                <div class="w-1/3"><div class="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div></div>
+                                <div class="w-2/3"><div class="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Quick Actions Skeleton -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div v-for="i in 4" :key="i" class="panel">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+                        <div class="space-y-2">
+                            <div class="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                            <div class="h-3 w-36 bg-gray-100 dark:bg-gray-800 rounded"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -24,19 +68,19 @@
                 <!-- Profile Card -->
                 <div class="panel">
                     <div class="flex items-center justify-between mb-5">
-                        <h5 class="font-semibold text-lg dark:text-white-light">Profile</h5>
-                        <router-link to="/users/user-account-settings" class="ltr:ml-auto rtl:mr-auto btn btn-primary p-2 rounded-full">
+                        <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('profile.title') }}</h5>
+                        <router-link to="/users/user-account-settings" class="ltr:ml-auto rtl:mr-auto btn btn-primary p-2 rounded-full" aria-label="Edit profile settings">
                             <icon-pencil-paper />
                         </router-link>
                     </div>
                     <div class="mb-5">
                         <div class="flex flex-col justify-center items-center">
                             <!-- Avatar -->
-                            <div v-if="profileStore.avatarUrl" class="w-24 h-24 rounded-full overflow-hidden mb-5">
-                                <img :src="profileStore.avatarUrl" alt="Avatar" class="w-full h-full object-cover" />
+                            <div v-if="profileStore.avatarUrl" class="w-24 h-24 rounded-full overflow-hidden mb-5" role="img" :aria-label="`${profileStore.fullName}'s avatar`">
+                                <img :src="profileStore.avatarUrl" :alt="`${profileStore.fullName}'s profile photo`" class="w-full h-full object-cover" />
                             </div>
-                            <div v-else class="w-24 h-24 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white mb-5">
-                                <span class="text-3xl font-bold">{{ profileStore.initials }}</span>
+                            <div v-else class="w-24 h-24 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white mb-5" role="img" :aria-label="`${profileStore.fullName}'s avatar`">
+                                <span class="text-3xl font-bold" aria-hidden="true">{{ profileStore.initials }}</span>
                             </div>
                             <p class="font-semibold text-primary text-xl">{{ profileStore.fullName }}</p>
                             <p class="text-gray-500 text-sm">{{ profileStore.email }}</p>
@@ -76,6 +120,7 @@
                                     class="btn btn-info flex items-center justify-center rounded-full w-10 h-10 p-0"
                                     :href="`https://twitter.com/${profile.social_links.twitter}`"
                                     target="_blank"
+                                    aria-label="Twitter profile"
                                 >
                                     <icon-twitter class="w-5 h-5" />
                                 </a>
@@ -85,6 +130,7 @@
                                     class="btn btn-primary flex items-center justify-center rounded-full w-10 h-10 p-0"
                                     :href="`https://linkedin.com/in/${profile.social_links.linkedin}`"
                                     target="_blank"
+                                    aria-label="LinkedIn profile"
                                 >
                                     <icon-linkedin class="w-5 h-5" />
                                 </a>
@@ -94,6 +140,7 @@
                                     class="btn btn-dark flex items-center justify-center rounded-full w-10 h-10 p-0"
                                     :href="`https://github.com/${profile.social_links.github}`"
                                     target="_blank"
+                                    aria-label="GitHub profile"
                                 >
                                     <icon-github class="w-5 h-5" />
                                 </a>
@@ -103,6 +150,7 @@
                                     class="btn btn-secondary flex items-center justify-center rounded-full w-10 h-10 p-0"
                                     :href="`https://facebook.com/${profile.social_links.facebook}`"
                                     target="_blank"
+                                    aria-label="Facebook profile"
                                 >
                                     <icon-facebook class="w-5 h-5" />
                                 </a>
@@ -129,31 +177,31 @@
                 <!-- Account Information -->
                 <div class="panel lg:col-span-2 xl:col-span-3">
                     <div class="mb-5">
-                        <h5 class="font-semibold text-lg dark:text-white-light">Account Information</h5>
+                        <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('profile.account_information') }}</h5>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <!-- Basic Info -->
                         <div class="space-y-4">
-                            <h6 class="font-semibold text-gray-600 dark:text-gray-400">Basic Information</h6>
+                            <h6 class="font-semibold text-gray-600 dark:text-gray-400">{{ $t('profile.basic_information') }}</h6>
                             <div class="flex items-center border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <span class="w-1/3 text-gray-500">Full Name</span>
+                                <span class="w-1/3 text-gray-500">{{ $t('profile.full_name') }}</span>
                                 <span class="w-2/3 font-medium">{{ profileStore.fullName }}</span>
                             </div>
                             <div class="flex items-center border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <span class="w-1/3 text-gray-500">Email</span>
+                                <span class="w-1/3 text-gray-500">{{ $t('profile.email') }}</span>
                                 <span class="w-2/3 font-medium">{{ profileStore.email }}</span>
                             </div>
                             <div class="flex items-center border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <span class="w-1/3 text-gray-500">Phone</span>
+                                <span class="w-1/3 text-gray-500">{{ $t('profile.phone') }}</span>
                                 <span class="w-2/3 font-medium">{{ profile?.phone || '-' }}</span>
                             </div>
                             <div class="flex items-center border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <span class="w-1/3 text-gray-500">Date of Birth</span>
+                                <span class="w-1/3 text-gray-500">{{ $t('profile.date_of_birth') }}</span>
                                 <span class="w-2/3 font-medium">{{ profile?.date_of_birth ? formatDate(profile.date_of_birth) : '-' }}</span>
                             </div>
                             <div class="flex items-center pb-3">
-                                <span class="w-1/3 text-gray-500">Website</span>
+                                <span class="w-1/3 text-gray-500">{{ $t('profile.website') }}</span>
                                 <span class="w-2/3 font-medium">
                                     <a v-if="profile?.website" :href="profile.website" target="_blank" class="text-primary">
                                         {{ profile.website }}
@@ -165,25 +213,25 @@
 
                         <!-- Address Info -->
                         <div class="space-y-4">
-                            <h6 class="font-semibold text-gray-600 dark:text-gray-400">Address Information</h6>
+                            <h6 class="font-semibold text-gray-600 dark:text-gray-400">{{ $t('profile.address_information') }}</h6>
                             <div class="flex items-center border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <span class="w-1/3 text-gray-500">Address</span>
+                                <span class="w-1/3 text-gray-500">{{ $t('profile.address') }}</span>
                                 <span class="w-2/3 font-medium">{{ profile?.address || '-' }}</span>
                             </div>
                             <div class="flex items-center border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <span class="w-1/3 text-gray-500">City</span>
+                                <span class="w-1/3 text-gray-500">{{ $t('profile.city') }}</span>
                                 <span class="w-2/3 font-medium">{{ profile?.city || '-' }}</span>
                             </div>
                             <div class="flex items-center border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <span class="w-1/3 text-gray-500">State</span>
+                                <span class="w-1/3 text-gray-500">{{ $t('profile.state') }}</span>
                                 <span class="w-2/3 font-medium">{{ profile?.state || '-' }}</span>
                             </div>
                             <div class="flex items-center border-b border-gray-200 dark:border-gray-700 pb-3">
-                                <span class="w-1/3 text-gray-500">Country</span>
+                                <span class="w-1/3 text-gray-500">{{ $t('profile.country') }}</span>
                                 <span class="w-2/3 font-medium">{{ profile?.country || '-' }}</span>
                             </div>
                             <div class="flex items-center pb-3">
-                                <span class="w-1/3 text-gray-500">Postal Code</span>
+                                <span class="w-1/3 text-gray-500">{{ $t('profile.postal_code') }}</span>
                                 <span class="w-2/3 font-medium">{{ profile?.postal_code || '-' }}</span>
                             </div>
                         </div>
@@ -191,20 +239,20 @@
 
                     <!-- Bio Section -->
                     <div v-if="profile?.bio" class="mt-5 pt-5 border-t border-gray-200 dark:border-gray-700">
-                        <h6 class="font-semibold text-gray-600 dark:text-gray-400 mb-3">About Me</h6>
+                        <h6 class="font-semibold text-gray-600 dark:text-gray-400 mb-3">{{ $t('profile.about_me') }}</h6>
                         <p class="text-gray-600 dark:text-gray-300">{{ profile.bio }}</p>
                     </div>
 
                     <!-- Preferences -->
                     <div class="mt-5 pt-5 border-t border-gray-200 dark:border-gray-700">
-                        <h6 class="font-semibold text-gray-600 dark:text-gray-400 mb-3">Preferences</h6>
+                        <h6 class="font-semibold text-gray-600 dark:text-gray-400 mb-3">{{ $t('profile.preferences') }}</h6>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="flex items-center">
-                                <span class="w-1/3 text-gray-500">Timezone</span>
+                                <span class="w-1/3 text-gray-500">{{ $t('profile.timezone') }}</span>
                                 <span class="w-2/3 font-medium">{{ profile?.timezone || 'Not set' }}</span>
                             </div>
                             <div class="flex items-center">
-                                <span class="w-1/3 text-gray-500">Language</span>
+                                <span class="w-1/3 text-gray-500">{{ $t('profile.language') }}</span>
                                 <span class="w-2/3 font-medium">{{ profile?.language || 'Not set' }}</span>
                             </div>
                         </div>
@@ -220,8 +268,8 @@
                             <icon-settings class="w-6 h-6 text-primary" />
                         </div>
                         <div>
-                            <h6 class="font-semibold">Account Settings</h6>
-                            <p class="text-gray-500 text-sm">Manage your account</p>
+                            <h6 class="font-semibold">{{ $t('profile.account_settings') }}</h6>
+                            <p class="text-gray-500 text-sm">{{ $t('profile.manage_your_account') }}</p>
                         </div>
                     </div>
                 </router-link>
@@ -232,8 +280,8 @@
                             <icon-lock-dots class="w-6 h-6 text-warning" />
                         </div>
                         <div>
-                            <h6 class="font-semibold">Security</h6>
-                            <p class="text-gray-500 text-sm">Change password</p>
+                            <h6 class="font-semibold">{{ $t('profile.security') }}</h6>
+                            <p class="text-gray-500 text-sm">{{ $t('profile.change_password') }}</p>
                         </div>
                     </div>
                 </router-link>
@@ -244,9 +292,9 @@
                             <icon-circle-check class="w-6 h-6 text-success" />
                         </div>
                         <div>
-                            <h6 class="font-semibold">Email Status</h6>
-                            <p v-if="authStore.isEmailVerified" class="text-success text-sm">Verified</p>
-                            <p v-else class="text-warning text-sm">Not verified</p>
+                            <h6 class="font-semibold">{{ $t('profile.email_status') }}</h6>
+                            <p v-if="authStore.isEmailVerified" class="text-success text-sm">{{ $t('profile.verified') }}</p>
+                            <p v-else class="text-warning text-sm">{{ $t('profile.not_verified') }}</p>
                         </div>
                     </div>
                 </div>
@@ -257,8 +305,8 @@
                             <icon-calendar class="w-6 h-6 text-info" />
                         </div>
                         <div>
-                            <h6 class="font-semibold">Member Since</h6>
-                            <p class="text-gray-500 text-sm">{{ formatDate(authStore.user?.created_at) }}</p>
+                            <h6 class="font-semibold">{{ $t('profile.member_since') }}</h6>
+                            <p class="text-gray-500 text-sm">{{ authStore.user?.created_at ? formatDate(authStore.user?.created_at) : '-' }}</p>
                         </div>
                     </div>
                 </div>

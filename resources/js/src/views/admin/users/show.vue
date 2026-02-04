@@ -10,10 +10,55 @@
             </li>
         </ul>
 
-        <!-- Loading State -->
-        <div v-if="isLoading" class="panel">
-            <div class="flex items-center justify-center py-20">
-                <span class="animate-spin border-4 border-primary border-l-transparent rounded-full w-10 h-10"></span>
+        <!-- Loading Skeleton -->
+        <div v-if="isLoading" class="animate-pulse">
+            <!-- Header Skeleton -->
+            <div class="panel mb-5">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+                        <div class="space-y-3">
+                            <div class="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                            <div class="h-4 w-56 bg-gray-100 dark:bg-gray-800 rounded"></div>
+                            <div class="flex gap-2">
+                                <div class="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                                <div class="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="h-9 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                        <div class="h-9 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                        <div class="h-9 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Content Skeleton -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <div class="panel lg:col-span-2">
+                    <div class="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-5"></div>
+                    <div class="space-y-4">
+                        <div v-for="i in 6" :key="i" class="flex items-center border-b border-gray-100 dark:border-gray-800 pb-4">
+                            <div class="w-1/3"><div class="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div></div>
+                            <div class="w-2/3"><div class="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-5">
+                    <div class="panel h-28 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    <div class="panel">
+                        <div class="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+                        <div class="flex flex-wrap gap-2">
+                            <div v-for="i in 4" :key="i" class="h-5 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div class="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+                        <div class="space-y-2">
+                            <div v-for="i in 3" :key="i" class="h-9 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -54,7 +99,7 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        <router-link to="/admin/users" class="btn btn-outline-secondary gap-2">
+                        <router-link to="/admin/users" class="btn btn-outline-secondary gap-2" aria-label="Back to users list">
                             <icon-arrow-left class="w-4 h-4" />
                             Back
                         </router-link>
@@ -62,6 +107,7 @@
                             v-can="'users.update'"
                             :to="`/admin/users/${user.id}/edit`"
                             class="btn btn-primary gap-2"
+                            :aria-label="`Edit ${user.name}`"
                         >
                             <icon-pencil class="w-4 h-4" />
                             Edit
@@ -70,6 +116,7 @@
                             v-can="'users.delete'"
                             type="button"
                             class="btn btn-danger gap-2"
+                            :aria-label="`Delete ${user.name}`"
                             @click="confirmDelete"
                         >
                             <icon-trash-lines class="w-4 h-4" />
@@ -217,6 +264,7 @@
                                 v-if="!user.email_verified_at"
                                 type="button"
                                 class="btn btn-outline-success w-full justify-start gap-2"
+                                aria-label="Resend verification email"
                                 @click="sendVerificationEmail"
                                 :disabled="isSendingVerification"
                             >

@@ -1,7 +1,7 @@
 ---
 name: backend
 description: "Especialista en desarrollo backend con Laravel, PHP, MySQL, API REST, Laravel Sanctum y Clean Architecture"
-model: sonnet
+model: opus
 color: blue
 ---
 
