@@ -57,6 +57,10 @@ class RoleControllerTest extends TestCase
                 'data' => [
                     '*' => ['id', 'name', 'permissions'],
                 ],
+                'current_page',
+                'per_page',
+                'total',
+                'last_page',
             ]);
     }
 
@@ -129,10 +133,7 @@ class RoleControllerTest extends TestCase
                 'name' => 'new-admin-name',
             ]);
 
-        $response->assertStatus(422)
-            ->assertJson([
-                'message' => 'Cannot modify protected roles',
-            ]);
+        $response->assertStatus(403);
     }
 
     public function test_admin_cannot_delete_protected_roles(): void
@@ -142,10 +143,7 @@ class RoleControllerTest extends TestCase
         $response = $this->actingAs($this->admin)
             ->deleteJson("/api/roles/{$adminRole->id}");
 
-        $response->assertStatus(422)
-            ->assertJson([
-                'message' => 'Cannot delete protected roles',
-            ]);
+        $response->assertStatus(403);
     }
 
     public function test_admin_can_update_custom_role(): void
@@ -213,5 +211,43 @@ class RoleControllerTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['permissions.0']);
+    }
+
+    public function test_index_supports_search_filter(): void
+    {
+        Role::create(['name' => 'custom-manager', 'guard_name' => 'web']);
+        Role::create(['name' => 'custom-support', 'guard_name' => 'web']);
+
+        $response = $this->actingAs($this->admin)
+            ->getJson('/api/roles?search=manager');
+
+        $response->assertStatus(200);
+
+        $data = $response->json('data');
+        $this->assertCount(1, $data);
+        $this->assertEquals('custom-manager', $data[0]['name']);
+    }
+
+    public function test_index_supports_pagination(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->getJson('/api/roles?per_page=2');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('per_page', 2);
+
+        $data = $response->json('data');
+        $this->assertLessThanOrEqual(2, count($data));
+    }
+
+    public function test_create_role_validates_name_format(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->postJson('/api/roles', [
+                'name' => 'Role Name With Spaces',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['name']);
     }
 }

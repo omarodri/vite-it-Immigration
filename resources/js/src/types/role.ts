@@ -6,8 +6,6 @@
 export interface Role {
     id: number;
     name: string;
-    display_name: string;
-    description: string | null;
     guard_name: string;
     created_at: string;
     updated_at: string;
@@ -17,8 +15,6 @@ export interface Role {
 export interface Permission {
     id: number;
     name: string;
-    display_name: string;
-    description: string | null;
     guard_name: string;
     created_at: string;
     updated_at: string;
@@ -26,21 +22,12 @@ export interface Permission {
 
 export interface CreateRoleData {
     name: string;
-    display_name: string;
-    description?: string;
-    permissions?: number[];
+    permissions?: string[];
 }
 
 export interface UpdateRoleData {
     name?: string;
-    display_name?: string;
-    description?: string;
-    permissions?: number[];
-}
-
-export interface AssignRoleData {
-    user_id: number;
-    role_ids: number[];
+    permissions?: string[];
 }
 
 export interface RoleListResponse {
@@ -100,3 +87,8 @@ export const ROLES = {
 } as const;
 
 export type RoleName = typeof ROLES[keyof typeof ROLES];
+
+/**
+ * Protected roles that cannot be modified or deleted
+ */
+export const PROTECTED_ROLES = ['admin', 'editor', 'user'];

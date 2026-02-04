@@ -28,7 +28,7 @@
 
                     <ul class="relative font-semibold space-y-0.5 p-4 py-0">
                         <!-- Admin Section (visible only for users with permission) -->
-                        <template v-if="canViewUsers">
+                        <template v-if="canViewUsers || canViewRoles">
                             <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
                                 <icon-minus class="w-4 h-5 flex-none hidden" />
                                 <span>{{ $t('sidebar.admin') }}</span>
@@ -36,12 +36,22 @@
 
                             <li class="nav-item">
                                 <ul>
-                                    <li class="nav-item">
+                                    <li v-if="canViewUsers" class="nav-item">
                                         <router-link to="/admin/users" class="group" @click="toggleMobileMenu">
                                             <div class="flex items-center">
                                                 <icon-users class="group-hover:!text-primary shrink-0" />
                                                 <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
                                                     {{ $t('sidebar.users') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                    <li v-if="canViewRoles" class="nav-item">
+                                        <router-link to="/admin/roles" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-lock-dots class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('sidebar.roles') }}
                                                 </span>
                                             </div>
                                         </router-link>
@@ -763,14 +773,16 @@
     import IconMenuAuthentication from '@/components/icon/menu/icon-menu-authentication.vue';
     import IconMenuDocumentation from '@/components/icon/menu/icon-menu-documentation.vue';
     import IconUsers from '@/components/icon/icon-users.vue';
+    import IconLockDots from '@/components/icon/icon-lock-dots.vue';
 
     const store = useAppStore();
     const authStore = useAuthStore();
     const activeDropdown: any = ref('');
     const subActive: any = ref('');
 
-    // Check if user has permission to view users (admin section)
+    // Check if user has permission to view admin sections
     const canViewUsers = computed(() => authStore.hasPermission('users.view'));
+    const canViewRoles = computed(() => authStore.hasPermission('roles.view'));
 
     onMounted(() => {
         const selector = document.querySelector('.sidebar ul a[href="' + window.location.pathname + '"]');

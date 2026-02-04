@@ -2,12 +2,15 @@
 
 namespace App\Repositories\Contracts;
 
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Role;
 
 interface RoleRepositoryInterface
 {
     public function all(): Collection;
+
+    public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator;
 
     public function findById(int $id): ?Role;
 

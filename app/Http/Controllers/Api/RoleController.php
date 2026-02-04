@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Role\StoreRoleRequest;
+use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,22 +19,31 @@ class RoleController extends Controller
 
     #[OA\Get(
         path: '/api/roles',
-        summary: 'List all roles',
+        summary: 'List roles (paginated)',
         tags: ['Roles'],
         security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'sort_by', in: 'query', required: false, schema: new OA\Schema(type: 'string', default: 'created_at')),
+            new OA\Parameter(name: 'sort_direction', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['asc', 'desc'], default: 'desc')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
+        ],
         responses: [
-            new OA\Response(response: 200, description: 'List of roles'),
+            new OA\Response(response: 200, description: 'Paginated role list'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
             new OA\Response(response: 403, description: 'Unauthorized'),
         ]
     )]
     public function index(Request $request): JsonResponse
     {
-        if (! $request->user()->can('roles.view')) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('viewAny', Role::class);
 
-        return response()->json(['data' => $this->roleRepository->all()]);
+        $roles = $this->roleRepository->paginate(
+            $request->only('search', 'sort_by', 'sort_direction'),
+            (int) $request->get('per_page', 15)
+        );
+
+        return response()->json($roles);
     }
 
     #[OA\Get(
@@ -52,9 +63,7 @@ class RoleController extends Controller
     )]
     public function show(Request $request, Role $role): JsonResponse
     {
-        if (! $request->user()->can('roles.view')) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('view', $role);
 
         $role->load('permissions');
 
@@ -74,9 +83,7 @@ class RoleController extends Controller
     )]
     public function permissions(Request $request): JsonResponse
     {
-        if (! $request->user()->can('roles.view')) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('viewAny', Role::class);
 
         return response()->json([
             'data' => $this->roleRepository->allPermissions(),
@@ -106,18 +113,8 @@ class RoleController extends Controller
             new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
-    public function store(Request $request): JsonResponse
+    public function store(StoreRoleRequest $request): JsonResponse
     {
-        if (! $request->user()->can('roles.create')) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:roles'],
-            'permissions' => ['sometimes', 'array'],
-            'permissions.*' => ['exists:permissions,name'],
-        ]);
-
         $role = $this->roleRepository->create([
             'name' => $request->name,
             'permissions' => $request->permissions ?? [],
@@ -149,26 +146,19 @@ class RoleController extends Controller
         responses: [
             new OA\Response(response: 200, description: 'Role updated'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
-            new OA\Response(response: 403, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Unauthorized or protected role'),
             new OA\Response(response: 404, description: 'Not found'),
-            new OA\Response(response: 422, description: 'Cannot modify protected roles or validation error'),
+            new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
-    public function update(Request $request, Role $role): JsonResponse
+    public function update(UpdateRoleRequest $request, Role $role): JsonResponse
     {
-        if (! $request->user()->can('roles.update')) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('update', $role);
 
+        // Gate::before bypasses Policy for admin users, so check protected roles explicitly
         if ($this->roleRepository->isProtected($role)) {
-            return response()->json(['message' => 'Cannot modify protected roles'], 422);
+            abort(403, 'Cannot modify protected roles.');
         }
-
-        $request->validate([
-            'name' => ['sometimes', 'string', 'max:255', 'unique:roles,name,'.$role->id],
-            'permissions' => ['sometimes', 'array'],
-            'permissions.*' => ['exists:permissions,name'],
-        ]);
 
         $role = $this->roleRepository->update($role, [
             'name' => $request->name,
@@ -192,19 +182,17 @@ class RoleController extends Controller
         responses: [
             new OA\Response(response: 200, description: 'Role deleted'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
-            new OA\Response(response: 403, description: 'Unauthorized'),
+            new OA\Response(response: 403, description: 'Unauthorized or protected role'),
             new OA\Response(response: 404, description: 'Not found'),
-            new OA\Response(response: 422, description: 'Cannot delete protected roles'),
         ]
     )]
     public function destroy(Request $request, Role $role): JsonResponse
     {
-        if (! $request->user()->can('roles.delete')) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('delete', $role);
 
+        // Gate::before bypasses Policy for admin users, so check protected roles explicitly
         if ($this->roleRepository->isProtected($role)) {
-            return response()->json(['message' => 'Cannot delete protected roles'], 422);
+            abort(403, 'Cannot delete protected roles.');
         }
 
         $this->roleRepository->delete($role);

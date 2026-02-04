@@ -509,6 +509,32 @@ const routes: RouteRecordRaw[] = [
         meta: { permission: 'users.update' },
     },
 
+    // Admin - Role Management
+    {
+        path: '/admin/roles',
+        name: 'admin-roles',
+        component: () => import('../views/admin/roles/list.vue'),
+        meta: { permission: 'roles.view' },
+    },
+    {
+        path: '/admin/roles/create',
+        name: 'admin-roles-create',
+        component: () => import('../views/admin/roles/create.vue'),
+        meta: { permission: 'roles.create' },
+    },
+    {
+        path: '/admin/roles/:id',
+        name: 'admin-roles-show',
+        component: () => import('../views/admin/roles/show.vue'),
+        meta: { permission: 'roles.view' },
+    },
+    {
+        path: '/admin/roles/:id/edit',
+        name: 'admin-roles-edit',
+        component: () => import('../views/admin/roles/edit.vue'),
+        meta: { permission: 'roles.update' },
+    },
+
     // pages
     {
         path: '/pages/knowledge-base',
