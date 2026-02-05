@@ -5,6 +5,7 @@
 
 import { defineStore } from 'pinia';
 import profileService from '@/services/profileService';
+import { useAuthStore } from '@/stores/auth';
 import type { User, UserProfile, UpdateProfileData, ChangePasswordData } from '@/types/user';
 
 interface ProfileState {
@@ -99,6 +100,11 @@ export const useProfileStore = defineStore('profile', {
                 } else {
                     this.profile = response.profile;
                 }
+                // Sync with authStore so Header avatar updates immediately
+                const authStore = useAuthStore();
+                if (authStore.user) {
+                    authStore.user.profile = { avatar_url: response.avatar_url };
+                }
                 return response;
             } catch (error: any) {
                 this.error = error.response?.data?.message || 'Failed to upload avatar';
@@ -116,6 +122,11 @@ export const useProfileStore = defineStore('profile', {
                 const response = await profileService.deleteAvatar();
                 if (this.profile) {
                     this.profile.avatar_url = null;
+                }
+                // Sync with authStore so Header avatar updates immediately
+                const authStore = useAuthStore();
+                if (authStore.user?.profile) {
+                    authStore.user.profile.avatar_url = null;
                 }
                 return response;
             } catch (error: any) {

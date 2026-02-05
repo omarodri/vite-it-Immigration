@@ -18,6 +18,9 @@ export interface User {
     updated_at: string;
     roles?: Role[];
     permissions?: string[];
+    profile?: {
+        avatar_url: string | null;
+    } | null;
 }
 
 export interface LoginCredentials {

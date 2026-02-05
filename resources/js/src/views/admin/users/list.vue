@@ -399,6 +399,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import Vue3Datatable from '@bhplugin/vue3-datatable';
 import { useMeta } from '@/composables/use-meta';
 import { useUserStore } from '@/stores/user';
@@ -422,9 +423,10 @@ import IconX from '@/components/icon/icon-x.vue';
 
 useMeta({ title: 'User Management' });
 
+const { t } = useI18n();
 const userStore = useUserStore();
 const authStore = useAuthStore();
-const { confirmDelete: confirmDeleteDialog, success, error, warning } = useNotification();
+const { confirm: confirmDialog, success, error, warning } = useNotification();
 const { debounce, isDebouncing } = useDebounce(300);
 
 // Local state
@@ -557,30 +559,33 @@ const fetchUsers = async () => {
 const confirmDelete = async (user: User) => {
     // Prevent self-deletion
     if (authStore.user?.id === user.id) {
-        warning('You cannot delete your own account');
+        warning(t('users.cannot_delete_own_account'));
         return;
     }
 
-    const result = await confirmDeleteDialog(
-        `Are you sure you want to delete "${user.name}"?`,
-        'This action cannot be undone.'
-    );
+    const confirmed = await confirmDialog({
+        title: t('users.are_you_sure_you_want_to_delete', { name: user.name }),
+        text: t('users.this_action_cannot_be_undone'),
+        icon: 'warning',
+        confirmButtonText: t('users.yes_delete'),
+        cancelButtonText: t('users.cancel'),
+    });
 
-    if (result.isConfirmed) {
+    if (confirmed) {
         try {
             await userStore.deleteUser(user.id);
-            success('User deleted successfully');
+            success(t('users.user_deleted_successfully'));
             // Remove from selection if was selected
             selectedUsers.value = selectedUsers.value.filter(u => u.id !== user.id);
         } catch (err: any) {
-            error(err.response?.data?.message || 'Failed to delete user');
+            error(err.response?.data?.message || t('users.failed_to_delete_user'));
         }
     }
 };
 
 const confirmBulkDelete = async () => {
     if (selectedUsers.value.length === 0) {
-        warning('No users selected');
+        warning(t('users.no_users_selected'));
         return;
     }
 
@@ -589,35 +594,38 @@ const confirmBulkDelete = async () => {
     const usersToDelete = selectedUsers.value.filter(u => u.id !== currentUserId);
 
     if (usersToDelete.length === 0) {
-        warning('You cannot delete your own account');
+        warning(t('users.cannot_delete_own_account'));
         return;
     }
 
     // Check if trying to delete self
     if (usersToDelete.length < selectedUsers.value.length) {
-        warning('You cannot delete your own account. It has been excluded from the selection.');
+        warning(t('users.cannot_delete_own_account_excluded'));
     }
 
     // Check for admin users being deleted
     const adminUsers = usersToDelete.filter(u => u.roles?.some(r => r.name === 'admin'));
-    let warningMessage = '';
+    let titleText = t('users.are_you_sure_you_want_to_delete_users', { count: usersToDelete.length });
     if (adminUsers.length > 0) {
-        warningMessage = `\n\nWarning: ${adminUsers.length} administrator(s) will be deleted.`;
+        titleText += '\n\n' + t('users.warning_administrator_will_be_deleted', { count: adminUsers.length });
     }
 
-    const result = await confirmDeleteDialog(
-        `Are you sure you want to delete ${usersToDelete.length} user(s)?${warningMessage}`,
-        'This action cannot be undone. All selected users will be permanently removed.'
-    );
+    const confirmed = await confirmDialog({
+        title: titleText,
+        text: t('users.this_action_cannot_be_undone'),
+        icon: 'warning',
+        confirmButtonText: t('users.yes_delete'),
+        cancelButtonText: t('users.cancel'),
+    });
 
-    if (result.isConfirmed) {
+    if (confirmed) {
         try {
             const ids = usersToDelete.map(u => u.id);
             await userStore.bulkDeleteUsers(ids);
-            success(`${usersToDelete.length} user(s) deleted successfully`);
+            success(t('users.users_deleted_successfully', { count: usersToDelete.length }));
             clearSelection();
         } catch (err: any) {
-            error(err.response?.data?.message || 'Failed to delete users');
+            error(err.response?.data?.message || t('users.failed_to_delete_users'));
         }
     }
 };

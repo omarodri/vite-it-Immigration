@@ -168,7 +168,7 @@ class AuthService
 
     private function loadUserWithPermissions(User $user): User
     {
-        $user->load('roles.permissions');
+        $user->load(['roles.permissions', 'profile']);
         $user->permissions = $user->roles
             ->flatMap->permissions
             ->pluck('name')

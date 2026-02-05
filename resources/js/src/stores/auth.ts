@@ -36,6 +36,18 @@ export const useAuthStore = defineStore('auth', {
         getUser: (state) => state.user,
         isLoggedIn: (state) => state.isAuthenticated,
 
+        avatarUrl: (state): string | null => state.user?.profile?.avatar_url || null,
+
+        initials: (state): string => {
+            if (!state.user?.name) return '';
+            return state.user.name
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2);
+        },
+
         // Email verification getters
         isEmailVerified: (state) => !!state.user?.email_verified_at,
 
@@ -104,7 +116,7 @@ export const useAuthStore = defineStore('auth', {
                     return response;
                 }
 
-                this.user = response.user;
+                this.user = response.user ?? null;
                 this.isAuthenticated = true;
                 return response;
             } catch (error: any) {
@@ -120,7 +132,7 @@ export const useAuthStore = defineStore('auth', {
             this.error = null;
             try {
                 const response = await authService.register(data);
-                this.user = response.user;
+                this.user = response.user ?? null;
                 this.isAuthenticated = true;
                 return response;
             } catch (error: any) {
