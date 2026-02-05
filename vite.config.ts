@@ -35,7 +35,7 @@ export default defineConfig({
         },
     },
     optimizeDeps: {
-        include: ["@fullcalendar/core", "@fullcalendar/vue3"],
+        include: ["@fullcalendar/core", "@fullcalendar/vue3", "quill"],
     },
     build: {
         chunkSizeWarningLimit: 1000, // 1MB - some libraries like highlight.js are large

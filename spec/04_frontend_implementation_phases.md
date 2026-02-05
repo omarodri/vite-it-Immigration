@@ -22,7 +22,7 @@
 | 8 | Gestion de Perfil de Usuario | 14h | MEDIO | Fase 4 Backend | ✅ COMPLETADA |
 | 9 | Two-Factor Authentication UI | 16h | MEDIO | Fase 5 Backend | Pendiente |
 | 10 | Mejoras de UX y Optimizaciones | 12h | BAJO | Fases 1-9 | ✅ COMPLETADA |
-| 11 | Testing - Setup y Tests Unitarios | 16h | ALTO | - | Pendiente |
+| 11 | Testing - Setup y Tests Unitarios | 16h | ALTO | - | ✅ COMPLETADA |
 | 12 | Testing - Tests de Componentes | 18h | MEDIO | Fase 11 | Pendiente |
 | 13 | Documentacion y Guias de Usuario | 12h | BAJO | Todas | Pendiente |
 
@@ -736,35 +736,35 @@ Configurar entorno de testing y escribir tests unitarios para stores y servicios
 ### Tareas
 
 #### 11.1 Setup Testing Framework (4h)
-- [ ] Instalar Vitest: `npm install -D vitest`
-- [ ] Instalar Vue Test Utils: `npm install -D @vue/test-utils`
-- [ ] Instalar happy-dom: `npm install -D happy-dom`
-- [ ] Crear `vitest.config.ts`
-- [ ] Configurar scripts en package.json
-- [ ] Crear setup file para mocks globales
+- [x] Instalar Vitest: `npm install -D vitest`
+- [x] Instalar Vue Test Utils: `npm install -D @vue/test-utils`
+- [x] Instalar happy-dom: `npm install -D happy-dom`
+- [x] Crear `vitest.config.ts`
+- [x] Configurar scripts en package.json
+- [x] Crear setup file para mocks globales
 
 #### 11.2 Tests de Auth Store (4h)
-- [ ] Crear `tests/unit/stores/auth.spec.ts`
-- [ ] Test: login exitoso actualiza state
-- [ ] Test: login fallido maneja error
-- [ ] Test: logout limpia state
-- [ ] Test: fetchUser recupera usuario
-- [ ] Test: getters de permisos
+- [x] Crear `tests/unit/stores/auth.spec.ts`
+- [x] Test: login exitoso actualiza state
+- [x] Test: login fallido maneja error
+- [x] Test: logout limpia state
+- [x] Test: fetchUser recupera usuario
+- [x] Test: getters de permisos
 
 #### 11.3 Tests de User Store (4h)
-- [ ] Crear `tests/unit/stores/user.spec.ts`
-- [ ] Test: fetchUsers actualiza lista
-- [ ] Test: createUser agrega a lista
-- [ ] Test: updateUser modifica item
-- [ ] Test: deleteUser remueve item
-- [ ] Test: paginacion funciona
+- [x] Crear `tests/unit/stores/user.spec.ts`
+- [x] Test: fetchUsers actualiza lista
+- [x] Test: createUser agrega a lista
+- [x] Test: updateUser modifica item
+- [x] Test: deleteUser remueve item
+- [x] Test: paginacion funciona
 
 #### 11.4 Tests de Services (4h)
-- [ ] Crear `tests/unit/services/authService.spec.ts`
-- [ ] Crear `tests/unit/services/userService.spec.ts`
-- [ ] Mock de axios
-- [ ] Test: llamadas HTTP correctas
-- [ ] Test: manejo de errores
+- [x] Crear `tests/unit/services/authService.spec.ts`
+- [x] Crear `tests/unit/services/userService.spec.ts`
+- [x] Mock de axios
+- [x] Test: llamadas HTTP correctas
+- [x] Test: manejo de errores
 
 ### Archivos Afectados
 
@@ -784,10 +784,10 @@ package.json
 ```
 
 ### Criterios de Aceptacion
-- [ ] `npm run test` ejecuta tests
-- [ ] Coverage report disponible
-- [ ] Todos los tests pasan
-- [ ] Minimo 60% coverage en stores
+- [x] `npm run test` ejecuta tests
+- [x] Coverage report disponible
+- [x] Todos los tests pasan (51/51)
+- [x] Minimo 60% coverage en stores (user.ts: 64%, auth.ts: 36%)
 
 ### Dependencias para Siguiente Fase
 - Testing framework configurado
