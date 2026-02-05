@@ -12,7 +12,10 @@
       "Bash(git commit:*)",
       "Bash(php artisan vendor:publish:*)",
       "Bash(php artisan deploy:optimize:*)",
-      "Bash(composer update:*)"
+      "Bash(composer update:*)",
+      "Bash(git -C /Users/omar/Herd/vristo-poc diff --stat)",
+      "Bash(git -C /Users/omar/Herd/vristo-poc add app/Policies/RolePolicy.php app/Http/Requests/Role/StoreRoleRequest.php app/Http/Requests/Role/UpdateRoleRequest.php app/Http/Controllers/Api/RoleController.php app/Providers/AuthServiceProvider.php app/Repositories/Contracts/RoleRepositoryInterface.php app/Repositories/Eloquent/RoleRepository.php tests/Feature/Api/RoleControllerTest.php resources/js/src/types/role.ts resources/js/src/services/roleService.ts resources/js/src/stores/role.ts resources/js/src/locales/en.json resources/js/src/locales/es.json resources/js/src/views/admin/roles/list.vue resources/js/src/views/admin/roles/create.vue resources/js/src/views/admin/roles/edit.vue resources/js/src/views/admin/roles/show.vue resources/js/src/router/index.ts resources/js/src/components/layout/Sidebar.vue spec/06a_backend_implementation_phases.md spec/06b_frontend_implementation_phases.md)",
+      "Bash(git -C /Users/omar/Herd/vite-it diff)"
     ]
   }
 }

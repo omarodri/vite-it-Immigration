@@ -3,20 +3,20 @@
         <!-- Breadcrumb -->
         <ul class="flex space-x-2 rtl:space-x-reverse mb-5">
             <li>
-                <router-link to="/admin/users" class="text-primary hover:underline">Users</router-link>
+                <router-link to="/admin/users" class="text-primary hover:underline">{{ $t('users.users') }}</router-link>
             </li>
             <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-                <span>Create User</span>
+                <span>{{ $t('users.create_user') }}</span>
             </li>
         </ul>
 
         <div class="panel">
             <!-- Header -->
             <div class="flex items-center justify-between mb-5">
-                <h5 class="font-semibold text-lg dark:text-white-light">Create New User</h5>
+                <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('users.create_new_user') }}</h5>
                 <router-link to="/admin/users" class="btn btn-outline-secondary gap-2">
                     <icon-arrow-left class="w-4 h-4" />
-                    Back to List
+                    {{ $t('users.back_to_list') }}
                 </router-link>
             </div>
 
@@ -34,14 +34,14 @@
                     <!-- Name -->
                     <div>
                         <label for="name" class="mb-2 block">
-                            Name <span class="text-danger">*</span>
+                            {{ $t('users.name') }} <span class="text-danger">*</span>
                         </label>
                         <div class="relative">
                             <input
                                 id="name"
                                 v-model="form.name"
                                 type="text"
-                                placeholder="Enter full name"
+                                :placeholder="$t('users.enter_full_name')"
                                 class="form-input pl-10"
                                 :class="{ 'border-danger': v$.name.$error }"
                                 :aria-invalid="v$.name.$error"
@@ -59,14 +59,14 @@
                     <!-- Email -->
                     <div>
                         <label for="email" class="mb-2 block">
-                            Email <span class="text-danger">*</span>
+                            {{ $t('users.email') }} <span class="text-danger">*</span>
                         </label>
                         <div class="relative">
                             <input
                                 id="email"
                                 v-model="form.email"
                                 type="email"
-                                placeholder="Enter email address"
+                                :placeholder="$t('users.enter_email_address')"
                                 class="form-input pl-10"
                                 :class="{ 'border-danger': v$.email.$error }"
                                 :aria-invalid="v$.email.$error"
@@ -84,14 +84,14 @@
                     <!-- Password -->
                     <div>
                         <label for="password" class="mb-2 block">
-                            Password <span class="text-danger">*</span>
+                            {{ $t('users.password') }} <span class="text-danger">*</span>
                         </label>
                         <div class="relative">
                             <input
                                 id="password"
                                 v-model="form.password"
                                 :type="showPassword ? 'text' : 'password'"
-                                placeholder="Enter password"
+                                :placeholder="$t('users.enter_password')"
                                 class="form-input pl-10 pr-10"
                                 :class="{ 'border-danger': v$.password.$error }"
                                 :aria-invalid="v$.password.$error"
@@ -112,20 +112,20 @@
                         <template v-if="v$.password.$error">
                             <p id="password-error" role="alert" class="text-danger mt-1 text-sm">{{ v$.password.$errors[0]?.$message }}</p>
                         </template>
-                        <p id="password-hint" class="text-gray-500 text-xs mt-1">Minimum 8 characters</p>
+                        <p id="password-hint" class="text-gray-500 text-xs mt-1">{{ $t('minimum_8_characters') }}</p>
                     </div>
 
                     <!-- Password Confirmation -->
                     <div>
                         <label for="password_confirmation" class="mb-2 block">
-                            Confirm Password <span class="text-danger">*</span>
+                            {{ $t('confirm_password') }} <span class="text-danger">*</span>
                         </label>
                         <div class="relative">
                             <input
                                 id="password_confirmation"
                                 v-model="form.password_confirmation"
                                 :type="showPasswordConfirm ? 'text' : 'password'"
-                                placeholder="Confirm password"
+                                :placeholder="$t('users.confirm_password')"
                                 class="form-input pl-10 pr-10"
                                 :class="{ 'border-danger': v$.password_confirmation.$error }"
                                 :aria-invalid="v$.password_confirmation.$error"
@@ -152,11 +152,11 @@
                 <!-- Roles -->
                 <fieldset>
                     <legend class="mb-2 block">
-                        Roles <span class="text-danger">*</span>
+                        {{ $t('users.roles') }} <span class="text-danger">*</span>
                     </legend>
                     <div v-if="isLoadingRoles" class="flex items-center gap-2 text-gray-500">
                         <span class="animate-spin border-2 border-primary border-l-transparent rounded-full w-4 h-4"></span>
-                        Loading roles...
+                        {{ $t('users.loading_roles') }}
                     </div>
                     <div v-else class="flex flex-wrap gap-4" role="group" aria-label="User roles">
                         <label
@@ -190,18 +190,18 @@
                             class="form-checkbox text-success"
                         />
                         <span class="ml-2 text-white-dark">
-                            Send welcome email with login credentials
+                            {{ $t('users.send_welcome_email_with_login_credentials') }}
                         </span>
                     </label>
                     <p class="text-gray-500 text-xs mt-1 ml-6">
-                        The user will receive an email with their login details and instructions.
+                        {{ $t('users.the_user_will_receive_an_email_with_their_login_details_and_instructions') }}
                     </p>
                 </div>
 
                 <!-- Actions -->
                 <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <router-link to="/admin/users" class="btn btn-outline-danger">
-                        Cancel
+                        {{ $t('users.cancel') }}
                     </router-link>
                     <button
                         type="submit"
@@ -210,11 +210,11 @@
                     >
                         <template v-if="isSubmitting">
                             <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-5 h-5 inline-block mr-2"></span>
-                            Creating...
+                            {{ $t('users.creating') }}
                         </template>
                         <template v-else>
                             <icon-save class="w-5 h-5 mr-2" />
-                            Create User
+                            {{ $t('users.create_user') }}
                         </template>
                     </button>
                 </div>
@@ -232,6 +232,7 @@ import { useMeta } from '@/composables/use-meta';
 import { useUserStore } from '@/stores/user';
 import { useNotification } from '@/composables/useNotification';
 import roleService, { type RoleWithPermissions } from '@/services/roleService';
+import { useI18n } from 'vue-i18n';
 
 // Icons
 import IconArrowLeft from '@/components/icon/icon-arrow-left.vue';
@@ -247,6 +248,7 @@ useMeta({ title: 'Create User' });
 const router = useRouter();
 const userStore = useUserStore();
 const { success, error } = useNotification();
+const { t } = useI18n();
 
 // State
 const roles = ref<RoleWithPermissions[]>([]);
@@ -272,24 +274,24 @@ const passwordRef = computed(() => form.password);
 // Validation rules
 const rules = computed(() => ({
     name: {
-        required: helpers.withMessage('Name is required', required),
-        minLength: helpers.withMessage('Name must be at least 2 characters', minLength(2)),
+        required: helpers.withMessage( () => t('users.name_is_required'), required),
+        minLength: helpers.withMessage( () => t('users.name_must_be_at_least_2_characters'), minLength(2)),
     },
     email: {
-        required: helpers.withMessage('Email is required', required),
-        email: helpers.withMessage('Please enter a valid email address', email),
+        required: helpers.withMessage( () => t('users.email_is_required'), required),
+        email: helpers.withMessage( () => t('users.please_enter_a_valid_email_address'), email),
     },
     password: {
-        required: helpers.withMessage('Password is required', required),
-        minLength: helpers.withMessage('Password must be at least 8 characters', minLength(8)),
+        required: helpers.withMessage( () => t('users.password_is_required'), required),
+        minLength: helpers.withMessage( () => t('users.password_must_be_at_least_8_characters'), minLength(8)),
     },
     password_confirmation: {
-        required: helpers.withMessage('Please confirm the password', required),
-        sameAs: helpers.withMessage('Passwords do not match', sameAs(passwordRef)),
+        required: helpers.withMessage( () => t('users.please_confirm_the_password'), required),
+        sameAs: helpers.withMessage( () => t('users.passwords_do_not_match'), sameAs(passwordRef)),
     },
     roles: {
-        required: helpers.withMessage('Please select at least one role', required),
-        minLength: helpers.withMessage('Please select at least one role', minLength(1)),
+        required: helpers.withMessage( () => t('users.please_select_at_least_one_role'), required),
+        minLength: helpers.withMessage( () => t('users.please_select_at_least_one_role'), minLength(1)),
     },
 }));
 

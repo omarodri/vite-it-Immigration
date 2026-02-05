@@ -90,9 +90,10 @@
                 <div class="w-32">
                     <select v-model="perPage" class="form-select" aria-label="Results per page" @change="changePerPage">
                         <option :value="10">{{ $t('users.10_per_page') }}</option>
-                        <option :value="15">{{ $t('users.15_per_page') }}</option>
-                        <option :value="25">{{ $t('users.25_per_page') }}</option>
+                        <option :value="20">{{ $t('users.20_per_page') }}</option>
+                        <option :value="30">{{ $t('users.30_per_page') }}</option>
                         <option :value="50">{{ $t('users.50_per_page') }}</option>
+                        <option :value="100">{{ $t('users.100_per_page') }}</option>
                     </select>
                 </div>
 
@@ -432,7 +433,7 @@ const { debounce, isDebouncing } = useDebounce(300);
 // Local state
 const searchQuery = ref('');
 const roleFilter = ref('');
-const perPage = ref(15);
+const perPage = ref(10);
 const currentPage = ref(1);
 const sortColumn = ref('created_at');
 const sortDirection = ref<'asc' | 'desc'>('desc');
@@ -447,11 +448,11 @@ const showEmptyState = computed(() => !userStore.isLoading && !initialLoading.va
 // Table columns
 const columns = computed(() => [
     { field: 'id', title: 'ID', width: '80px', isUnique: true },
-    { field: 'name', title: 'User', minWidth: '250px' },
-    { field: 'roles', title: 'Roles', sort: false, minWidth: '150px' },
-    { field: 'email_verified_at', title: 'Status', sort: false, width: '120px' },
-    { field: 'created_at', title: 'Created', width: '150px' },
-    { field: 'actions', title: 'Actions', sort: false, width: '150px', headerClass: 'justify-center' },
+    { field: 'name', title: t('users.name'), minWidth: '250px' },
+    { field: 'roles', title: t('users.roles'), sort: false, minWidth: '150px' },
+    { field: 'email_verified_at', title: t('users.email_status'), sort: false, width: '120px' },
+    { field: 'created_at', title: t('users.created'), width: '150px' },
+    { field: 'actions', title: t('users.actions'), sort: false, width: '150px', headerClass: 'justify-center' },
 ]);
 
 // Methods

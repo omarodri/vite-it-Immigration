@@ -157,8 +157,8 @@
                                                 v-model="profileForm.date_of_birth as DateOption | DateOption[]"
                                                 class="form-input"
                                                 :config="datePickerConfig"
-                                                placeholder="Select date"
                                                 :value="profileForm.date_of_birth ? new Date(profileForm.date_of_birth) : null"
+                                                :placeholder="$t('profile.select_date')"
                                             />
                                         </div>
                                         <div>
@@ -317,8 +317,8 @@
                                             <option value="en">{{ $t('profile.english') }}</option>
                                             <option value="es">{{ $t('profile.spanish') }}</option>
                                             <option value="fr">{{ $t('profile.french') }}</option>
-                                            <option value="de">{{ $t('profile.german') }}</option>
-                                            <option value="pt">{{ $t('profile.portuguese') }}</option>
+                                            <!-- <option value="de">{{ $t('profile.german') }}</option>
+                                            <option value="pt">{{ $t('profile.portuguese') }}</option> -->
                                         </select>
                                     </div>
                                 </div>

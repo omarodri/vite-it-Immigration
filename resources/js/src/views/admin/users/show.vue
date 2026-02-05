@@ -3,10 +3,10 @@
         <!-- Breadcrumb -->
         <ul class="flex space-x-2 rtl:space-x-reverse mb-5">
             <li>
-                <router-link to="/admin/users" class="text-primary hover:underline">Users</router-link>
+                <router-link to="/admin/users" class="text-primary hover:underline">{{ $t('users.users') }}</router-link>
             </li>
             <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-                <span>View User</span>
+                <span>{{ $t('users.view_user') }}</span>
             </li>
         </ul>
 
@@ -66,10 +66,10 @@
         <div v-else-if="!user" class="panel">
             <div class="text-center py-20">
                 <icon-info-hexagon class="w-16 h-16 mx-auto text-danger mb-4" />
-                <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">User Not Found</h3>
-                <p class="text-gray-500 mb-4">The user you're looking for doesn't exist or has been deleted.</p>
+                <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">{{ $t('users.user_not_found') }}</h3>
+                <p class="text-gray-500 mb-4">{{ $t('users.the_user_you_are_looking_for_does_not_exist_or_has_been_deleted') }}</p>
                 <router-link to="/admin/users" class="btn btn-primary">
-                    Back to Users
+                    {{ $t('users.back_to_users') }}
                 </router-link>
             </div>
         </div>
@@ -101,7 +101,7 @@
                     <div class="flex items-center gap-2">
                         <router-link to="/admin/users" class="btn btn-outline-secondary gap-2" aria-label="Back to users list">
                             <icon-arrow-left class="w-4 h-4" />
-                            Back
+                            {{ $t('users.back_to_users') }}
                         </router-link>
                         <router-link
                             v-can="'users.update'"
@@ -110,7 +110,7 @@
                             :aria-label="`Edit ${user.name}`"
                         >
                             <icon-pencil class="w-4 h-4" />
-                            Edit
+                            {{ $t('users.edit_user') }}
                         </router-link>
                         <button
                             v-can="'users.delete'"
@@ -120,7 +120,7 @@
                             @click="confirmDelete"
                         >
                             <icon-trash-lines class="w-4 h-4" />
-                            Delete
+                            {{ $t('users.delete_user') }}
                         </button>
                     </div>
                 </div>
@@ -130,13 +130,13 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 <!-- Account Information -->
                 <div class="panel lg:col-span-2">
-                    <h5 class="font-semibold text-lg dark:text-white-light mb-5">Account Information</h5>
+                    <h5 class="font-semibold text-lg dark:text-white-light mb-5">{{ $t('users.account_information') }}</h5>
                     <div class="space-y-4">
                         <div class="flex items-center border-b border-gray-200 dark:border-gray-700 pb-4">
                             <div class="w-1/3 text-gray-500">
                                 <div class="flex items-center gap-2">
                                     <icon-user class="w-4 h-4" />
-                                    Full Name
+                                    {{ $t('users.full_name') }}
                                 </div>
                             </div>
                             <div class="w-2/3 font-medium dark:text-white-light">{{ user.name }}</div>
@@ -145,7 +145,7 @@
                             <div class="w-1/3 text-gray-500">
                                 <div class="flex items-center gap-2">
                                     <icon-mail class="w-4 h-4" />
-                                    Email Address
+                                    {{ $t('users.email_address') }}
                                 </div>
                             </div>
                             <div class="w-2/3 font-medium dark:text-white-light">{{ user.email }}</div>
@@ -154,7 +154,7 @@
                             <div class="w-1/3 text-gray-500">
                                 <div class="flex items-center gap-2">
                                     <icon-circle-check class="w-4 h-4" />
-                                    Email Status
+                                    {{ $t('users.email_status') }}
                                 </div>
                             </div>
                             <div class="w-2/3">
@@ -164,7 +164,7 @@
                                 </span>
                                 <span v-else class="badge badge-outline-warning gap-1">
                                     <icon-info-triangle class="w-3.5 h-3.5" />
-                                    Not Verified
+                                    {{ $t('users.not_verified') }}
                                 </span>
                             </div>
                         </div>
@@ -172,7 +172,7 @@
                             <div class="w-1/3 text-gray-500">
                                 <div class="flex items-center gap-2">
                                     <icon-users class="w-4 h-4" />
-                                    Roles
+                                    {{ $t('users.roles') }}
                                 </div>
                             </div>
                             <div class="w-2/3">
@@ -185,7 +185,7 @@
                                     >
                                         {{ capitalizeFirst(role.name) }}
                                     </span>
-                                    <span v-if="!user.roles?.length" class="text-gray-400">No roles assigned</span>
+                                    <span v-if="!user.roles?.length" class="text-gray-400">{{ $t('users.no_roles_assigned') }}</span>
                                 </div>
                             </div>
                         </div>
@@ -193,7 +193,7 @@
                             <div class="w-1/3 text-gray-500">
                                 <div class="flex items-center gap-2">
                                     <icon-calendar class="w-4 h-4" />
-                                    Created At
+                                    {{ $t('users.created_at') }}
                                 </div>
                             </div>
                             <div class="w-2/3 font-medium dark:text-white-light">
@@ -204,7 +204,7 @@
                             <div class="w-1/3 text-gray-500">
                                 <div class="flex items-center gap-2">
                                     <icon-clock class="w-4 h-4" />
-                                    Last Updated
+                                    {{ $t('users.last_updated') }}
                                 </div>
                             </div>
                             <div class="w-2/3 font-medium dark:text-white-light">
@@ -220,7 +220,7 @@
                     <div class="panel bg-gradient-to-r from-primary to-secondary text-white">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm opacity-80">User ID</p>
+                                <p class="text-sm opacity-80">{{ $t('users.user_id') }}</p>
                                 <h3 class="text-3xl font-bold">#{{ user.id }}</h3>
                             </div>
                             <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
@@ -231,7 +231,7 @@
 
                     <!-- Permissions Card -->
                     <div class="panel">
-                        <h5 class="font-semibold text-lg dark:text-white-light mb-4">Permissions</h5>
+                        <h5 class="font-semibold text-lg dark:text-white-light mb-4">{{ $t('users.permissions') }}</h5>
                         <div v-if="user.permissions && user.permissions.length > 0" class="flex flex-wrap gap-2">
                             <span
                                 v-for="permission in user.permissions"
@@ -243,14 +243,14 @@
                         </div>
                         <div v-else class="text-center py-4 text-gray-500">
                             <icon-lock-dots class="w-10 h-10 mx-auto mb-2 opacity-50" />
-                            <p class="text-sm">No direct permissions</p>
-                            <p class="text-xs">Permissions are inherited from roles</p>
+                            <p class="text-sm">{{ $t('users.no_direct_permissions') }}</p>
+                            <p class="text-xs">{{ $t('users.permissions_are_inherited_from_roles') }}</p>
                         </div>
                     </div>
 
                     <!-- Quick Actions -->
                     <div class="panel">
-                        <h5 class="font-semibold text-lg dark:text-white-light mb-4">Quick Actions</h5>
+                        <h5 class="font-semibold text-lg dark:text-white-light mb-4">{{ $t('users.quick_actions') }}</h5>
                         <div class="space-y-2">
                             <router-link
                                 v-can="'users.update'"
@@ -258,7 +258,7 @@
                                 class="btn btn-outline-primary w-full justify-start gap-2"
                             >
                                 <icon-pencil class="w-4 h-4" />
-                                Edit User
+                                {{ $t('users.edit_user') }}
                             </router-link>
                             <button
                                 v-if="!user.email_verified_at"
@@ -270,11 +270,11 @@
                             >
                                 <template v-if="isSendingVerification">
                                     <span class="animate-spin border-2 border-success border-l-transparent rounded-full w-4 h-4"></span>
-                                    Sending...
+                                    {{ $t('users.sending') }}
                                 </template>
                                 <template v-else>
                                     <icon-mail class="w-4 h-4" />
-                                    Resend Verification
+                                    {{ $t('users.resend_verification') }}
                                 </template>
                             </button>
                             <button
@@ -284,7 +284,7 @@
                                 @click="confirmDelete"
                             >
                                 <icon-trash-lines class="w-4 h-4" />
-                                Delete User
+                                {{ $t('users.delete_user') }}
                             </button>
                         </div>
                     </div>
@@ -303,6 +303,7 @@ import { useNotification } from '@/composables/useNotification';
 import { formatDate } from '@/utils/formatters';
 import userService from '@/services/userService';
 import type { User } from '@/types/user';
+import { useI18n } from 'vue-i18n';
 
 // Icons
 import IconArrowLeft from '@/components/icon/icon-arrow-left.vue';
@@ -320,6 +321,7 @@ import IconLockDots from '@/components/icon/icon-lock-dots.vue';
 
 useMeta({ title: 'View User' });
 
+const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
@@ -385,17 +387,17 @@ const confirmDelete = async () => {
     if (!user.value) return;
 
     const result = await confirmDeleteDialog(
-        `Are you sure you want to delete "${user.value.name}"?`,
-        'This action cannot be undone. All user data will be permanently removed.'
+        t('users.are_you_sure_you_want_to_delete', { name: user.value.name }),
+        t('users.this_action_cannot_be_undone')
     );
 
     if (result.isConfirmed) {
         try {
             await userStore.deleteUser(user.value.id);
-            success('User deleted successfully');
+            success(t('users.user_deleted_successfully'));
             router.push('/admin/users');
         } catch (err: any) {
-            error(err.response?.data?.message || 'Failed to delete user');
+            error(err.response?.data?.message || t('users.failed_to_delete_user'));
         }
     }
 };

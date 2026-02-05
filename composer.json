@@ -1,19 +1,11 @@
 {
-    "name": "laravel/laravel",
+    "name": "Vite IT Immigration",
     "type": "project",
-    "description": "The Laravel Framework.",
-    "keywords": ["framework", "laravel"],
+    "description": "Vite IT Immigration",
+    "keywords": ["vite", "it", "immigration"],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
-        "bacon/bacon-qr-code": "^3.0",
-        "darkaonline/l5-swagger": "^10.1",
-        "laravel/framework": "^12.0",
-        "laravel/sanctum": "^4.2",
-        "laravel/tinker": "^2.9",
-        "pragmarx/google2fa-laravel": "^2.3",
-        "spatie/laravel-activitylog": "^4.10",
-        "spatie/laravel-permission": "^6.24"
+        "php": "^8.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

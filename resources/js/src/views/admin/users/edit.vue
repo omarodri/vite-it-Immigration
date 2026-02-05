@@ -22,7 +22,7 @@
             <div class="text-center py-20">
                 <icon-info-hexagon class="w-16 h-16 mx-auto text-danger mb-4" />
                 <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">{{ $t('users.user_not_found') }}</h3>
-                <p class="text-gray-500 mb-4">The user you're looking for doesn't exist or has been deleted.</p>
+                <p class="text-gray-500 mb-4">{{ $t('users.the_user_you_are_looking_for_does_not_exist_or_has_been_deleted') }}</p>
                 <router-link to="/admin/users" class="btn btn-primary">
                     {{ $t('users.back_to_users') }}
                 </router-link>
@@ -241,8 +241,8 @@
                         </div>
                         <div>
                             <span class="text-gray-500">{{ $t('users.status') }}:</span>
-                            <span v-if="user.email_verified_at" class="ml-2 badge badge-outline-success">Verified</span>
-                            <span v-else class="ml-2 badge badge-outline-warning">Pending</span>
+                            <span v-if="user.email_verified_at" class="ml-2 badge badge-outline-success">{{ $t('users.verified') }}</span>
+                            <span v-else class="ml-2 badge badge-outline-warning">{{ $t('users.pending') }}</span>
                         </div>
                         <div>
                             <span class="text-gray-500">{{ $t('users.created') }}:</span>
@@ -292,6 +292,7 @@ import { formatDate } from '@/utils/formatters';
 import roleService, { type RoleWithPermissions } from '@/services/roleService';
 import userService from '@/services/userService';
 import type { User } from '@/types/user';
+import { useI18n } from 'vue-i18n';
 
 // Icons
 import IconArrowLeft from '@/components/icon/icon-arrow-left.vue';
@@ -305,6 +306,7 @@ import IconInfoHexagon from '@/components/icon/icon-info-hexagon.vue';
 
 useMeta({ title: 'Edit User' });
 
+const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
@@ -336,24 +338,24 @@ const passwordRef = computed(() => form.password);
 // Validation rules
 const rules = computed(() => ({
     name: {
-        required: helpers.withMessage('Name is required', required),
-        minLength: helpers.withMessage('Name must be at least 2 characters', minLength(2)),
+        required: helpers.withMessage(t('users.name_is_required'), required),
+        minLength: helpers.withMessage(t('users.name_must_be_at_least_2_characters'), minLength(2)),
     },
     email: {
-        required: helpers.withMessage('Email is required', required),
-        email: helpers.withMessage('Please enter a valid email address', email),
+        required: helpers.withMessage(t('users.email_is_required'), required),
+        email: helpers.withMessage(t('users.please_enter_a_valid_email_address'), email),
     },
     password: {
-        requiredIf: helpers.withMessage('Password is required', requiredIf(changePassword)),
-        minLength: helpers.withMessage('Password must be at least 8 characters', minLength(8)),
+        requiredIf: helpers.withMessage(t('users.password_is_required'), requiredIf(changePassword)),
+        minLength: helpers.withMessage(t('users.password_must_be_at_least_8_characters'), minLength(8)),
     },
     password_confirmation: {
-        requiredIf: helpers.withMessage('Please confirm the password', requiredIf(changePassword)),
-        sameAs: helpers.withMessage('Passwords do not match', sameAs(passwordRef)),
+        requiredIf: helpers.withMessage(t('users.please_confirm_the_password'), requiredIf(changePassword)),
+        sameAs: helpers.withMessage(t('users.passwords_do_not_match'), sameAs(passwordRef)),
     },
     roles: {
-        required: helpers.withMessage('Please select at least one role', required),
-        minLength: helpers.withMessage('Please select at least one role', minLength(1)),
+        required: helpers.withMessage(t('users.please_select_at_least_one_role'), required),
+        minLength: helpers.withMessage(t('users.please_select_at_least_one_role'), minLength(1)),
     },
 }));
 
@@ -406,7 +408,7 @@ const fetchUser = async () => {
         form.email = user.value.email;
         form.roles = user.value.roles?.map(r => r.name) || [];
     } catch (err) {
-        error('Failed to load user');
+        error(t('users.failed_to_load_user'));
         user.value = null;
     } finally {
         isLoading.value = false;
@@ -418,7 +420,7 @@ const fetchRoles = async () => {
     try {
         roles.value = await roleService.getRoles();
     } catch (err) {
-        error('Failed to load roles');
+        error(t('users.failed_to_load_roles'));
     } finally {
         isLoadingRoles.value = false;
     }
@@ -447,7 +449,7 @@ const handleSubmit = async () => {
 
         await userStore.updateUser(userId, updateData);
 
-        success('User updated successfully');
+        success(t('users.user_updated_successfully'));
         router.push('/admin/users');
     } catch (err: any) {
         if (err.response?.data?.errors) {
@@ -455,7 +457,7 @@ const handleSubmit = async () => {
             const firstError = Object.values(errors)[0];
             errorMessage.value = Array.isArray(firstError) ? firstError[0] : String(firstError);
         } else {
-            errorMessage.value = err.response?.data?.message || 'Failed to update user';
+            errorMessage.value = err.response?.data?.message || t('users.failed_to_update_user');
         }
     } finally {
         isSubmitting.value = false;

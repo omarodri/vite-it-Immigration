@@ -48,9 +48,10 @@
                 <div class="w-32">
                     <select v-model="perPage" class="form-select" aria-label="Results per page" @change="changePerPage">
                         <option :value="10">{{ $t('roles.10_per_page') }}</option>
-                        <option :value="15">{{ $t('roles.15_per_page') }}</option>
-                        <option :value="25">{{ $t('roles.25_per_page') }}</option>
+                        <option :value="20">{{ $t('roles.20_per_page') }}</option>
+                        <option :value="30">{{ $t('roles.30_per_page') }}</option>
                         <option :value="50">{{ $t('roles.50_per_page') }}</option>
+                        <option :value="100">{{ $t('roles.100_per_page') }}</option>
                     </select>
                 </div>
             </div>
@@ -311,16 +312,18 @@ import IconPencil from '@/components/icon/icon-pencil.vue';
 import IconTrashLines from '@/components/icon/icon-trash-lines.vue';
 import IconLockDots from '@/components/icon/icon-lock-dots.vue';
 import IconX from '@/components/icon/icon-x.vue';
+import { useI18n } from 'vue-i18n';
 
 useMeta({ title: 'Role Management' });
 
+const { t } = useI18n();
 const roleStore = useRoleStore();
 const { confirmDelete, success, error } = useNotification();
 const { debounce, isDebouncing } = useDebounce(300);
 
 // Local state
 const searchQuery = ref('');
-const perPage = ref(15);
+const perPage = ref(10);
 const currentPage = ref(1);
 const sortColumn = ref('name');
 const sortDirection = ref<'asc' | 'desc'>('asc');
@@ -333,10 +336,10 @@ const showEmptyState = computed(() => !roleStore.isLoading && !initialLoading.va
 
 // Table columns
 const columns = computed(() => [
-    { field: 'name', title: 'Name', minWidth: '200px' },
-    { field: 'permissions', title: 'Permissions', sort: false, width: '150px' },
-    { field: 'created_at', title: 'Created', width: '150px' },
-    { field: 'actions', title: 'Actions', sort: false, width: '150px', headerClass: 'justify-center' },
+    { field: 'name', title: t('roles.role_name'), minWidth: '200px' },
+    { field: 'permissions', title: t('roles.permissions'), sort: false, width: '150px' },
+    { field: 'created_at', title: t('roles.created_at'), width: '150px' },
+    { field: 'actions', title: t('roles.actions'), sort: false, width: '150px', headerClass: 'justify-center' },
 ]);
 
 // Methods
