@@ -3,10 +3,10 @@
         <!-- Breadcrumb -->
         <ul class="flex space-x-2 rtl:space-x-reverse mb-5">
             <li>
-                <router-link to="/admin/users" class="text-primary hover:underline">Users</router-link>
+                <router-link to="/admin/users" class="text-primary hover:underline">{{ $t('users.user_management') }}</router-link>
             </li>
             <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-                <span>Edit User</span>
+                <span>{{ $t('users.edit_user') }}</span>
             </li>
         </ul>
 
@@ -21,10 +21,10 @@
         <div v-else-if="!user" class="panel">
             <div class="text-center py-20">
                 <icon-info-hexagon class="w-16 h-16 mx-auto text-danger mb-4" />
-                <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">User Not Found</h3>
+                <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">{{ $t('users.user_not_found') }}</h3>
                 <p class="text-gray-500 mb-4">The user you're looking for doesn't exist or has been deleted.</p>
                 <router-link to="/admin/users" class="btn btn-primary">
-                    Back to Users
+                    {{ $t('users.back_to_users') }}
                 </router-link>
             </div>
         </div>
@@ -40,13 +40,13 @@
                         </span>
                     </div>
                     <div>
-                        <h5 class="font-semibold text-lg dark:text-white-light">Edit User</h5>
+                        <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('users.edit_user') }}</h5>
                         <p class="text-gray-500 text-sm">{{ user.email }}</p>
                     </div>
                 </div>
                 <router-link to="/admin/users" class="btn btn-outline-secondary gap-2">
                     <icon-arrow-left class="w-4 h-4" />
-                    Back to List
+                    {{ $t('users.back_to_list') }}
                 </router-link>
             </div>
 
@@ -64,14 +64,14 @@
                     <!-- Name -->
                     <div>
                         <label for="name" class="mb-2 block">
-                            Name <span class="text-danger">*</span>
+                            {{ $t('users.name') }} <span class="text-danger">*</span>
                         </label>
                         <div class="relative">
                             <input
                                 id="name"
                                 v-model="form.name"
                                 type="text"
-                                placeholder="Enter full name"
+                                :placeholder="$t('users.enter_full_name')"
                                 class="form-input pl-10"
                                 :class="{ 'border-danger': v$.name.$error }"
                                 :aria-invalid="v$.name.$error"
@@ -89,14 +89,14 @@
                     <!-- Email -->
                     <div>
                         <label for="email" class="mb-2 block">
-                            Email <span class="text-danger">*</span>
+                            {{ $t('users.email') }} <span class="text-danger">*</span>
                         </label>
                         <div class="relative">
                             <input
                                 id="email"
                                 v-model="form.email"
                                 type="email"
-                                placeholder="Enter email address"
+                                :placeholder="$t('users.enter_email_address')"
                                 class="form-input pl-10"
                                 :class="{ 'border-danger': v$.email.$error }"
                                 :aria-invalid="v$.email.$error"
@@ -116,8 +116,8 @@
                 <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h6 class="font-semibold dark:text-white-light">Change Password</h6>
-                            <p class="text-gray-500 text-sm">Leave empty to keep current password</p>
+                            <h6 class="font-semibold dark:text-white-light">{{ $t('users.change_password') }}</h6>
+                            <p class="text-gray-500 text-sm">{{ $t('users.leave_empty_to_keep_current_password') }}</p>
                         </div>
                         <label class="flex items-center cursor-pointer">
                             <input
@@ -125,7 +125,7 @@
                                 v-model="changePassword"
                                 class="form-checkbox text-warning"
                             />
-                            <span class="ml-2 text-sm">Change password</span>
+                            <span class="ml-2 text-sm">{{ $t('users.change_password') }}</span>
                         </label>
                     </div>
 
@@ -133,14 +133,14 @@
                         <!-- New Password -->
                         <div>
                             <label for="password" class="mb-2 block">
-                                New Password <span class="text-danger">*</span>
+                                {{ $t('users.new_password') }} <span class="text-danger">*</span>
                             </label>
                             <div class="relative">
                                 <input
                                     id="password"
                                     v-model="form.password"
                                     :type="showPassword ? 'text' : 'password'"
-                                    placeholder="Enter new password"
+                                    :placeholder="$t('users.enter_new_password')"
                                     class="form-input pl-10 pr-10"
                                     :class="{ 'border-danger': v$.password.$error }"
                                     :aria-invalid="v$.password.$error"
@@ -161,20 +161,20 @@
                             <template v-if="v$.password.$error">
                                 <p id="password-error" role="alert" class="text-danger mt-1 text-sm">{{ v$.password.$errors[0]?.$message }}</p>
                             </template>
-                            <p id="password-hint" class="text-gray-500 text-xs mt-1">Minimum 8 characters</p>
+                            <p id="password-hint" class="text-gray-500 text-xs mt-1">{{ $t('users.minimum_8_characters') }}</p>
                         </div>
 
                         <!-- Password Confirmation -->
                         <div>
                             <label for="password_confirmation" class="mb-2 block">
-                                Confirm Password <span class="text-danger">*</span>
+                                {{ $t('users.confirm_password') }} <span class="text-danger">*</span>
                             </label>
                             <div class="relative">
                                 <input
                                     id="password_confirmation"
                                     v-model="form.password_confirmation"
                                     :type="showPasswordConfirm ? 'text' : 'password'"
-                                    placeholder="Confirm new password"
+                                    :placeholder="$t('users.confirm_new_password')"
                                     class="form-input pl-10 pr-10"
                                     :class="{ 'border-danger': v$.password_confirmation.$error }"
                                     :aria-invalid="v$.password_confirmation.$error"
@@ -202,11 +202,11 @@
                 <!-- Roles -->
                 <fieldset>
                     <legend class="mb-2 block">
-                        Roles <span class="text-danger">*</span>
+                        {{ $t('users.roles') }} <span class="text-danger">*</span>
                     </legend>
                     <div v-if="isLoadingRoles" class="flex items-center gap-2 text-gray-500">
                         <span class="animate-spin border-2 border-primary border-l-transparent rounded-full w-4 h-4"></span>
-                        Loading roles...
+                        {{ $t('users.loading_roles') }}
                     </div>
                     <div v-else class="flex flex-wrap gap-4" role="group" aria-label="User roles">
                         <label
@@ -233,23 +233,23 @@
 
                 <!-- User Info -->
                 <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-                    <h6 class="font-semibold mb-3 dark:text-white-light">User Information</h6>
+                    <h6 class="font-semibold mb-3 dark:text-white-light">{{ $t('users.user_information') }}</h6>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                             <span class="text-gray-500">ID:</span>
                             <span class="ml-2 font-medium">#{{ user.id }}</span>
                         </div>
                         <div>
-                            <span class="text-gray-500">Status:</span>
+                            <span class="text-gray-500">{{ $t('users.status') }}:</span>
                             <span v-if="user.email_verified_at" class="ml-2 badge badge-outline-success">Verified</span>
                             <span v-else class="ml-2 badge badge-outline-warning">Pending</span>
                         </div>
                         <div>
-                            <span class="text-gray-500">Created:</span>
+                            <span class="text-gray-500">{{ $t('users.created') }}:</span>
                             <span class="ml-2">{{ formatDate(user.created_at) }}</span>
                         </div>
                         <div>
-                            <span class="text-gray-500">Updated:</span>
+                            <span class="text-gray-500">{{ $t('users.updated') }}:</span>
                             <span class="ml-2">{{ formatDate(user.updated_at) }}</span>
                         </div>
                     </div>
@@ -258,7 +258,7 @@
                 <!-- Actions -->
                 <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <router-link to="/admin/users" class="btn btn-outline-danger">
-                        Cancel
+                        {{ $t('users.cancel') }}
                     </router-link>
                     <button
                         type="submit"
@@ -267,11 +267,11 @@
                     >
                         <template v-if="isSubmitting">
                             <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-5 h-5 inline-block mr-2"></span>
-                            Saving...
+                            {{ $t('users.saving') }}
                         </template>
                         <template v-else>
                             <icon-save class="w-5 h-5 mr-2" />
-                            Save Changes
+                            {{ $t('users.save_changes') }}
                         </template>
                     </button>
                 </div>

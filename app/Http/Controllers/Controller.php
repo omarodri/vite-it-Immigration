@@ -9,9 +9,9 @@ use OpenApi\Attributes as OA;
 
 #[OA\Info(
     version: '1.0.0',
-    title: 'Vristo POC API',
-    description: 'API documentation for Vristo POC - Sales Admin Dashboard',
-    contact: new OA\Contact(email: 'admin@vristo.test')
+    title: 'VITE-IT Immigration API',
+    description: 'API documentation for VITE-IT Immigration',
+    contact: new OA\Contact(email: 'admin@vite-it.com')
 )]
 #[OA\SecurityScheme(
     securityScheme: 'sanctum',

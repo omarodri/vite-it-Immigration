@@ -1,10 +1,10 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Vristo POC API",
-        "description": "API documentation for Vristo POC - Sales Admin Dashboard",
+        "title": "VITE-IT Immigration API",
+        "description": "API documentation for VITE-IT Immigration",
         "contact": {
-            "email": "admin@vristo.test"
+            "email": "admin@vite-it.com"
         },
         "version": "1.0.0"
     },
@@ -771,11 +771,52 @@
                 "tags": [
                     "Roles"
                 ],
-                "summary": "List all roles",
+                "summary": "List roles (paginated)",
                 "operationId": "ca86f0a206144dfbd695b749b4b28f9d",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "created_at"
+                        }
+                    },
+                    {
+                        "name": "sort_direction",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "List of roles"
+                        "description": "Paginated role list"
                     },
                     "401": {
                         "description": "Unauthenticated"
@@ -928,13 +969,13 @@
                         "description": "Unauthenticated"
                     },
                     "403": {
-                        "description": "Unauthorized"
+                        "description": "Unauthorized or protected role"
                     },
                     "404": {
                         "description": "Not found"
                     },
                     "422": {
-                        "description": "Cannot modify protected roles or validation error"
+                        "description": "Validation error"
                     }
                 },
                 "security": [
@@ -967,13 +1008,10 @@
                         "description": "Unauthenticated"
                     },
                     "403": {
-                        "description": "Unauthorized"
+                        "description": "Unauthorized or protected role"
                     },
                     "404": {
                         "description": "Not found"
-                    },
-                    "422": {
-                        "description": "Cannot delete protected roles"
                     }
                 },
                 "security": [

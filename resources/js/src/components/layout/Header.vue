@@ -19,6 +19,7 @@
                         <icon-menu class="w-5 h-5" />
                     </a>
                 </div>
+                <!-- Calendar -->
                 <div class="ltr:mr-2 rtl:ml-2 hidden sm:block">
                     <ul class="flex items-center space-x-2 rtl:space-x-reverse dark:text-[#d0d2d6]">
                         <li>
@@ -47,9 +48,11 @@
                         </li>
                     </ul>
                 </div>
+                <!-- Header -->
                 <div
                     class="sm:flex-1 ltr:sm:ml-0 ltr:ml-auto sm:rtl:mr-0 rtl:mr-auto flex items-center space-x-1.5 lg:space-x-2 rtl:space-x-reverse dark:text-[#d0d2d6]"
                 >
+                    <!-- Search -->
                     <div class="sm:ltr:mr-auto sm:rtl:ml-auto">
                         <form
                             class="sm:relative absolute inset-x-0 sm:top-0 top-1/2 sm:translate-y-0 -translate-y-1/2 sm:mx-0 mx-4 z-10 sm:block hidden"
@@ -60,7 +63,7 @@
                                 <input
                                     type="text"
                                     class="form-input ltr:pl-9 rtl:pr-9 ltr:sm:pr-4 rtl:sm:pl-4 ltr:pr-9 rtl:pl-9 peer sm:bg-transparent bg-gray-100 placeholder:tracking-widest"
-                                    placeholder="Search..."
+                                    :placeholder="$t('search') + '...'"
                                 />
                                 <button type="button" class="absolute w-9 h-9 inset-0 ltr:right-auto rtl:left-auto appearance-none peer-focus:text-primary">
                                     <icon-search class="mx-auto" />
@@ -83,6 +86,8 @@
                             <icon-search class="w-4.5 h-4.5 mx-auto dark:text-[#d0d2d6]" />
                         </button>
                     </div>
+                    
+                    <!-- Theme -->
                     <div>
                         <a
                             href="javascript:;"
@@ -110,6 +115,7 @@
                         </a>
                     </div>
 
+                    <!-- Language -->
                     <div class="dropdown shrink-0">
                         <Popper :placement="store.rtlClass === 'rtl' ? 'bottom-end' : 'bottom-start'" offsetDistance="8">
                             <button
@@ -142,6 +148,7 @@
                         </Popper>
                     </div>
 
+                    <!-- Messages -->
                     <div class="dropdown shrink-0">
                         <Popper :placement="store.rtlClass === 'rtl' ? 'bottom-start' : 'bottom-end'" offsetDistance="8">
                             <button
@@ -184,7 +191,7 @@
                                                 class="flex items-center py-4 px-5 text-primary font-semibold group dark:text-gray-400 justify-center cursor-pointer"
                                                 @click="close()"
                                             >
-                                                <span class="group-hover:underline ltr:mr-1 rtl:ml-1">VIEW ALL ACTIVITIES</span>
+                                                <span class="group-hover:underline ltr:mr-1 rtl:ml-1">{{ $t('view_all_activities') }}</span>
 
                                                 <icon-arrow-left class="group-hover:translate-x-1 transition duration-300 ltr:ml-1 rtl:mr-1" />
                                             </div>
@@ -196,7 +203,7 @@
                                                 <div class="mx-auto ring-4 ring-primary/30 rounded-full mb-4 text-primary">
                                                     <icon-info-circle :fill="true" class="w-10 h-10" />
                                                 </div>
-                                                No data available.
+                                                {{ $t('No data available') }}.
                                             </div>
                                         </li>
                                     </template>
@@ -205,6 +212,7 @@
                         </Popper>
                     </div>
 
+                    <!-- Notifications -->
                     <div class="dropdown shrink-0">
                         <Popper :placement="store.rtlClass === 'rtl' ? 'bottom-end' : 'bottom-start'" offsetDistance="8">
                             <button
@@ -224,9 +232,9 @@
                                 <ul class="!py-0 text-dark dark:text-white-dark w-[300px] sm:w-[350px] divide-y dark:divide-white/10">
                                     <li>
                                         <div class="flex items-center px-4 py-2 justify-between font-semibold">
-                                            <h4 class="text-lg">Notification</h4>
+                                            <h4 class="text-lg">{{ $t('notifications') }}</h4>
                                             <template v-if="notifications.length">
-                                                <span class="badge bg-primary/80" v-text="notifications.length + 'New'"></span>
+                                                <span class="badge bg-primary/80" v-text="notifications.length + ' ' + $t('new')"></span>
                                             </template>
                                         </div>
                                     </li>
@@ -262,7 +270,7 @@
                                     <template v-if="notifications.length">
                                         <li>
                                             <div class="p-4">
-                                                <button class="btn btn-primary block w-full btn-small" @click="close()">Read All Notifications</button>
+                                                <button class="btn btn-primary block w-full btn-small" @click="close()">{{ $t('read_all_notifications') }}</button>
                                             </div>
                                         </li>
                                     </template>
@@ -272,7 +280,7 @@
                                                 <div class="mx-auto ring-4 ring-primary/30 rounded-full mb-4 text-primary">
                                                     <icon-info-circle :fill="true" class="w-10 h-10" />
                                                 </div>
-                                                No data available.
+                                                {{ $t('no_data_available') }}
                                             </div>
                                         </li>
                                     </template>
@@ -281,21 +289,16 @@
                         </Popper>
                     </div>
 
+                    <!-- Profile -->
                     <div class="dropdown shrink-0">
                         <Popper :placement="store.rtlClass === 'rtl' ? 'bottom-end' : 'bottom-start'" offsetDistance="8" class="!block">
                             <button type="button" class="relative group block">
-                                <!-- <img
-                                    v-if="authStore.user"
-                                    class="w-9 h-9 rounded-full object-cover saturate-50 group-hover:saturate-100"
-                                    src="/assets/images/user-profile.jpeg"
-                                    :alt="authStore.user.name"
-                                /> -->
                                 <!-- Avatar -->
-                                <img v-if="profileStore.avatarUrl"
-                                :src="profileStore.avatarUrl" 
-                                :alt="`${profileStore.fullName}'s profile photo`" 
+                                <img v-if="authStore.avatarUrl"
+                                :src="authStore.avatarUrl" 
+                                :alt="`${authStore.user?.name}'s profile photo`" 
                                 class="w-9 h-9 rounded-full object-cover saturate-50 group-hover:saturate-100" />
-                                <span v-else class="w-9 h-9 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white mb-0 text-1xl font-bold" aria-hidden="true">{{ profileStore.initials }}</span>
+                                <span v-else class="w-9 h-9 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white mb-0 text-1xl font-bold" aria-hidden="true">{{ authStore.initials }}</span>
 
                             </button>
                             <template #content="{ close }">
@@ -303,15 +306,11 @@
                                     <li>
                                         <div class="flex items-center px-4 py-4">
                                             <div class="flex-none">
-                                                <img v-if="profileStore.avatarUrl"
-                                                :src="profileStore.avatarUrl" 
-                                                :alt="`${profileStore.fullName}'s profile photo`" 
+                                                <img v-if="authStore.avatarUrl"
+                                                :src="authStore.avatarUrl" 
+                                                :alt="`${authStore.user?.name}'s profile photo`" 
                                                 class="w-9 h-9 rounded-full object-cover saturate-50 group-hover:saturate-100" />
-                                                <span v-else class="w-9 h-9 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white mb-0 text-1xl font-bold" aria-hidden="true">{{ profileStore.initials }}</span>
-                                                <!-- <img v-if="authStore.user" class="rounded-md w-10 h-10 object-cover" src="/assets/images/user-profile.jpeg" :alt="authStore.user.name" />
-                                                <div v-else class="rounded-md w-10 h-10 bg-primary flex items-center justify-center text-white font-semibold">
-                                                    <icon-user class="w-6 h-6" />
-                                                </div> -->
+                                                <span v-else class="w-9 h-9 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white mb-0 text-1xl font-bold" aria-hidden="true">{{ authStore.initials }}</span>
                                             </div>
                                             <div class="ltr:pl-4 rtl:pr-4 truncate">
                                                 <h4 class="text-base">
@@ -885,7 +884,7 @@
     import { useRoute, useRouter } from 'vue-router';
     import { useAppStore } from '@/stores/index';
     import { useAuthStore } from '@/stores/auth';
-    import { useProfileStore } from '@/stores/profile';
+
 
     import IconMenu from '@/components/icon/icon-menu.vue';
     import IconCalendar from '@/components/icon/icon-calendar.vue';
@@ -919,8 +918,6 @@
     const route = useRoute();
     const router = useRouter();
     const search = ref(false);
-
-    const profileStore = useProfileStore();
 
     // Logout handler
     const handleLogout = async () => {
@@ -963,30 +960,30 @@
         {
             id: 1,
             image: '<span class="grid place-content-center w-9 h-9 rounded-full bg-success-light dark:bg-success text-success dark:text-success-light"><svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>',
-            title: 'Congratulations!',
-            message: 'Your OS has been updated.',
+            title: 'Felicitaciones!',
+            message: 'Haz completado todas las tareas.',
             time: '1hr',
         },
         {
             id: 2,
             image: '<span class="grid place-content-center w-9 h-9 rounded-full bg-info-light dark:bg-info text-info dark:text-info-light"><svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>',
-            title: 'Did you know?',
-            message: 'You can switch between artboards.',
-            time: '2hr',
+            title: '¿Sabías que?',
+            message: 'Puedes cambiar entre paneles.',
+            time: '2 horas',
         },
         {
             id: 3,
             image: '<span class="grid place-content-center w-9 h-9 rounded-full bg-danger-light dark:bg-danger text-danger dark:text-danger-light"> <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></span>',
-            title: 'Something went wrong!',
-            message: 'Send Reposrt',
-            time: '2days',
+                title: 'Algo salió mal!',
+            message: 'Enviar Reporte',
+            time: '2 días',
         },
         {
             id: 4,
             image: '<span class="grid place-content-center w-9 h-9 rounded-full bg-warning-light dark:bg-warning text-warning dark:text-warning-light"><svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">    <circle cx="12" cy="12" r="10"></circle>    <line x1="12" y1="8" x2="12" y2="12"></line>    <line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>',
-            title: 'Warning',
-            message: 'Your password strength is low.',
-            time: '5days',
+            title: 'Advertencia',
+            message: 'La fortaleza de tu contraseña es baja.',
+            time: '5 días',
         },
     ]);
 
