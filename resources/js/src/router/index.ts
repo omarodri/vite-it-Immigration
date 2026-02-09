@@ -535,6 +535,14 @@ const routes: RouteRecordRaw[] = [
         meta: { permission: 'roles.update' },
     },
 
+    // Tenant Settings
+    {
+        path: '/admin/tenant/oauth',
+        name: 'admin-tenant-oauth',
+        component: () => import('../views/admin/tenant/OAuthSettings.vue'),
+        meta: { permission: 'settings.update' },
+    },
+
     // pages
     {
         path: '/pages/knowledge-base',

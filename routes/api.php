@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\TenantController;
+use App\Http\Controllers\Api\TenantOAuthController;
 use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -91,6 +92,13 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::get('/tenant', [TenantController::class, 'show']);
     Route::put('/tenant/settings', [TenantController::class, 'updateSettings']);
     Route::put('/tenant/branding', [TenantController::class, 'updateBranding']);
+
+    // Tenant OAuth credentials routes
+    Route::get('/tenant/oauth/status', [TenantOAuthController::class, 'status']);
+    Route::put('/tenant/oauth/microsoft', [TenantOAuthController::class, 'updateMicrosoft']);
+    Route::put('/tenant/oauth/google', [TenantOAuthController::class, 'updateGoogle']);
+    Route::delete('/tenant/oauth/microsoft', [TenantOAuthController::class, 'removeMicrosoft']);
+    Route::delete('/tenant/oauth/google', [TenantOAuthController::class, 'removeGoogle']);
 });
 
 // Public tenant branding route (no auth required)
