@@ -16,6 +16,9 @@ class DatabaseSeeder extends Seeder
         // Seed roles and permissions first
         $this->call(RolePermissionSeeder::class);
 
+        // Seed tenants
+        $this->call(TenantSeeder::class);
+
         // Create admin user if not exists
         $admin = User::firstOrCreate(
             ['email' => 'admin@vristo.com'],
