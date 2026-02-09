@@ -211,14 +211,14 @@ trait BelongsToTenant
 | name             |    |  | tenant_id (FK)    |------>| name             |
 | slug             |    |  | name              |       | guard_name       |
 | settings (JSON)  |    |  | email             |       +------------------+
-| oauth_ms_*       |    |  | password          |
-| oauth_google_*   |    |  | email_verified_at |
-| created_at       |    |  | two_factor_*      |
-| updated_at       |    |  | created_at        |
-+------------------+    |  +-------------------+
-        |               |           |
-        |               |           | (model_has_roles)
-        |               |           v
+| ms_client_id     |    |  | password          |
+| ms_client_secret |    |  | email_verified_at |
+| google_client_id |    |  | two_factor_*      |
+| google_client_*  |    |  | created_at        |
+| is_active        |    |  +-------------------+
+| created_at       |    |           |
+| updated_at       |    |           | (model_has_roles)
++------------------+    |           v
         |               |  +-------------------+
         |               |  |   user_profiles   |
         |               |  +-------------------+
@@ -231,78 +231,89 @@ trait BelongsToTenant
         |               |                                          |
         v               v                                          v
 +------------------+   +-------------------+              +------------------+
-|    clientes      |   |   acompanantes    |              |   expedientes    |
+|     clients      |   |    companions     |              |      cases       |
 +------------------+   +-------------------+              +------------------+
 | id (PK)          |   | id (PK)           |              | id (PK)          |
 | tenant_id (FK)   |   | tenant_id (FK)    |              | tenant_id (FK)   |
-| nombre           |   | cliente_id (FK)   |------------->| cliente_id (FK)  |
-| apellidos        |   | nombre            |              | tipo_caso        |
-| email            |   | apellidos         |              | numero_referencia|
-| telefono         |   | parentesco        |              | etapa            |
-| nacionalidad     |   | fecha_nacimiento  |              | estado           |
-| estado           |   | nacionalidad      |              | prioridad        |
-| notas            |   | pasaporte_numero  |              | consultor_id(FK) |
-| created_by (FK)  |   | created_at        |              | asignado_id (FK) |
-| created_at       |   +-------------------+              | fecha_inicio     |
-+------------------+           |                          | fecha_objetivo   |
-        |                      |                          | notas            |
-        |                      v                          | created_at       |
-        |          +------------------------+             +------------------+
-        |          | expediente_acompanante |                     |
-        |          +------------------------+                     |
-        |          | expediente_id (FK)     |<--------------------+
-        |          | acompanante_id (FK)    |                     |
-        +--------->| rol_en_caso            |                     |
-                   +------------------------+                     |
-                                                                  |
+| user_id (FK)     |   | client_id (FK)    |------------->| client_id (FK)   |
+| first_name       |   | first_name        |              | case_number      |
+| last_name        |   | last_name         |              | case_type_id(FK) |
+| email            |   | relationship      |              | status           |
+| phone            |   | date_of_birth     |              | priority         |
+| nationality      |   | passport_number   |              | progress         |
+| canada_status    |   | nationality       |              | assigned_to (FK) |
+| status           |   | notes             |              | hearing_date     |
+| description      |   | created_at        |              | fda_deadline     |
+| is_primary_*     |   +-------------------+              | description      |
+| created_at       |                                      | created_at       |
++------------------+                                      +------------------+
+        |                                                         |
+        |                                                         |
+        +-------------------------+-------------------------------+
+                                  |
+        +-------------------------+-------------------------+
+        |                         |                         |
+        v                         v                         v
 +------------------+   +-------------------+   +------------------+
-|     tareas       |   |   seguimientos    |   |   documentos     |
+|      tasks       |   |    follow_ups     |   |    documents     |
 +------------------+   +-------------------+   +------------------+
 | id (PK)          |   | id (PK)           |   | id (PK)          |
 | tenant_id (FK)   |   | tenant_id (FK)    |   | tenant_id (FK)   |
-| expediente_id(FK)|   | expediente_id(FK) |   | expediente_id(FK)|
-| titulo           |   | tipo_canal        |   | carpeta_id (FK)  |
-| descripcion      |   | resumen           |   | nombre           |
-| prioridad        |   | contenido         |   | provider         |
-| fecha_vencimiento|   | direccion         |   | provider_file_id |
-| estado           |   | created_by (FK)   |   | provider_path    |
-| asignado_id (FK) |   | created_at        |   | mime_type        |
-| tiempo_estimado  |   +-------------------+   | tamano           |
-| tiempo_registrado|                           | created_by (FK)  |
-| created_by (FK)  |                           | created_at       |
-| created_at       |                           +------------------+
-+------------------+
-        |
-        v
-+------------------+
-|  tiempo_tareas   |
-+------------------+
-| id (PK)          |
-| tarea_id (FK)    |
-| user_id (FK)     |
-| minutos          |
-| descripcion      |
-| fecha            |
-| created_at       |
-+------------------+
+| case_id (FK)     |   | client_id (FK)    |   | case_id (FK)     |
+| requester_id(FK) |   | case_id (FK)      |   | folder_id (FK)   |
+| assigned_to (FK) |   | user_id (FK)      |   | uploaded_by (FK) |
+| subject          |   | channel           |   | name             |
+| description      |   | type              |   | original_name    |
+| type             |   | contact_date      |   | mime_type        |
+| priority         |   | duration_hours    |   | size             |
+| status           |   | notes             |   | category         |
+| due_date         |   | category          |   | storage_type     |
+| estimated_hours  |   | created_at        |   | storage_path     |
+| actual_hours     |   +-------------------+   | external_id      |
+| document_id (FK) |                           | external_url     |
+| created_at       |                           | created_at       |
++------------------+                           +------------------+
+        |                                               |
+        v                                               v
++--------------------+                        +--------------------+
+| task_time_entries  |                        |  document_folders  |
++--------------------+                        +--------------------+
+| id (PK)            |                        | id (PK)            |
+| tenant_id (FK)     |                        | tenant_id (FK)     |
+| task_id (FK)       |                        | case_id (FK)       |
+| user_id (FK)       |                        | parent_id (FK)     |
+| hours              |                        | name               |
+| work_date          |                        | sort_order         |
+| description        |                        | created_at         |
+| created_at         |                        +--------------------+
++--------------------+
 
-+------------------+   +-------------------+   +------------------+
-|     eventos      |   |  oauth_tokens     |   | carpetas_docs    |
-+------------------+   +-------------------+   +------------------+
-| id (PK)          |   | id (PK)           |   | id (PK)          |
-| tenant_id (FK)   |   | user_id (FK)      |   | tenant_id (FK)   |
-| expediente_id    |   | provider          |   | expediente_id(FK)|
-| titulo           |   | access_token (enc)|   | nombre           |
-| descripcion      |   | refresh_token(enc)|   | parent_id (FK)   |
-| fecha_inicio     |   | expires_at        |   | orden            |
-| fecha_fin        |   | scopes            |   | created_at       |
-| todo_el_dia      |   | created_at        |   +------------------+
-| provider         |   +-------------------+
-| provider_event_id|
-| sync_status      |
-| user_id (FK)     |
-| created_at       |
-+------------------+
++------------------+   +-------------------+   +--------------------+
+|     events       |   |   oauth_tokens    |   | event_participants |
++------------------+   +-------------------+   +--------------------+
+| id (PK)          |   | id (PK)           |   | id (PK)            |
+| tenant_id (FK)   |   | tenant_id (FK)    |   | event_id (FK)      |
+| created_by (FK)  |   | user_id (FK)      |   | user_id (FK)       |
+| client_id (FK)   |   | provider          |   | confirmed          |
+| case_id (FK)     |   | access_token      |   | created_at         |
+| title            |   | refresh_token     |   +--------------------+
+| description      |   | expires_at        |
+| start_date       |   | scopes (JSON)     |
+| end_date         |   | created_at        |
+| all_day          |   +-------------------+
+| location         |
+| category         |   +-------------------+
+| sync_source      |   |    case_types     |
+| external_id      |   +-------------------+
+| last_synced_at   |   | id (PK)           |
+| created_at       |   | tenant_id (FK)    |
++------------------+   | name              |
+                       | code              |
+                       | category          |
+                       | description       |
+                       | is_active         |
+                       | created_at        |
+                       +-------------------+
 ```
 
 ### 3.2 Core Tables Schema
@@ -315,17 +326,14 @@ CREATE TABLE tenants (
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(100) UNIQUE NOT NULL,
     settings JSON DEFAULT NULL,
-    -- Tenant-level OAuth credentials (optional)
-    oauth_ms_client_id VARCHAR(255) DEFAULT NULL,
-    oauth_ms_client_secret TEXT DEFAULT NULL,
-    oauth_google_client_id VARCHAR(255) DEFAULT NULL,
-    oauth_google_client_secret TEXT DEFAULT NULL,
+    -- Tenant-level OAuth credentials (optional, encrypted)
+    ms_client_id TEXT DEFAULT NULL,
+    ms_client_secret TEXT DEFAULT NULL,
+    google_client_id TEXT DEFAULT NULL,
+    google_client_secret TEXT DEFAULT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
-
-    INDEX idx_tenants_slug (slug),
-    INDEX idx_tenants_active (is_active)
+    updated_at TIMESTAMP NULL
 );
 ```
 
@@ -334,269 +342,328 @@ CREATE TABLE tenants (
 ```sql
 ALTER TABLE users
 ADD COLUMN tenant_id BIGINT UNSIGNED NULL AFTER id,
-ADD COLUMN consultor_supervisor_id BIGINT UNSIGNED NULL,
-ADD CONSTRAINT fk_users_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-ADD CONSTRAINT fk_users_supervisor FOREIGN KEY (consultor_supervisor_id) REFERENCES users(id),
-ADD INDEX idx_users_tenant (tenant_id);
+ADD CONSTRAINT fk_users_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE SET NULL;
 ```
 
-#### 3.2.3 Clientes Table
+#### 3.2.3 Clients Table
 
 ```sql
-CREATE TABLE clientes (
+CREATE TABLE clients (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tenant_id BIGINT UNSIGNED NOT NULL,
-    nombre VARCHAR(100) NOT NULL,
-    apellidos VARCHAR(150) NOT NULL,
+    user_id BIGINT UNSIGNED NULL,
+
+    -- Personal Information
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    nationality VARCHAR(255) NULL,
+    second_nationality VARCHAR(255) NULL,
+    language VARCHAR(255) DEFAULT 'es',
+    second_language VARCHAR(255) NULL,
+    date_of_birth DATE NULL,
+    gender ENUM('male', 'female', 'other') NULL,
+    passport_number VARCHAR(255) NULL,
+    passport_country VARCHAR(255) NULL,
+    passport_expiry_date DATE NULL,
+    marital_status ENUM('single', 'married', 'divorced', 'widowed', 'common_law', 'separated') NULL,
+    profession VARCHAR(255) NULL,
+    description TEXT NULL,
+
+    -- Contact Information
     email VARCHAR(255) NULL,
-    telefono VARCHAR(50) NULL,
-    telefono_alternativo VARCHAR(50) NULL,
-    nacionalidad VARCHAR(100) NULL,
-    pais_residencia VARCHAR(100) NULL,
-    idioma_preferido ENUM('es', 'en', 'fr') DEFAULT 'es',
-    estado ENUM('prospecto', 'activo', 'inactivo', 'archivado') DEFAULT 'prospecto',
-    fuente_captacion VARCHAR(100) NULL,
-    notas TEXT NULL,
-    created_by BIGINT UNSIGNED NOT NULL,
+    residential_address VARCHAR(255) NULL,
+    mailing_address VARCHAR(255) NULL,
+    city VARCHAR(255) NULL,
+    province VARCHAR(255) NULL,
+    postal_code VARCHAR(255) NULL,
+    country VARCHAR(255) NULL,
+    phone VARCHAR(255) NULL,
+    secondary_phone VARCHAR(255) NULL,
+
+    -- Legal Status in Canada
+    canada_status ENUM('asylum_seeker', 'refugee', 'temporary_resident', 'permanent_resident', 'citizen', 'visitor', 'student', 'worker', 'other') NULL,
+    status_date DATE NULL,
+    arrival_date DATE NULL,
+    entry_point ENUM('airport', 'land_border', 'green_path') NULL,
+    iuc VARCHAR(255) NULL COMMENT 'Unique Client Identifier',
+    work_permit_number VARCHAR(255) NULL,
+    study_permit_number VARCHAR(255) NULL,
+    permit_expiry_date DATE NULL,
+    other_status_1 VARCHAR(255) NULL,
+    other_status_2 VARCHAR(255) NULL,
+
+    -- Status
+    status ENUM('active', 'inactive', 'archived') DEFAULT 'active',
+    is_primary_applicant BOOLEAN DEFAULT TRUE,
+
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
     deleted_at TIMESTAMP NULL,
 
-    CONSTRAINT fk_clientes_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_clientes_creator FOREIGN KEY (created_by) REFERENCES users(id),
+    CONSTRAINT fk_clients_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_clients_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
 
-    INDEX idx_clientes_tenant (tenant_id),
-    INDEX idx_clientes_estado (tenant_id, estado),
-    INDEX idx_clientes_nombre (tenant_id, nombre, apellidos),
-    INDEX idx_clientes_email (tenant_id, email),
-    UNIQUE INDEX uq_clientes_email_tenant (tenant_id, email)
+    INDEX idx_clients_tenant_status (tenant_id, status),
+    INDEX idx_clients_tenant_name (tenant_id, last_name, first_name),
+    INDEX idx_clients_tenant_email (tenant_id, email),
+    INDEX idx_clients_tenant_passport (tenant_id, passport_number)
 );
 ```
 
-#### 3.2.4 Acompanantes Table
+#### 3.2.4 Companions Table
 
 ```sql
-CREATE TABLE acompanantes (
+CREATE TABLE companions (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tenant_id BIGINT UNSIGNED NOT NULL,
-    cliente_id BIGINT UNSIGNED NOT NULL,
-    nombre VARCHAR(100) NOT NULL,
-    apellidos VARCHAR(150) NOT NULL,
-    parentesco ENUM('conyuge', 'hijo', 'padre', 'madre', 'hermano', 'otro') NOT NULL,
-    parentesco_otro VARCHAR(100) NULL,
-    fecha_nacimiento DATE NULL,
-    nacionalidad VARCHAR(100) NULL,
-    pasaporte_numero VARCHAR(50) NULL,
-    pasaporte_vencimiento DATE NULL,
-    notas TEXT NULL,
+    client_id BIGINT UNSIGNED NOT NULL,
+
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    relationship ENUM('spouse', 'child', 'parent', 'sibling', 'other') DEFAULT 'other',
+    date_of_birth DATE NULL,
+    passport_number VARCHAR(255) NULL,
+    nationality VARCHAR(255) NULL,
+    notes TEXT NULL,
+
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
     deleted_at TIMESTAMP NULL,
 
-    CONSTRAINT fk_acompanantes_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_acompanantes_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE,
+    CONSTRAINT fk_companions_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_companions_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
 
-    INDEX idx_acompanantes_tenant (tenant_id),
-    INDEX idx_acompanantes_cliente (cliente_id)
+    INDEX idx_companions_tenant_client (tenant_id, client_id)
 );
 ```
 
-#### 3.2.5 Expedientes Table
+#### 3.2.5 Case Types Table
 
 ```sql
-CREATE TABLE expedientes (
+CREATE TABLE case_types (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT UNSIGNED NULL,
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(255) UNIQUE NOT NULL,
+    category ENUM('temporary_residence', 'permanent_residence', 'humanitarian') NOT NULL,
+    description TEXT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+
+    CONSTRAINT fk_case_types_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+
+    INDEX idx_case_types_tenant_category (tenant_id, category)
+);
+
+-- Default seeded case types:
+-- Temporary Residence: TOURIST, STUDENT, WORK, EMIT
+-- Permanent Residence: EXPRESS_ENTRY, ARRIMA, PEQ, PILOT, SKILLED_WORKER
+-- Humanitarian: ASYLUM, ASYLUM_CLAIM, APPEAL, FEDERAL_COURT, ERAR, SPONSORSHIP
+```
+
+#### 3.2.6 Cases Table
+
+```sql
+CREATE TABLE cases (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tenant_id BIGINT UNSIGNED NOT NULL,
-    cliente_id BIGINT UNSIGNED NOT NULL,
-    codigo VARCHAR(50) NOT NULL,
-    tipo_caso VARCHAR(100) NOT NULL,
-    subtipo_caso VARCHAR(100) NULL,
-    numero_referencia_ircc VARCHAR(100) NULL,
-    numero_referencia_cisr VARCHAR(100) NULL,
-    etapa VARCHAR(100) NOT NULL DEFAULT 'inicial',
-    estado ENUM('borrador', 'activo', 'pausado', 'completado', 'cancelado', 'archivado') DEFAULT 'borrador',
-    prioridad ENUM('baja', 'media', 'alta', 'urgente') DEFAULT 'media',
-    consultor_id BIGINT UNSIGNED NOT NULL,
-    asignado_id BIGINT UNSIGNED NULL,
-    fecha_inicio DATE NULL,
-    fecha_objetivo DATE NULL,
-    fecha_cierre DATE NULL,
-    notas TEXT NULL,
-    metadata JSON NULL,
-    created_by BIGINT UNSIGNED NOT NULL,
+    case_number VARCHAR(255) UNIQUE NOT NULL,
+    client_id BIGINT UNSIGNED NOT NULL,
+    case_type_id BIGINT UNSIGNED NOT NULL,
+    assigned_to BIGINT UNSIGNED NULL,
+
+    -- Status & Priority
+    status ENUM('active', 'inactive', 'archived', 'closed') DEFAULT 'active',
+    priority ENUM('urgent', 'high', 'medium', 'low') DEFAULT 'medium',
+    progress TINYINT UNSIGNED DEFAULT 0 COMMENT '0-100 percentage',
+    language VARCHAR(255) DEFAULT 'es',
+
+    -- Description
+    description TEXT NULL,
+
+    -- Key Dates
+    hearing_date DATE NULL COMMENT 'Hearing date',
+    fda_deadline DATE NULL COMMENT 'FDA deposit deadline',
+    brown_sheet_date DATE NULL COMMENT 'Brown sheet date',
+    evidence_deadline DATE NULL COMMENT 'Evidence submission deadline',
+
+    -- Archive Info
+    archive_box_number VARCHAR(255) NULL COMMENT 'Archive box number',
+
+    -- Closure
+    closed_at DATE NULL,
+    closure_notes TEXT NULL COMMENT 'Closure notes',
+
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
     deleted_at TIMESTAMP NULL,
 
-    CONSTRAINT fk_expedientes_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_expedientes_cliente FOREIGN KEY (cliente_id) REFERENCES clientes(id),
-    CONSTRAINT fk_expedientes_consultor FOREIGN KEY (consultor_id) REFERENCES users(id),
-    CONSTRAINT fk_expedientes_asignado FOREIGN KEY (asignado_id) REFERENCES users(id),
-    CONSTRAINT fk_expedientes_creator FOREIGN KEY (created_by) REFERENCES users(id),
+    CONSTRAINT fk_cases_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cases_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
+    CONSTRAINT fk_cases_type FOREIGN KEY (case_type_id) REFERENCES case_types(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_cases_assigned FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL,
 
-    INDEX idx_expedientes_tenant (tenant_id),
-    INDEX idx_expedientes_cliente (cliente_id),
-    INDEX idx_expedientes_consultor (consultor_id),
-    INDEX idx_expedientes_estado (tenant_id, estado),
-    INDEX idx_expedientes_etapa (tenant_id, etapa),
-    UNIQUE INDEX uq_expedientes_codigo (tenant_id, codigo)
+    INDEX idx_cases_tenant_status (tenant_id, status),
+    INDEX idx_cases_tenant_client (tenant_id, client_id),
+    INDEX idx_cases_tenant_assigned (tenant_id, assigned_to),
+    INDEX idx_cases_tenant_priority (tenant_id, priority),
+    INDEX idx_cases_tenant_hearing (tenant_id, hearing_date)
 );
 ```
 
-#### 3.2.6 Expediente Acompanantes (Pivot)
+#### 3.2.7 Tasks Table
 
 ```sql
-CREATE TABLE expediente_acompanante (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    expediente_id BIGINT UNSIGNED NOT NULL,
-    acompanante_id BIGINT UNSIGNED NOT NULL,
-    rol_en_caso VARCHAR(100) NULL,
-    notas TEXT NULL,
-    created_at TIMESTAMP NULL,
-
-    CONSTRAINT fk_exp_acomp_expediente FOREIGN KEY (expediente_id) REFERENCES expedientes(id) ON DELETE CASCADE,
-    CONSTRAINT fk_exp_acomp_acompanante FOREIGN KEY (acompanante_id) REFERENCES acompanantes(id) ON DELETE CASCADE,
-
-    UNIQUE INDEX uq_exp_acomp (expediente_id, acompanante_id)
-);
-```
-
-#### 3.2.7 Tareas Table
-
-```sql
-CREATE TABLE tareas (
+CREATE TABLE tasks (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tenant_id BIGINT UNSIGNED NOT NULL,
-    expediente_id BIGINT UNSIGNED NULL,
-    titulo VARCHAR(255) NOT NULL,
-    descripcion TEXT NULL,
-    prioridad ENUM('baja', 'media', 'alta', 'urgente') DEFAULT 'media',
-    estado ENUM('pendiente', 'en_progreso', 'completada', 'cancelada') DEFAULT 'pendiente',
-    fecha_vencimiento DATE NULL,
-    fecha_completada DATETIME NULL,
-    asignado_id BIGINT UNSIGNED NULL,
-    tiempo_estimado_minutos INT UNSIGNED NULL,
-    tiempo_registrado_minutos INT UNSIGNED DEFAULT 0,
-    es_plantilla BOOLEAN DEFAULT FALSE,
-    plantilla_orden INT UNSIGNED NULL,
-    created_by BIGINT UNSIGNED NOT NULL,
+    case_id BIGINT UNSIGNED NULL,
+    requester_id BIGINT UNSIGNED NOT NULL,
+    assigned_to BIGINT UNSIGNED NULL,
+
+    subject VARCHAR(255) NOT NULL,
+    description TEXT NULL,
+    type ENUM('translation', 'case_creation', 'accounting', 'filing', 'document', 'other') DEFAULT 'other',
+    priority ENUM('urgent', 'high', 'medium', 'low') DEFAULT 'medium',
+    status ENUM('new', 'assigned', 'in_progress', 'rejected', 'resolved', 'closed') DEFAULT 'new',
+
+    due_date DATETIME NULL,
+    estimated_hours DECIMAL(5, 2) NULL,
+    actual_hours DECIMAL(5, 2) NULL,
+
+    -- Document attachment
+    document_id BIGINT UNSIGNED NULL,
+
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
     deleted_at TIMESTAMP NULL,
 
-    CONSTRAINT fk_tareas_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_tareas_expediente FOREIGN KEY (expediente_id) REFERENCES expedientes(id) ON DELETE SET NULL,
-    CONSTRAINT fk_tareas_asignado FOREIGN KEY (asignado_id) REFERENCES users(id),
-    CONSTRAINT fk_tareas_creator FOREIGN KEY (created_by) REFERENCES users(id),
+    CONSTRAINT fk_tasks_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_tasks_case FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE,
+    CONSTRAINT fk_tasks_requester FOREIGN KEY (requester_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_tasks_assigned FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL,
 
-    INDEX idx_tareas_tenant (tenant_id),
-    INDEX idx_tareas_expediente (expediente_id),
-    INDEX idx_tareas_asignado (asignado_id),
-    INDEX idx_tareas_estado (tenant_id, estado),
-    INDEX idx_tareas_vencimiento (tenant_id, fecha_vencimiento),
-    INDEX idx_tareas_prioridad_estado (tenant_id, prioridad, estado)
+    INDEX idx_tasks_tenant_status (tenant_id, status),
+    INDEX idx_tasks_tenant_assigned (tenant_id, assigned_to),
+    INDEX idx_tasks_tenant_case (tenant_id, case_id),
+    INDEX idx_tasks_tenant_due (tenant_id, due_date),
+    INDEX idx_tasks_tenant_priority (tenant_id, priority)
 );
 ```
 
-#### 3.2.8 Tiempo Tareas Table
+#### 3.2.8 Task Time Entries Table
 
 ```sql
-CREATE TABLE tiempo_tareas (
+CREATE TABLE task_time_entries (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    tarea_id BIGINT UNSIGNED NOT NULL,
+    tenant_id BIGINT UNSIGNED NOT NULL,
+    task_id BIGINT UNSIGNED NOT NULL,
     user_id BIGINT UNSIGNED NOT NULL,
-    minutos INT UNSIGNED NOT NULL,
-    descripcion TEXT NULL,
-    fecha DATE NOT NULL,
-    created_at TIMESTAMP NULL,
 
-    CONSTRAINT fk_tiempo_tarea FOREIGN KEY (tarea_id) REFERENCES tareas(id) ON DELETE CASCADE,
-    CONSTRAINT fk_tiempo_user FOREIGN KEY (user_id) REFERENCES users(id),
+    hours DECIMAL(5, 2) NOT NULL,
+    work_date DATE NOT NULL,
+    description TEXT NULL,
 
-    INDEX idx_tiempo_tarea (tarea_id),
-    INDEX idx_tiempo_user_fecha (user_id, fecha)
-);
-```
-
-#### 3.2.9 Seguimientos Table
-
-```sql
-CREATE TABLE seguimientos (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    tenant_id BIGINT UNSIGNED NOT NULL,
-    expediente_id BIGINT UNSIGNED NOT NULL,
-    tipo_canal ENUM('llamada', 'email', 'whatsapp', 'presencial', 'otro') NOT NULL,
-    direccion ENUM('entrante', 'saliente') NOT NULL,
-    resumen VARCHAR(500) NOT NULL,
-    contenido TEXT NULL,
-    contacto_nombre VARCHAR(255) NULL,
-    created_by BIGINT UNSIGNED NOT NULL,
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
 
-    CONSTRAINT fk_seguimientos_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_seguimientos_expediente FOREIGN KEY (expediente_id) REFERENCES expedientes(id) ON DELETE CASCADE,
-    CONSTRAINT fk_seguimientos_creator FOREIGN KEY (created_by) REFERENCES users(id),
+    CONSTRAINT fk_time_entries_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_time_entries_task FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+    CONSTRAINT fk_time_entries_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 
-    INDEX idx_seguimientos_expediente (expediente_id),
-    INDEX idx_seguimientos_fecha (tenant_id, created_at),
-    FULLTEXT INDEX ft_seguimientos_contenido (resumen, contenido)
+    INDEX idx_time_entries_tenant_task (tenant_id, task_id),
+    INDEX idx_time_entries_tenant_user (tenant_id, user_id),
+    INDEX idx_time_entries_tenant_date (tenant_id, work_date)
 );
 ```
 
-#### 3.2.10 Carpetas Documentos Table
+#### 3.2.9 Follow Ups Table
 
 ```sql
-CREATE TABLE carpetas_documentos (
+CREATE TABLE follow_ups (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tenant_id BIGINT UNSIGNED NOT NULL,
-    expediente_id BIGINT UNSIGNED NOT NULL,
-    parent_id BIGINT UNSIGNED NULL,
-    nombre VARCHAR(255) NOT NULL,
-    orden INT UNSIGNED DEFAULT 0,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
+    client_id BIGINT UNSIGNED NOT NULL,
+    case_id BIGINT UNSIGNED NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
 
-    CONSTRAINT fk_carpetas_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_carpetas_expediente FOREIGN KEY (expediente_id) REFERENCES expedientes(id) ON DELETE CASCADE,
-    CONSTRAINT fk_carpetas_parent FOREIGN KEY (parent_id) REFERENCES carpetas_documentos(id) ON DELETE CASCADE,
+    channel ENUM('phone', 'email', 'meeting', 'video_call', 'other') DEFAULT 'phone',
+    type ENUM('task', 'follow_up', 'note') DEFAULT 'follow_up',
+    contact_date DATETIME NOT NULL,
+    duration_hours DECIMAL(5, 2) NULL,
+    notes TEXT NULL,
+    category VARCHAR(255) NULL,
 
-    INDEX idx_carpetas_expediente (expediente_id),
-    INDEX idx_carpetas_parent (parent_id)
-);
-```
-
-#### 3.2.11 Documentos Table
-
-```sql
-CREATE TABLE documentos (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    tenant_id BIGINT UNSIGNED NOT NULL,
-    expediente_id BIGINT UNSIGNED NOT NULL,
-    carpeta_id BIGINT UNSIGNED NULL,
-    nombre VARCHAR(255) NOT NULL,
-    descripcion TEXT NULL,
-    provider ENUM('onedrive', 'google_drive', 'local') NOT NULL,
-    provider_file_id VARCHAR(500) NULL,
-    provider_path TEXT NULL,
-    provider_web_url TEXT NULL,
-    mime_type VARCHAR(100) NULL,
-    tamano_bytes BIGINT UNSIGNED NULL,
-    ultima_modificacion DATETIME NULL,
-    sync_status ENUM('synced', 'pending', 'error') DEFAULT 'synced',
-    created_by BIGINT UNSIGNED NOT NULL,
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
     deleted_at TIMESTAMP NULL,
 
-    CONSTRAINT fk_documentos_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_documentos_expediente FOREIGN KEY (expediente_id) REFERENCES expedientes(id) ON DELETE CASCADE,
-    CONSTRAINT fk_documentos_carpeta FOREIGN KEY (carpeta_id) REFERENCES carpetas_documentos(id) ON DELETE SET NULL,
-    CONSTRAINT fk_documentos_creator FOREIGN KEY (created_by) REFERENCES users(id),
+    CONSTRAINT fk_follow_ups_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_follow_ups_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
+    CONSTRAINT fk_follow_ups_case FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE,
+    CONSTRAINT fk_follow_ups_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 
-    INDEX idx_documentos_expediente (expediente_id),
-    INDEX idx_documentos_carpeta (carpeta_id),
-    INDEX idx_documentos_provider (provider, provider_file_id(100))
+    INDEX idx_follow_ups_tenant_client (tenant_id, client_id),
+    INDEX idx_follow_ups_tenant_case (tenant_id, case_id),
+    INDEX idx_follow_ups_tenant_user (tenant_id, user_id),
+    INDEX idx_follow_ups_tenant_date (tenant_id, contact_date)
+);
+```
+
+#### 3.2.10 Document Folders Table
+
+```sql
+CREATE TABLE document_folders (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT UNSIGNED NOT NULL,
+    case_id BIGINT UNSIGNED NOT NULL,
+    parent_id BIGINT UNSIGNED NULL,
+    name VARCHAR(255) NOT NULL,
+    sort_order INT DEFAULT 0,
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+
+    CONSTRAINT fk_folders_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_folders_case FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE,
+    CONSTRAINT fk_folders_parent FOREIGN KEY (parent_id) REFERENCES document_folders(id) ON DELETE CASCADE,
+
+    INDEX idx_folders_tenant_case (tenant_id, case_id)
+);
+```
+
+#### 3.2.11 Documents Table
+
+```sql
+CREATE TABLE documents (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT UNSIGNED NOT NULL,
+    case_id BIGINT UNSIGNED NOT NULL,
+    folder_id BIGINT UNSIGNED NULL,
+    uploaded_by BIGINT UNSIGNED NOT NULL,
+
+    name VARCHAR(255) NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(255) NULL,
+    size BIGINT UNSIGNED NULL,
+    category ENUM('admission', 'history', 'evidence', 'hearing', 'contract', 'other') DEFAULT 'other',
+    storage_type ENUM('local', 'onedrive', 'google_drive') DEFAULT 'local',
+    storage_path VARCHAR(255) NULL,
+    external_id VARCHAR(255) NULL COMMENT 'ID in OneDrive/Google Drive',
+    external_url VARCHAR(255) NULL,
+
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+    deleted_at TIMESTAMP NULL,
+
+    CONSTRAINT fk_documents_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_documents_case FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE,
+    CONSTRAINT fk_documents_folder FOREIGN KEY (folder_id) REFERENCES document_folders(id) ON DELETE SET NULL,
+    CONSTRAINT fk_documents_uploader FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE,
+
+    INDEX idx_documents_tenant_case (tenant_id, case_id),
+    INDEX idx_documents_tenant_category (tenant_id, category),
+    INDEX idx_documents_storage (storage_type, external_id)
 );
 ```
 
@@ -605,80 +672,79 @@ CREATE TABLE documentos (
 ```sql
 CREATE TABLE oauth_tokens (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id BIGINT UNSIGNED NOT NULL,
     user_id BIGINT UNSIGNED NOT NULL,
+
     provider ENUM('microsoft', 'google') NOT NULL,
     access_token TEXT NOT NULL,
     refresh_token TEXT NULL,
-    token_type VARCHAR(50) DEFAULT 'Bearer',
     expires_at DATETIME NOT NULL,
-    scopes TEXT NULL,
-    account_email VARCHAR(255) NULL,
-    account_name VARCHAR(255) NULL,
+    scopes JSON NULL,
+
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
 
+    CONSTRAINT fk_oauth_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
     CONSTRAINT fk_oauth_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 
     UNIQUE INDEX uq_oauth_user_provider (user_id, provider),
-    INDEX idx_oauth_expires (expires_at)
+    INDEX idx_oauth_tenant_provider (tenant_id, provider)
 );
 ```
 
-#### 3.2.13 Eventos Table
+#### 3.2.13 Events Table
 
 ```sql
-CREATE TABLE eventos (
+CREATE TABLE events (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     tenant_id BIGINT UNSIGNED NOT NULL,
-    user_id BIGINT UNSIGNED NOT NULL,
-    expediente_id BIGINT UNSIGNED NULL,
-    titulo VARCHAR(255) NOT NULL,
-    descripcion TEXT NULL,
-    ubicacion VARCHAR(255) NULL,
-    fecha_inicio DATETIME NOT NULL,
-    fecha_fin DATETIME NOT NULL,
-    todo_el_dia BOOLEAN DEFAULT FALSE,
-    recordatorio_minutos INT UNSIGNED NULL,
-    color VARCHAR(20) NULL,
-    provider ENUM('local', 'outlook', 'google') DEFAULT 'local',
-    provider_event_id VARCHAR(500) NULL,
-    provider_calendar_id VARCHAR(500) NULL,
-    sync_status ENUM('local', 'synced', 'pending_sync', 'sync_error') DEFAULT 'local',
+    created_by BIGINT UNSIGNED NOT NULL,
+    client_id BIGINT UNSIGNED NULL,
+    case_id BIGINT UNSIGNED NULL,
+
+    title VARCHAR(255) NOT NULL,
+    description TEXT NULL,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    all_day BOOLEAN DEFAULT FALSE,
+    location VARCHAR(255) NULL,
+    category VARCHAR(255) NULL,
+
+    -- External calendar sync
+    sync_source ENUM('local', 'outlook', 'google') DEFAULT 'local',
+    external_id VARCHAR(255) NULL,
     last_synced_at DATETIME NULL,
+
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
     deleted_at TIMESTAMP NULL,
 
-    CONSTRAINT fk_eventos_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
-    CONSTRAINT fk_eventos_user FOREIGN KEY (user_id) REFERENCES users(id),
-    CONSTRAINT fk_eventos_expediente FOREIGN KEY (expediente_id) REFERENCES expedientes(id) ON DELETE SET NULL,
+    CONSTRAINT fk_events_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+    CONSTRAINT fk_events_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_events_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL,
+    CONSTRAINT fk_events_case FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE SET NULL,
 
-    INDEX idx_eventos_user_fecha (user_id, fecha_inicio, fecha_fin),
-    INDEX idx_eventos_expediente (expediente_id),
-    INDEX idx_eventos_sync (provider, sync_status)
+    INDEX idx_events_tenant_start (tenant_id, start_date),
+    INDEX idx_events_tenant_creator (tenant_id, created_by),
+    INDEX idx_events_sync (sync_source, external_id)
 );
 ```
 
-#### 3.2.14 Tipos Caso Table (Configuration)
+#### 3.2.14 Event Participants Table
 
 ```sql
-CREATE TABLE tipos_caso (
+CREATE TABLE event_participants (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    tenant_id BIGINT UNSIGNED NOT NULL,
-    codigo VARCHAR(50) NOT NULL,
-    nombre VARCHAR(255) NOT NULL,
-    descripcion TEXT NULL,
-    etapas JSON NOT NULL,
-    plantilla_tareas JSON NULL,
-    plantilla_carpetas JSON NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    orden INT UNSIGNED DEFAULT 0,
+    event_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    confirmed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
 
-    CONSTRAINT fk_tipos_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id),
+    CONSTRAINT fk_participants_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    CONSTRAINT fk_participants_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 
-    UNIQUE INDEX uq_tipos_codigo (tenant_id, codigo)
+    UNIQUE INDEX uq_event_user (event_id, user_id)
 );
 ```
 
@@ -687,13 +753,18 @@ CREATE TABLE tipos_caso (
 | Table | Index Purpose | Columns |
 |-------|---------------|---------|
 | All domain tables | Tenant isolation | `tenant_id` |
-| clientes | Search by name | `tenant_id, nombre, apellidos` |
-| clientes | Duplicate prevention | `tenant_id, email` (unique) |
-| expedientes | Status filtering | `tenant_id, estado` |
-| tareas | Due date queries | `tenant_id, fecha_vencimiento` |
-| tareas | Priority dashboard | `tenant_id, prioridad, estado` |
-| seguimientos | Full-text search | `resumen, contenido` (FULLTEXT) |
-| eventos | Calendar range queries | `user_id, fecha_inicio, fecha_fin` |
+| clients | Search by name | `tenant_id, last_name, first_name` |
+| clients | Email lookup | `tenant_id, email` |
+| clients | Passport lookup | `tenant_id, passport_number` |
+| cases | Status filtering | `tenant_id, status` |
+| cases | Priority filtering | `tenant_id, priority` |
+| cases | Hearing dates | `tenant_id, hearing_date` |
+| tasks | Due date queries | `tenant_id, due_date` |
+| tasks | Priority filtering | `tenant_id, priority` |
+| tasks | Status filtering | `tenant_id, status` |
+| follow_ups | Date queries | `tenant_id, contact_date` |
+| events | Calendar range queries | `tenant_id, start_date` |
+| documents | External sync | `storage_type, external_id` |
 
 ---
 
