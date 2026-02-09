@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -85,4 +86,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::delete('/two-factor/disable', [TwoFactorController::class, 'disable']);
     Route::get('/two-factor/recovery-codes', [TwoFactorController::class, 'recoveryCodes']);
     Route::post('/two-factor/recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes']);
+
+    // Tenant management routes
+    Route::get('/tenant', [TenantController::class, 'show']);
+    Route::put('/tenant/settings', [TenantController::class, 'updateSettings']);
+    Route::put('/tenant/branding', [TenantController::class, 'updateBranding']);
 });
+
+// Public tenant branding route (no auth required)
+Route::get('/tenant/{slug}/branding', [TenantController::class, 'branding']);
