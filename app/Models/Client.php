@@ -76,15 +76,15 @@ class Client extends Model
         return $this->belongsTo(User::class);
     }
 
-    // Note: Companion, ImmigrationCase, and FollowUp models will be implemented in future epics
-    // /**
-    //  * Get the companions for this client.
-    //  */
-    // public function companions(): HasMany
-    // {
-    //     return $this->hasMany(Companion::class);
-    // }
+    /**
+     * Get the companions for this client.
+     */
+    public function companions(): HasMany
+    {
+        return $this->hasMany(Companion::class);
+    }
 
+    // Note: ImmigrationCase and FollowUp models will be implemented in future epics
     // /**
     //  * Get the cases for this client.
     //  */

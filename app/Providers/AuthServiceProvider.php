@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Models\Client;
+use App\Models\Companion;
 use App\Models\User;
 use App\Policies\ClientPolicy;
+use App\Policies\CompanionPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -22,6 +24,7 @@ class AuthServiceProvider extends ServiceProvider
         User::class => UserPolicy::class,
         Role::class => RolePolicy::class,
         Client::class => ClientPolicy::class,
+        Companion::class => CompanionPolicy::class,
     ];
 
     /**

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\CompanionController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
@@ -75,6 +76,9 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     Route::delete('/clients/bulk', [ClientController::class, 'bulkDestroy']);
     Route::post('/clients/{client}/convert', [ClientController::class, 'convert']);
     Route::apiResource('clients', ClientController::class);
+
+    // Companion management routes (nested under clients)
+    Route::apiResource('clients.companions', CompanionController::class);
 
     // Role management routes
     Route::get('/roles', [RoleController::class, 'index']);

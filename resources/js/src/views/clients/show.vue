@@ -114,6 +114,17 @@
                         <button
                             type="button"
                             class="px-5 py-3 border-b-2 font-medium transition-colors"
+                            :class="activeTab === 'companions' ? 'border-primary text-primary' : 'border-transparent hover:text-primary'"
+                            @click="activeTab = 'companions'"
+                        >
+                            {{ $t('clients.companions') }}
+                            <span v-if="companions.length" class="badge badge-outline-primary ml-2">{{ companions.length }}</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            type="button"
+                            class="px-5 py-3 border-b-2 font-medium transition-colors"
                             :class="activeTab === 'cases' ? 'border-primary text-primary' : 'border-transparent hover:text-primary'"
                             @click="activeTab = 'cases'"
                         >
@@ -250,6 +261,78 @@
                         </div>
                     </div>
 
+                    <!-- Companions Tab -->
+                    <div v-else-if="activeTab === 'companions'">
+                        <div class="flex justify-between items-center mb-4">
+                            <h5 class="text-lg font-semibold">{{ $t('clients.family_companions') }}</h5>
+                            <button
+                                v-can="'clients.update'"
+                                type="button"
+                                class="btn btn-primary btn-sm gap-2"
+                                @click="openCompanionModal()"
+                            >
+                                <icon-plus class="w-4 h-4" />
+                                {{ $t('companions.add') }}
+                            </button>
+                        </div>
+
+                        <div v-if="isLoadingCompanions" class="text-center py-10">
+                            <div class="animate-spin inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                        </div>
+
+                        <div v-else-if="!companions.length" class="text-center py-10">
+                            <icon-users class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                            <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">{{ $t('companions.no_companions') }}</h3>
+                            <p class="text-gray-500 mb-4">{{ $t('companions.add_family_members') }}</p>
+                        </div>
+
+                        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div
+                                v-for="companion in companions"
+                                :key="companion.id"
+                                class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow"
+                            >
+                                <div class="flex items-start justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold bg-primary/10 text-primary">
+                                            {{ getInitials(companion.first_name, companion.last_name) }}
+                                        </div>
+                                        <div>
+                                            <h6 class="font-semibold">{{ companion.first_name }} {{ companion.last_name }}</h6>
+                                            <p class="text-sm text-gray-500">{{ companion.relationship_label || formatRelationship(companion.relationship) }}</p>
+                                            <p v-if="companion.age" class="text-xs text-gray-400">{{ companion.age }} {{ $t('companions.years_old') }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-1">
+                                        <button
+                                            v-can="'clients.update'"
+                                            type="button"
+                                            class="btn btn-sm btn-outline-primary p-1"
+                                            @click="openCompanionModal(companion)"
+                                        >
+                                            <icon-pencil class="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            v-can="'clients.delete'"
+                                            type="button"
+                                            class="btn btn-sm btn-outline-danger p-1"
+                                            @click="confirmDeleteCompanion(companion)"
+                                        >
+                                            <icon-trash class="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div v-if="companion.passport_number" class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                                    <p class="text-xs text-gray-500">
+                                        <span class="font-medium">{{ $t('companions.passport') }}:</span>
+                                        {{ companion.passport_number }}
+                                        <span v-if="companion.passport_country">({{ companion.passport_country }})</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Cases Tab -->
                     <div v-else-if="activeTab === 'cases'">
                         <div v-if="!client.cases?.length" class="text-center py-10">
@@ -305,18 +388,201 @@
                 {{ $t('clients.back_to_list') }}
             </router-link>
         </div>
+
+        <!-- Companion Modal -->
+        <TransitionRoot appear :show="showCompanionModal" as="template">
+            <Dialog as="div" class="relative z-50" @close="closeCompanionModal">
+                <TransitionChild
+                    as="template"
+                    enter="duration-300 ease-out"
+                    enter-from="opacity-0"
+                    enter-to="opacity-100"
+                    leave="duration-200 ease-in"
+                    leave-from="opacity-100"
+                    leave-to="opacity-0"
+                >
+                    <div class="fixed inset-0 bg-black/50" />
+                </TransitionChild>
+
+                <div class="fixed inset-0 overflow-y-auto">
+                    <div class="flex min-h-full items-center justify-center p-4">
+                        <TransitionChild
+                            as="template"
+                            enter="duration-300 ease-out"
+                            enter-from="opacity-0 scale-95"
+                            enter-to="opacity-100 scale-100"
+                            leave="duration-200 ease-in"
+                            leave-from="opacity-100 scale-100"
+                            leave-to="opacity-0 scale-95"
+                        >
+                            <DialogPanel class="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-900 p-6 text-left align-middle shadow-xl transition-all">
+                                <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">
+                                    {{ editingCompanion ? $t('companions.edit_companion') : $t('companions.add_companion') }}
+                                </DialogTitle>
+
+                                <form @submit.prevent="saveCompanion" class="space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.first_name') }} *</label>
+                                            <input
+                                                v-model="companionForm.first_name"
+                                                type="text"
+                                                class="form-input"
+                                                :class="{ 'border-danger': companionErrors.first_name }"
+                                                required
+                                            />
+                                            <p v-if="companionErrors.first_name" class="text-danger text-xs mt-1">{{ companionErrors.first_name[0] }}</p>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.last_name') }} *</label>
+                                            <input
+                                                v-model="companionForm.last_name"
+                                                type="text"
+                                                class="form-input"
+                                                :class="{ 'border-danger': companionErrors.last_name }"
+                                                required
+                                            />
+                                            <p v-if="companionErrors.last_name" class="text-danger text-xs mt-1">{{ companionErrors.last_name[0] }}</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.relationship') }} *</label>
+                                            <select
+                                                v-model="companionForm.relationship"
+                                                class="form-select"
+                                                :class="{ 'border-danger': companionErrors.relationship }"
+                                                required
+                                            >
+                                                <option value="">{{ $t('companions.select_relationship') }}</option>
+                                                <option value="spouse">{{ $t('companions.spouse') }}</option>
+                                                <option value="child">{{ $t('companions.child') }}</option>
+                                                <option value="parent">{{ $t('companions.parent') }}</option>
+                                                <option value="sibling">{{ $t('companions.sibling') }}</option>
+                                                <option value="other">{{ $t('companions.other') }}</option>
+                                            </select>
+                                            <p v-if="companionErrors.relationship" class="text-danger text-xs mt-1">{{ companionErrors.relationship[0] }}</p>
+                                        </div>
+                                        <div v-if="companionForm.relationship === 'other'">
+                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.specify_relationship') }} *</label>
+                                            <input
+                                                v-model="companionForm.relationship_other"
+                                                type="text"
+                                                class="form-input"
+                                                :class="{ 'border-danger': companionErrors.relationship_other }"
+                                            />
+                                            <p v-if="companionErrors.relationship_other" class="text-danger text-xs mt-1">{{ companionErrors.relationship_other[0] }}</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.date_of_birth') }}</label>
+                                            <input
+                                                v-model="companionForm.date_of_birth"
+                                                type="date"
+                                                class="form-input"
+                                                :max="today"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.gender') }}</label>
+                                            <select v-model="companionForm.gender" class="form-select">
+                                                <option value="">{{ $t('companions.select_gender') }}</option>
+                                                <option value="male">{{ $t('companions.male') }}</option>
+                                                <option value="female">{{ $t('companions.female') }}</option>
+                                                <option value="other">{{ $t('companions.gender_other') }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.nationality') }}</label>
+                                            <input
+                                                v-model="companionForm.nationality"
+                                                type="text"
+                                                class="form-input"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.passport_number') }}</label>
+                                            <input
+                                                v-model="companionForm.passport_number"
+                                                type="text"
+                                                class="form-input"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.passport_country') }}</label>
+                                            <input
+                                                v-model="companionForm.passport_country"
+                                                type="text"
+                                                class="form-input"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.passport_expiry') }}</label>
+                                            <input
+                                                v-model="companionForm.passport_expiry_date"
+                                                type="date"
+                                                class="form-input"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">{{ $t('companions.notes') }}</label>
+                                        <textarea
+                                            v-model="companionForm.notes"
+                                            rows="2"
+                                            class="form-textarea"
+                                        ></textarea>
+                                    </div>
+
+                                    <div class="flex justify-end gap-3 mt-6">
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-secondary"
+                                            @click="closeCompanionModal"
+                                        >
+                                            {{ $t('companions.cancel') }}
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            class="btn btn-primary"
+                                            :disabled="isSavingCompanion"
+                                        >
+                                            <span v-if="isSavingCompanion" class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 mr-2 inline-block"></span>
+                                            {{ editingCompanion ? $t('companions.update') : $t('companions.save') }}
+                                        </button>
+                                    </div>
+                                </form>
+                            </DialogPanel>
+                        </TransitionChild>
+                    </div>
+                </div>
+            </Dialog>
+        </TransitionRoot>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useMeta } from '@/composables/use-meta';
 import { useClientStore } from '@/stores/client';
+import { useCompanionStore } from '@/stores/companion';
 import { useNotification } from '@/composables/useNotification';
 import { useI18n } from 'vue-i18n';
 import { formatDate } from '@/utils/formatters';
+import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue';
 import type { Client, ClientStatus } from '@/types/client';
+import type { Companion, CreateCompanionData, UpdateCompanionData, RelationshipType } from '@/types/companion';
 
 // Icons
 import IconArrowLeft from '@/components/icon/icon-arrow-left.vue';
@@ -324,17 +590,43 @@ import IconPencil from '@/components/icon/icon-pencil.vue';
 import IconArrowForward from '@/components/icon/icon-arrow-forward.vue';
 import IconUsers from '@/components/icon/icon-users.vue';
 import IconFolder from '@/components/icon/icon-folder.vue';
+import IconPlus from '@/components/icon/icon-plus.vue';
+import IconTrash from '@/components/icon/icon-trash.vue';
 
 useMeta({ title: 'Client Profile' });
 
 const route = useRoute();
 const clientStore = useClientStore();
+const companionStore = useCompanionStore();
 const { confirm: confirmDialog, success, error } = useNotification();
 const { t } = useI18n();
 
 const client = ref<Client | null>(null);
 const isLoading = ref(true);
 const activeTab = ref('personal');
+
+// Companion state
+const companions = ref<Companion[]>([]);
+const isLoadingCompanions = ref(false);
+const showCompanionModal = ref(false);
+const editingCompanion = ref<Companion | null>(null);
+const isSavingCompanion = ref(false);
+const companionErrors = ref<Record<string, string[]>>({});
+const today = new Date().toISOString().split('T')[0];
+
+const companionForm = ref<CreateCompanionData>({
+    first_name: '',
+    last_name: '',
+    relationship: '' as RelationshipType,
+    relationship_other: '',
+    date_of_birth: '',
+    gender: undefined,
+    nationality: '',
+    passport_number: '',
+    passport_country: '',
+    passport_expiry_date: '',
+    notes: '',
+});
 
 const getInitials = (firstName: string, lastName: string): string => {
     return ((firstName?.[0] || '') + (lastName?.[0] || '')).toUpperCase();
@@ -373,6 +665,131 @@ const getCaseBadgeClass = (status: string): string => {
     return classes[status] || 'badge-outline-primary';
 };
 
+const formatRelationship = (relationship: string): string => {
+    const labels: Record<string, string> = {
+        spouse: 'Cónyuge',
+        child: 'Hijo/a',
+        parent: 'Padre/Madre',
+        sibling: 'Hermano/a',
+        other: 'Otro',
+    };
+    return labels[relationship] || relationship;
+};
+
+const loadCompanions = async () => {
+    if (!client.value) return;
+    isLoadingCompanions.value = true;
+    try {
+        await companionStore.fetchCompanions(client.value.id);
+        companions.value = companionStore.companions;
+    } catch (err) {
+        console.error('Failed to load companions:', err);
+    } finally {
+        isLoadingCompanions.value = false;
+    }
+};
+
+const resetCompanionForm = () => {
+    companionForm.value = {
+        first_name: '',
+        last_name: '',
+        relationship: '' as RelationshipType,
+        relationship_other: '',
+        date_of_birth: '',
+        gender: undefined,
+        nationality: '',
+        passport_number: '',
+        passport_country: '',
+        passport_expiry_date: '',
+        notes: '',
+    };
+    companionErrors.value = {};
+};
+
+const openCompanionModal = (companion?: Companion) => {
+    resetCompanionForm();
+    if (companion) {
+        editingCompanion.value = companion;
+        companionForm.value = {
+            first_name: companion.first_name,
+            last_name: companion.last_name,
+            relationship: companion.relationship,
+            relationship_other: companion.relationship_other || '',
+            date_of_birth: companion.date_of_birth || '',
+            gender: companion.gender || undefined,
+            nationality: companion.nationality || '',
+            passport_number: companion.passport_number || '',
+            passport_country: companion.passport_country || '',
+            passport_expiry_date: companion.passport_expiry_date || '',
+            notes: companion.notes || '',
+        };
+    } else {
+        editingCompanion.value = null;
+    }
+    showCompanionModal.value = true;
+};
+
+const closeCompanionModal = () => {
+    showCompanionModal.value = false;
+    editingCompanion.value = null;
+    resetCompanionForm();
+};
+
+const saveCompanion = async () => {
+    if (!client.value) return;
+    isSavingCompanion.value = true;
+    companionErrors.value = {};
+
+    try {
+        if (editingCompanion.value) {
+            await companionStore.updateCompanion(
+                client.value.id,
+                editingCompanion.value.id,
+                companionForm.value as UpdateCompanionData
+            );
+            success(t('companions.updated_successfully'));
+        } else {
+            await companionStore.createCompanion(
+                client.value.id,
+                companionForm.value as CreateCompanionData
+            );
+            success(t('companions.created_successfully'));
+        }
+        companions.value = companionStore.companions;
+        closeCompanionModal();
+    } catch (err: any) {
+        if (err.response?.status === 422 && err.response?.data?.errors) {
+            companionErrors.value = err.response.data.errors;
+        } else {
+            error(err.response?.data?.message || t('companions.save_failed'));
+        }
+    } finally {
+        isSavingCompanion.value = false;
+    }
+};
+
+const confirmDeleteCompanion = async (companion: Companion) => {
+    if (!client.value) return;
+
+    const confirmed = await confirmDialog({
+        title: t('companions.confirm_delete'),
+        text: t('companions.delete_warning', { name: `${companion.first_name} ${companion.last_name}` }),
+        icon: 'warning',
+        confirmButtonText: t('companions.yes_delete'),
+        cancelButtonText: t('companions.cancel'),
+    });
+
+    if (confirmed) {
+        try {
+            await companionStore.deleteCompanion(client.value.id, companion.id);
+            companions.value = companionStore.companions;
+            success(t('companions.deleted_successfully'));
+        } catch (err: any) {
+            error(err.response?.data?.message || t('companions.delete_failed'));
+        }
+    }
+};
+
 const confirmConvert = async () => {
     if (!client.value) return;
 
@@ -395,10 +812,21 @@ const confirmConvert = async () => {
     }
 };
 
+// Load companions when tab becomes active
+watch(activeTab, (newTab) => {
+    if (newTab === 'companions' && client.value && !companions.value.length) {
+        loadCompanions();
+    }
+});
+
 onMounted(async () => {
     try {
         const id = parseInt(route.params.id as string);
         client.value = await clientStore.fetchClient(id);
+        // Preload companions if we might show them
+        if (client.value) {
+            loadCompanions();
+        }
     } catch (err) {
         error(t('clients.failed_to_load'));
     } finally {
