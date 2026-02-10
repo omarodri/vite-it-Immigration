@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
@@ -46,8 +47,8 @@ Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 've
     ->middleware(['signed', 'throttle:email-verification'])
     ->name('verification.verify');
 
-// Protected routes (authentication required) with API rate limiting
-Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
+// Protected routes (authentication required) with API rate limiting and tenant scope
+Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function () {
     // Auth routes
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -68,6 +69,12 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // User management routes
     Route::apiResource('users', UserController::class);
     Route::delete('/users/bulk', [UserController::class, 'bulkDestroy']);
+
+    // Client management routes
+    Route::get('/clients/statistics', [ClientController::class, 'statistics']);
+    Route::delete('/clients/bulk', [ClientController::class, 'bulkDestroy']);
+    Route::post('/clients/{client}/convert', [ClientController::class, 'convert']);
+    Route::apiResource('clients', ClientController::class);
 
     // Role management routes
     Route::get('/roles', [RoleController::class, 'index']);

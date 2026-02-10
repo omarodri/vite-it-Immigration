@@ -63,7 +63,7 @@ return new class extends Migration
             $table->string('other_status_2')->nullable();
 
             // Status
-            $table->enum('status', ['active', 'inactive', 'archived'])->default('active');
+            $table->enum('status', ['prospect', 'active', 'inactive', 'archived'])->default('prospect');
             $table->boolean('is_primary_applicant')->default(true);
 
             $table->timestamps();

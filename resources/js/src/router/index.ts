@@ -543,6 +543,32 @@ const routes: RouteRecordRaw[] = [
         meta: { permission: 'settings.update' },
     },
 
+    // Client Management
+    {
+        path: '/clients',
+        name: 'clients',
+        component: () => import('../views/clients/list.vue'),
+        meta: { permission: 'clients.view' },
+    },
+    {
+        path: '/clients/create',
+        name: 'clients-create',
+        component: () => import('../views/clients/create.vue'),
+        meta: { permission: 'clients.create' },
+    },
+    {
+        path: '/clients/:id',
+        name: 'clients-show',
+        component: () => import('../views/clients/show.vue'),
+        meta: { permission: 'clients.view' },
+    },
+    {
+        path: '/clients/:id/edit',
+        name: 'clients-edit',
+        component: () => import('../views/clients/edit.vue'),
+        meta: { permission: 'clients.update' },
+    },
+
     // pages
     {
         path: '/pages/knowledge-base',

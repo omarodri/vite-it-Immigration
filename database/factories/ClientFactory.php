@@ -59,7 +59,7 @@ class ClientFactory extends Factory
             'work_permit_number' => fake()->optional(0.4)->numerify('W#######'),
             'study_permit_number' => fake()->optional(0.3)->numerify('S#######'),
             'permit_expiry_date' => fake()->optional(0.5)->dateTimeBetween('now', '+5 years'),
-            'status' => fake()->randomElement(['active', 'inactive', 'archived']),
+            'status' => fake()->randomElement(['prospect', 'active', 'inactive', 'archived']),
             'is_primary_applicant' => true,
         ];
     }
@@ -103,6 +103,26 @@ class ClientFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'canada_status' => 'refugee',
+        ]);
+    }
+
+    /**
+     * Indicate that the client is a prospect.
+     */
+    public function prospect(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'prospect',
+        ]);
+    }
+
+    /**
+     * Indicate that the client is archived.
+     */
+    public function archived(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'archived',
         ]);
     }
 }
