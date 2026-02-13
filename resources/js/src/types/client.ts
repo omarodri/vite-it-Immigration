@@ -8,6 +8,7 @@ export type Gender = 'male' | 'female' | 'other';
 export type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed' | 'common_law' | 'separated';
 export type CanadaStatus = 'asylum_seeker' | 'refugee' | 'temporary_resident' | 'permanent_resident' | 'citizen' | 'visitor' | 'student' | 'worker' | 'other';
 export type EntryPoint = 'airport' | 'land_border' | 'green_path';
+export type Language = 'es' | 'en' | 'fr';
 
 export interface Client {
     id: number;
@@ -21,8 +22,8 @@ export interface Client {
     initials?: string;
     nationality: string | null;
     second_nationality: string | null;
-    language: string;
-    second_language: string | null;
+    language: Language | null;
+    second_language: Language | null;
     date_of_birth: string | null;
     gender: Gender | null;
     passport_number: string | null;
@@ -227,4 +228,10 @@ export const ENTRY_POINT_OPTIONS: Array<{ value: EntryPoint; label: string }> = 
     { value: 'airport', label: 'Airport' },
     { value: 'land_border', label: 'Land Border' },
     { value: 'green_path', label: 'Green Path (Irregular)' },
+];
+
+export const LANGUAGE_OPTIONS: Array<{ value: Language; label: string }> = [
+    { value: 'es', label: 'Spanish' },
+    { value: 'en', label: 'English' },
+    { value: 'fr', label: 'French' },
 ];

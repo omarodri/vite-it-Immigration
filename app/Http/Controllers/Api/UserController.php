@@ -18,6 +18,23 @@ class UserController extends Controller
     ) {}
 
     #[OA\Get(
+        path: '/api/users/staff',
+        summary: 'List staff members available for case assignment',
+        tags: ['Users'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'List of staff members'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
+    public function staff(): JsonResponse
+    {
+        $staff = $this->userService->getStaffMembers();
+
+        return response()->json(['data' => $staff]);
+    }
+
+    #[OA\Get(
         path: '/api/users',
         summary: 'List users (paginated)',
         tags: ['Users'],

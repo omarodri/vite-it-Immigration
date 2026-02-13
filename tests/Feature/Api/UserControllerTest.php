@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
@@ -12,6 +13,8 @@ class UserControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected Tenant $tenant;
+
     protected User $admin;
 
     protected User $editor;
@@ -21,6 +24,9 @@ class UserControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Create tenant
+        $this->tenant = Tenant::factory()->create();
 
         // Create permissions
         $permissions = [
@@ -43,14 +49,14 @@ class UserControllerTest extends TestCase
         $userRole = Role::create(['name' => 'user', 'guard_name' => 'web']);
         $userRole->givePermissionTo(['profile.view', 'profile.update']);
 
-        // Create users
-        $this->admin = User::factory()->create();
+        // Create users with tenant_id
+        $this->admin = User::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->admin->assignRole('admin');
 
-        $this->editor = User::factory()->create();
+        $this->editor = User::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->editor->assignRole('editor');
 
-        $this->user = User::factory()->create();
+        $this->user = User::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->user->assignRole('user');
     }
 
@@ -183,7 +189,11 @@ class UserControllerTest extends TestCase
 
     public function test_users_can_be_filtered_by_search(): void
     {
-        User::factory()->create(['name' => 'Searchable User', 'email' => 'searchable@example.com']);
+        User::factory()->create([
+            'name' => 'Searchable User',
+            'email' => 'searchable@example.com',
+            'tenant_id' => $this->tenant->id,
+        ]);
 
         $response = $this->actingAs($this->admin)
             ->getJson('/api/users?search=searchable');

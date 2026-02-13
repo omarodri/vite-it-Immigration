@@ -13,8 +13,7 @@ class CompanionPolicy
      */
     public function viewAny(User $user, Client $client): bool
     {
-        // User must be able to view clients and companion must belong to user's tenant
-        return $user->can('clients.view') && $client->tenant_id === $user->tenant_id;
+        return $user->can('companions.view') && $client->tenant_id === $user->tenant_id;
     }
 
     /**
@@ -22,7 +21,7 @@ class CompanionPolicy
      */
     public function view(User $user, Companion $companion): bool
     {
-        return $user->can('clients.view') && $companion->tenant_id === $user->tenant_id;
+        return $user->can('companions.view') && $companion->tenant_id === $user->tenant_id;
     }
 
     /**
@@ -30,7 +29,7 @@ class CompanionPolicy
      */
     public function create(User $user, Client $client): bool
     {
-        return $user->can('clients.update') && $client->tenant_id === $user->tenant_id;
+        return $user->can('companions.create') && $client->tenant_id === $user->tenant_id;
     }
 
     /**
@@ -38,7 +37,7 @@ class CompanionPolicy
      */
     public function update(User $user, Companion $companion): bool
     {
-        return $user->can('clients.update') && $companion->tenant_id === $user->tenant_id;
+        return $user->can('companions.update') && $companion->tenant_id === $user->tenant_id;
     }
 
     /**
@@ -46,6 +45,6 @@ class CompanionPolicy
      */
     public function delete(User $user, Companion $companion): bool
     {
-        return $user->can('clients.delete') && $companion->tenant_id === $user->tenant_id;
+        return $user->can('companions.delete') && $companion->tenant_id === $user->tenant_id;
     }
 }

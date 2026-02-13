@@ -20,11 +20,20 @@ class AuthService
 
     public function register(array $data): User
     {
+        // For self-registration, assign to default tenant if exists
+        // In production, you may want to create a new tenant for each registration
+        // or disable self-registration entirely
+        $defaultTenantId = \App\Models\Tenant::where('is_active', true)->first()?->id;
+
         $user = $this->userRepository->create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
+            'tenant_id' => $defaultTenantId,
         ]);
+
+        // Assign default role
+        $user->assignRole('user');
 
         Auth::login($user);
 

@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use App\Models\Client;
 use App\Models\Companion;
+use App\Models\ImmigrationCase;
 use App\Models\User;
+use App\Policies\CasePolicy;
 use App\Policies\ClientPolicy;
 use App\Policies\CompanionPolicy;
 use App\Policies\RolePolicy;
@@ -25,6 +27,7 @@ class AuthServiceProvider extends ServiceProvider
         Role::class => RolePolicy::class,
         Client::class => ClientPolicy::class,
         Companion::class => CompanionPolicy::class,
+        ImmigrationCase::class => CasePolicy::class,
     ];
 
     /**

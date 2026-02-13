@@ -26,16 +26,16 @@ return new class extends Migration
             $table->text('description')->nullable();
 
             // Key Dates
-            $table->date('hearing_date')->nullable()->comment('Fecha de audiencia');
-            $table->date('fda_deadline')->nullable()->comment('Plazo para deposito FDA');
-            $table->date('brown_sheet_date')->nullable()->comment('Fecha hoja marron');
-            $table->date('evidence_deadline')->nullable()->comment('Plazo envio doc de pruebas');
+            $table->datetime('hearing_date')->nullable()->comment('Fecha de audiencia');
+            $table->datetime('fda_deadline')->nullable()->comment('Plazo para deposito FDA');
+            $table->datetime('brown_sheet_date')->nullable()->comment('Fecha hoja marron');
+            $table->datetime('evidence_deadline')->nullable()->comment('Plazo envio doc de pruebas');
 
             // Archive Info
             $table->string('archive_box_number')->nullable()->comment('Nro caja de archivo');
 
             // Closure
-            $table->date('closed_at')->nullable();
+            $table->datetime('closed_at')->nullable();
             $table->text('closure_notes')->nullable()->comment('Nota de cierre');
 
             $table->timestamps();

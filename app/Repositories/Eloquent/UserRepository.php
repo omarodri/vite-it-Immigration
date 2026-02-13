@@ -5,9 +5,29 @@ namespace App\Repositories\Eloquent;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 
 class UserRepository implements UserRepositoryInterface
 {
+    /**
+     * Get the tenant_id of the current authenticated user.
+     * Super admins can see all users (returns null).
+     */
+    private function getCurrentTenantId(): ?int
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return null;
+        }
+
+        // Super admins can see all users across all tenants
+        if ($user->hasRole('super-admin')) {
+            return null;
+        }
+
+        return $user->tenant_id;
+    }
     public function findById(int $id): ?User
     {
         return User::find($id);
@@ -39,6 +59,12 @@ class UserRepository implements UserRepositoryInterface
     {
         $query = User::with('roles');
 
+        // Apply tenant scope (except for super-admin)
+        $tenantId = $this->getCurrentTenantId();
+        if ($tenantId !== null) {
+            $query->where('tenant_id', $tenantId);
+        }
+
         if (! empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
@@ -60,16 +86,40 @@ class UserRepository implements UserRepositoryInterface
 
     public function bulkDelete(array $ids): int
     {
-        return User::whereIn('id', $ids)->delete();
+        $query = User::whereIn('id', $ids);
+
+        // Apply tenant scope (except for super-admin)
+        $tenantId = $this->getCurrentTenantId();
+        if ($tenantId !== null) {
+            $query->where('tenant_id', $tenantId);
+        }
+
+        return $query->delete();
     }
 
     public function countByRole(string $role): int
     {
-        return User::role($role)->count();
+        $query = User::role($role);
+
+        // Apply tenant scope (except for super-admin)
+        $tenantId = $this->getCurrentTenantId();
+        if ($tenantId !== null) {
+            $query->where('tenant_id', $tenantId);
+        }
+
+        return $query->count();
     }
 
     public function getAdminIdsFromList(array $ids): array
     {
-        return User::role('admin')->whereIn('id', $ids)->pluck('id')->toArray();
+        $query = User::role('admin')->whereIn('id', $ids);
+
+        // Apply tenant scope (except for super-admin)
+        $tenantId = $this->getCurrentTenantId();
+        if ($tenantId !== null) {
+            $query->where('tenant_id', $tenantId);
+        }
+
+        return $query->pluck('id')->toArray();
     }
 }

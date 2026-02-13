@@ -6,6 +6,7 @@ use App\Models\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -52,6 +53,15 @@ class Companion extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    /**
+     * Get the cases this companion is included in.
+     */
+    public function cases(): BelongsToMany
+    {
+        return $this->belongsToMany(ImmigrationCase::class, 'case_companions', 'companion_id', 'case_id')
+            ->withTimestamps();
     }
 
     /**

@@ -57,6 +57,39 @@
                             </li>
                         </template>
 
+                        <!-- CRM Section (visible for users with client or case permissions) -->
+                        <template v-if="canViewClients || canViewCases">
+                            <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
+                                <icon-minus class="w-4 h-5 flex-none hidden" />
+                                <span>{{ $t('sidebar.crm') }}</span>
+                            </h2>
+
+                            <li class="nav-item">
+                                <ul>
+                                    <li v-if="canViewClients" class="nav-item">
+                                        <router-link to="/clients" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-contacts class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('sidebar.clients') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                    <li v-if="canViewCases" class="nav-item">
+                                        <router-link to="/cases" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-documentation class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('sidebar.cases') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                </ul>
+                            </li>
+                        </template>
+
                         <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
                             <icon-minus class="w-4 h-5 flex-none hidden" />
                             <span>{{ $t('apps') }}</span>
@@ -795,6 +828,11 @@
     // Check if user has permission to view admin sections
     const canViewUsers = computed(() => authStore.hasPermission('users.view'));
     const canViewRoles = computed(() => authStore.hasPermission('roles.view'));
+
+    // Check if user has permission to view CRM sections
+    const canViewClients = computed(() => authStore.hasPermission('clients.view'));
+    const canCreateClients = computed(() => authStore.hasPermission('clients.create'));
+    const canViewCases = computed(() => authStore.hasPermission('cases.view'));
 
     onMounted(() => {
         const selector = document.querySelector('.sidebar ul a[href="' + window.location.pathname + '"]');

@@ -53,11 +53,18 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'clients.update', 'display_name' => 'Update Clients'],
             ['name' => 'clients.delete', 'display_name' => 'Delete Clients'],
 
+            // Companions
+            ['name' => 'companions.view', 'display_name' => 'View Companions'],
+            ['name' => 'companions.create', 'display_name' => 'Create Companions'],
+            ['name' => 'companions.update', 'display_name' => 'Update Companions'],
+            ['name' => 'companions.delete', 'display_name' => 'Delete Companions'],
+
             // Cases
             ['name' => 'cases.view', 'display_name' => 'View Cases'],
             ['name' => 'cases.create', 'display_name' => 'Create Cases'],
             ['name' => 'cases.update', 'display_name' => 'Update Cases'],
             ['name' => 'cases.delete', 'display_name' => 'Delete Cases'],
+            ['name' => 'cases.assign', 'display_name' => 'Assign Cases'],
 
             // Tasks
             ['name' => 'tasks.view', 'display_name' => 'View Tasks'],
@@ -109,7 +116,8 @@ class RolePermissionSeeder extends Seeder
                     'settings.view', 'settings.update',
                     'activity-logs.view',
                     'clients.view', 'clients.create', 'clients.update', 'clients.delete',
-                    'cases.view', 'cases.create', 'cases.update', 'cases.delete',
+                    'companions.view', 'companions.create', 'companions.update', 'companions.delete',
+                    'cases.view', 'cases.create', 'cases.update', 'cases.delete', 'cases.assign',
                     'tasks.view', 'tasks.create', 'tasks.update', 'tasks.delete',
                     'follow-ups.view', 'follow-ups.create', 'follow-ups.update', 'follow-ups.delete',
                     'documents.view', 'documents.create', 'documents.update', 'documents.delete',
@@ -122,7 +130,8 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'profile.view', 'profile.update',
                     'clients.view', 'clients.create', 'clients.update',
-                    'cases.view', 'cases.create', 'cases.update',
+                    'companions.view', 'companions.create', 'companions.update',
+                    'cases.view', 'cases.create', 'cases.update', 'cases.assign',
                     'tasks.view', 'tasks.create', 'tasks.update',
                     'follow-ups.view', 'follow-ups.create', 'follow-ups.update',
                     'documents.view', 'documents.create', 'documents.update',
@@ -135,6 +144,7 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'profile.view', 'profile.update',
                     'clients.view', 'clients.create', 'clients.update',
+                    'companions.view', 'companions.create', 'companions.update',
                     'cases.view', 'cases.update',
                     'tasks.view', 'tasks.create', 'tasks.update',
                     'follow-ups.view', 'follow-ups.create', 'follow-ups.update',
@@ -147,6 +157,7 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'profile.view', 'profile.update',
                     'clients.view',
+                    'companions.view',
                     'cases.view',
                     'reports.view',
                 ],

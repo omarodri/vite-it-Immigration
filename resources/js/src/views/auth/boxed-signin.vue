@@ -210,7 +210,7 @@
     import IconMicrosoft from '@/components/icon/icon-microsoft.vue';
     import IconX from '@/components/icon/icon-x.vue';
 
-    useMeta({ title: 'Login Boxed' });
+    useMeta({ title: 'VITE-IT Immigration Login' });
     const router = useRouter();
     const store = useAppStore();
     const authStore = useAuthStore();

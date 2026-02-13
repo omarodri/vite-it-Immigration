@@ -6,6 +6,7 @@
 import api from './api';
 import type { User, CreateUserData, UpdateUserData } from '@/types/user';
 import type { PaginatedResponse, PaginationParams } from '@/types/pagination';
+import type { StaffMember } from '@/types/wizard';
 
 export interface UserFilters extends PaginationParams {
     search?: string;
@@ -77,6 +78,14 @@ const userService = {
             data: { ids },
         });
         return response.data;
+    },
+
+    /**
+     * Get staff members available for case assignment
+     */
+    async getStaff(): Promise<StaffMember[]> {
+        const response = await api.get<{ data: StaffMember[] }>('/users/staff');
+        return response.data.data;
     },
 };
 

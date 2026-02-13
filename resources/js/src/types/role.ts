@@ -73,6 +73,18 @@ export const PERMISSIONS = {
 
     // Activity Logs
     ACTIVITY_LOGS_VIEW: 'activity-logs.view',
+
+    // Clients
+    CLIENTS_VIEW: 'clients.view',
+    CLIENTS_CREATE: 'clients.create',
+    CLIENTS_UPDATE: 'clients.update',
+    CLIENTS_DELETE: 'clients.delete',
+
+    // Companions
+    COMPANIONS_VIEW: 'companions.view',
+    COMPANIONS_CREATE: 'companions.create',
+    COMPANIONS_UPDATE: 'companions.update',
+    COMPANIONS_DELETE: 'companions.delete',
 } as const;
 
 export type PermissionName = typeof PERMISSIONS[keyof typeof PERMISSIONS];

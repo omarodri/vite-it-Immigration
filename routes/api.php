@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CaseController;
+use App\Http\Controllers\Api\CaseTypeController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\CompanionController;
 use App\Http\Controllers\Api\EmailVerificationController;
@@ -68,6 +70,7 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     Route::post('/profile/password', [ProfileController::class, 'changePassword']);
 
     // User management routes
+    Route::get('/users/staff', [UserController::class, 'staff']);
     Route::apiResource('users', UserController::class);
     Route::delete('/users/bulk', [UserController::class, 'bulkDestroy']);
 
@@ -79,6 +82,16 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
 
     // Companion management routes (nested under clients)
     Route::apiResource('clients.companions', CompanionController::class);
+
+    // Case Types routes (read-only)
+    Route::get('/case-types', [CaseTypeController::class, 'index']);
+    Route::get('/case-types/{caseType}', [CaseTypeController::class, 'show']);
+
+    // Case management routes
+    Route::get('/cases/statistics', [CaseController::class, 'statistics']);
+    Route::apiResource('cases', CaseController::class);
+    Route::post('/cases/{case}/assign', [CaseController::class, 'assign']);
+    Route::get('/cases/{case}/timeline', [CaseController::class, 'timeline']);
 
     // Role management routes
     Route::get('/roles', [RoleController::class, 'index']);

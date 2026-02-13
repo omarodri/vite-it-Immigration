@@ -458,4 +458,119 @@ class CompanionTest extends TestCase
             ->assertJsonPath('data.passport_country', 'Canada')
             ->assertJsonPath('data.passport_expiry_date', '2030-12-31');
     }
+
+    // ==================== Granular Permission Tests ====================
+
+    public function test_user_with_clients_view_but_not_companions_view_cannot_list_companions(): void
+    {
+        $user = User::factory()->create(['tenant_id' => $this->tenant->id]);
+        $user->givePermissionTo('clients.view');
+        // NOT giving companions.view
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson("/api/clients/{$this->client->id}/companions");
+
+        $response->assertStatus(403);
+    }
+
+    public function test_user_with_companions_view_can_list_companions(): void
+    {
+        $user = User::factory()->create(['tenant_id' => $this->tenant->id]);
+        $user->givePermissionTo('companions.view');
+
+        Companion::factory()->count(2)->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson("/api/clients/{$this->client->id}/companions");
+
+        $response->assertStatus(200)
+            ->assertJsonCount(2, 'data');
+    }
+
+    public function test_user_with_companions_create_can_add_companion(): void
+    {
+        $user = User::factory()->create(['tenant_id' => $this->tenant->id]);
+        $user->givePermissionTo('companions.create');
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson("/api/clients/{$this->client->id}/companions", [
+                'first_name' => 'Test',
+                'last_name' => 'Companion',
+                'relationship' => 'spouse',
+            ]);
+
+        $response->assertStatus(201);
+    }
+
+    public function test_user_without_companions_create_cannot_add_companion(): void
+    {
+        $user = User::factory()->create(['tenant_id' => $this->tenant->id]);
+        $user->givePermissionTo('companions.view'); // Only view, no create
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson("/api/clients/{$this->client->id}/companions", [
+                'first_name' => 'Test',
+                'last_name' => 'Companion',
+                'relationship' => 'spouse',
+            ]);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_user_with_companions_update_can_edit_companion(): void
+    {
+        $user = User::factory()->create(['tenant_id' => $this->tenant->id]);
+        $user->givePermissionTo('companions.update');
+
+        $companion = Companion::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'first_name' => 'Original',
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->putJson("/api/clients/{$this->client->id}/companions/{$companion->id}", [
+                'first_name' => 'Updated',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.first_name', 'Updated');
+    }
+
+    public function test_user_without_companions_delete_cannot_remove_companion(): void
+    {
+        $user = User::factory()->create(['tenant_id' => $this->tenant->id]);
+        $user->givePermissionTo(['companions.view', 'companions.update']);
+        // NOT giving companions.delete
+
+        $companion = Companion::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->deleteJson("/api/clients/{$this->client->id}/companions/{$companion->id}");
+
+        $response->assertStatus(403);
+    }
+
+    public function test_user_with_companions_delete_can_remove_companion(): void
+    {
+        $user = User::factory()->create(['tenant_id' => $this->tenant->id]);
+        $user->givePermissionTo('companions.delete');
+
+        $companion = Companion::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->deleteJson("/api/clients/{$this->client->id}/companions/{$companion->id}");
+
+        $response->assertStatus(200);
+        $this->assertSoftDeleted('companions', ['id' => $companion->id]);
+    }
 }

@@ -569,6 +569,38 @@ const routes: RouteRecordRaw[] = [
         meta: { permission: 'clients.update' },
     },
 
+    // Case Management
+    {
+        path: '/cases',
+        name: 'cases',
+        component: () => import('../views/cases/list.vue'),
+        meta: { permission: 'cases.view' },
+    },
+    {
+        path: '/cases/create',
+        name: 'cases-create',
+        component: () => import('../views/cases/create.vue'),
+        meta: { permission: 'cases.create' },
+    },
+    {
+        path: '/cases/wizard',
+        name: 'case-wizard',
+        component: () => import('../views/cases/wizard/CaseWizard.vue'),
+        meta: { permission: 'cases.create' },
+    },
+    {
+        path: '/cases/:id',
+        name: 'cases-show',
+        component: () => import('../views/cases/show.vue'),
+        meta: { permission: 'cases.view' },
+    },
+    {
+        path: '/cases/:id/edit',
+        name: 'cases-edit',
+        component: () => import('../views/cases/edit.vue'),
+        meta: { permission: 'cases.update' },
+    },
+
     // pages
     {
         path: '/pages/knowledge-base',

@@ -21,8 +21,7 @@ class ClientService
 
     public function getClient(Client $client): Client
     {
-        // Note: companions and cases relationships will be loaded when those models are implemented
-        $client->load(['user']);
+        $client->load(['user', 'companions', 'cases.caseType']);
 
         return $client;
     }

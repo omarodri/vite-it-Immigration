@@ -7,6 +7,7 @@ use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 
 class UserService
@@ -27,13 +28,32 @@ class UserService
         return $user;
     }
 
+    /**
+     * Get staff members available for case assignment.
+     * Returns active users with their id, name, and email.
+     * Filtered by current user's tenant.
+     */
+    public function getStaffMembers(): Collection
+    {
+        return User::query()
+            ->where('tenant_id', Auth::user()->tenant_id)
+            ->select('id', 'name', 'email')
+            ->orderBy('name')
+            ->get();
+    }
+
     public function createUser(array $data): User
     {
         return DB::transaction(function () use ($data) {
+            // Get the authenticated user's tenant_id
+            $currentUser = Auth::user();
+            $tenantId = $data['tenant_id'] ?? $currentUser?->tenant_id;
+
             $user = $this->userRepository->create([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
+                'tenant_id' => $tenantId,
             ]);
 
             if (! empty($data['roles'])) {

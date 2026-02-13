@@ -27,17 +27,34 @@
         </div>
 
         <div v-else class="panel">
-            <!-- Header -->
-            <div class="flex items-center justify-between mb-5">
-                <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('clients.edit_client') }}</h5>
-                <router-link :to="`/clients/${clientId}`" class="btn btn-outline-secondary gap-2">
-                    <icon-arrow-left class="w-4 h-4" />
-                    {{ $t('clients.back_to_profile') }}
-                </router-link>
-            </div>
-
             <!-- Form -->
             <form @submit.prevent="handleSubmit" class="space-y-6">
+
+                <!-- Header -->
+                <div class="flex items-center justify-between mb-5">
+                    <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('clients.edit_client') }}</h5>
+                    <!-- header/actions -->
+                    <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <router-link :to="`/clients/${clientId}`" class="btn btn-outline-secondary gap-2">
+                            <icon-arrow-left class="w-4 h-4" />
+                            {{ $t('clients.back_to_profile') }}
+                        </router-link>
+                        <router-link :to="`/clients/${clientId}`" class="btn btn-outline-danger">
+                            {{ $t('clients.cancel') }}
+                        </router-link>
+                        <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+                            <template v-if="isSubmitting">
+                                <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-5 h-5 inline-block mr-2"></span>
+                                {{ $t('clients.saving') }}
+                            </template>
+                            <template v-else>
+                                <icon-save class="w-5 h-5 mr-2" />
+                                {{ $t('clients.save_changes') }}
+                            </template>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Error Alert -->
                 <div v-if="errorMessage" role="alert" class="flex items-center p-3.5 rounded text-danger bg-danger-light dark:bg-danger-dark-light">
                     <span class="ltr:pr-2 rtl:pl-2">{{ errorMessage }}</span>
@@ -86,7 +103,12 @@
                         <!-- Date of Birth -->
                         <div>
                             <label for="date_of_birth" class="mb-2 block">{{ $t('clients.date_of_birth') }}</label>
-                            <flat-pickr v-model="form.date_of_birth" :config="dateConfig" class="form-input" />
+                            <flat-pickr 
+                                v-model="form.date_of_birth" 
+                                :config="dateConfig" 
+                                class="form-input"
+                                :placeholder="$t('clients.select_date')"
+                            />
                         </div>
 
                         <!-- Gender -->
@@ -94,14 +116,18 @@
                             <label for="gender" class="mb-2 block">{{ $t('clients.gender') }}</label>
                             <select id="gender" v-model="form.gender" class="form-select">
                                 <option value="">{{ $t('clients.select_gender') }}</option>
-                                <option v-for="opt in GENDER_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                                <option v-for="opt in GenderOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
                         </div>
 
                         <!-- Nationality -->
                         <div>
                             <label for="nationality" class="mb-2 block">{{ $t('clients.nationality') }}</label>
-                            <input id="nationality" v-model="form.nationality" type="text" class="form-input" />
+                            <CountrySelect
+                                id="nationality"
+                                v-model="form.nationality"
+                                :placeholder="$t('clients.select_nationality')"
+                            />
                         </div>
 
                         <!-- Marital Status -->
@@ -109,7 +135,7 @@
                             <label for="marital_status" class="mb-2 block">{{ $t('clients.marital_status') }}</label>
                             <select id="marital_status" v-model="form.marital_status" class="form-select">
                                 <option value="">{{ $t('clients.select_status') }}</option>
-                                <option v-for="opt in MARITAL_STATUS_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                                <option v-for="opt in MaritalStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
                         </div>
 
@@ -122,7 +148,10 @@
                         <!-- Language -->
                         <div>
                             <label for="language" class="mb-2 block">{{ $t('clients.language') }}</label>
-                            <input id="language" v-model="form.language" type="text" class="form-input" />
+                            <select id="language" v-model="form.language" class="form-select">
+                                <option value="">{{ $t('clients.enter_language') }}</option>
+                                <option v-for="opt in languageOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                            </select> 
                         </div>
                     </div>
                 </div>
@@ -178,7 +207,11 @@
 
                         <div>
                             <label for="country" class="mb-2 block">{{ $t('clients.country') }}</label>
-                            <input id="country" v-model="form.country" type="text" class="form-input" />
+                            <CountrySelect
+                                id="country"
+                                v-model="form.country"
+                                :placeholder="$t('clients.select_country')"
+                            />
                         </div>
                     </div>
                 </div>
@@ -194,7 +227,7 @@
                             <label for="canada_status" class="mb-2 block">{{ $t('clients.status_in_canada') }}</label>
                             <select id="canada_status" v-model="form.canada_status" class="form-select">
                                 <option value="">{{ $t('clients.select_status') }}</option>
-                                <option v-for="opt in CANADA_STATUS_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                                <option v-for="opt in CanadaStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
                         </div>
 
@@ -202,7 +235,7 @@
                             <label for="entry_point" class="mb-2 block">{{ $t('clients.entry_point') }}</label>
                             <select id="entry_point" v-model="form.entry_point" class="form-select">
                                 <option value="">{{ $t('clients.select_entry_point') }}</option>
-                                <option v-for="opt in ENTRY_POINT_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                                <option v-for="opt in EntryPointOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
                         </div>
 
@@ -218,12 +251,16 @@
 
                         <div>
                             <label for="passport_country" class="mb-2 block">{{ $t('clients.passport_country') }}</label>
-                            <input id="passport_country" v-model="form.passport_country" type="text" class="form-input" />
+                            <CountrySelect
+                                id="passport_country"
+                                v-model="form.passport_country"
+                                :placeholder="$t('clients.select_passport_country')"
+                            />
                         </div>
 
                         <div>
                             <label for="passport_expiry_date" class="mb-2 block">{{ $t('clients.passport_expiry') }}</label>
-                            <flat-pickr v-model="form.passport_expiry_date" :config="dateConfig" class="form-input" />
+                            <flat-pickr v-model="form.passport_expiry_date" :config="passportExpiryDateConfig" class="form-input" />
                         </div>
 
                         <div>
@@ -253,7 +290,7 @@
                         <div>
                             <label for="status" class="mb-2 block">{{ $t('clients.status') }}</label>
                             <select id="status" v-model="form.status" class="form-select">
-                                <option v-for="opt in CLIENT_STATUS_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                                <option v-for="opt in ClientStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
                         </div>
 
@@ -267,7 +304,13 @@
 
                     <div class="mt-5">
                         <label for="description" class="mb-2 block">{{ $t('clients.notes') }}</label>
-                        <textarea id="description" v-model="form.description" rows="4" class="form-textarea"></textarea>
+                        <textarea
+                            id="description"
+                            v-model="form.description"
+                            rows="4"
+                            :placeholder="$t('clients.enter_notes')"
+                            class="form-textarea"
+                        ></textarea>
                     </div>
                 </div>
 
@@ -319,6 +362,9 @@ import IconHome from '@/components/icon/icon-home.vue';
 import IconSettings from '@/components/icon/icon-settings.vue';
 import IconSave from '@/components/icon/icon-save.vue';
 import IconX from '@/components/icon/icon-x.vue';
+import CountrySelect from '@/components/CountrySelect.vue';
+import EasyMDE from 'easymde';
+import 'easymde/dist/easymde.min.css';
 
 useMeta({ title: 'Edit Client' });
 
@@ -328,6 +374,50 @@ const clientStore = useClientStore();
 const { success, error } = useNotification();
 const { t } = useI18n();
 
+const languageOptions = computed(() => [
+    { value: 'es', label: t('common.spanish') as string },
+    { value: 'en', label: t('common.english') as string },
+    { value: 'fr', label: t('common.french') as string },
+]);
+
+const ClientStatusOptions = computed(() => [
+    { value: 'prospect', label: t('clients.prospect') as string },
+    { value: 'active', label: t('clients.active') as string },
+    { value: 'inactive', label: t('clients.inactive') as string },
+    { value: 'archived', label: t('clients.archived') as string },
+]);
+
+const GenderOptions = computed(() => [
+    { value: 'male', label: t('clients.male') as string },
+    { value: 'female', label: t('clients.female') as string },
+    { value: 'other', label: t('clients.other') as string },
+]);
+
+const MaritalStatusOptions = computed(() => [
+    { value: 'single', label: t('clients.single') as string },
+    { value: 'married', label: t('clients.married') as string },
+    { value: 'divorced', label: t('clients.divorced') as string },
+    { value: 'widowed', label: t('clients.widowed') as string },
+]);
+
+const CanadaStatusOptions = computed(() => [
+    { value: 'asylum_seeker', label: t('clients.asylum_seeker') as string },
+    { value: 'refugee', label: t('clients.refugee') as string },
+    { value: 'temporary_resident', label: t('clients.temporary_resident') as string },
+    { value: 'permanent_resident', label: t('clients.permanent_resident') as string },
+    { value: 'citizen', label: t('clients.citizen') as string },
+    { value: 'visitor', label: t('clients.visitor') as string },
+    { value: 'student', label: t('clients.student') as string },
+    { value: 'worker', label: t('clients.worker') as string },
+    { value: 'other', label: t('clients.other') as string },
+]);
+
+const EntryPointOptions = computed(() => [
+    { value: 'airport', label: t('clients.airport') as string },
+    { value: 'land_border', label: t('clients.land_border') as string },
+    { value: 'green_path', label: t('clients.green_path') as string },
+]);
+
 const clientId = computed(() => parseInt(route.params.id as string));
 
 // State
@@ -336,7 +426,16 @@ const isSubmitting = ref(false);
 const errorMessage = ref('');
 
 // Date picker config
+const maxBirthDate = new Date();
+maxBirthDate.setDate(maxBirthDate.getDate() - 1);
+
 const dateConfig = {
+    dateFormat: 'Y-m-d',
+    allowInput: true,
+    maxDate: maxBirthDate.toISOString().split('T')[0],
+};
+
+const passportExpiryDateConfig = {
     dateFormat: 'Y-m-d',
     allowInput: true,
 };
@@ -388,24 +487,6 @@ const rules = computed(() => ({
 
 const v$ = useVuelidate(rules, form);
 
-const loadClient = async () => {
-    try {
-        const client = await clientStore.fetchClient(clientId.value);
-        if (client) {
-            // Populate form with client data
-            Object.keys(form).forEach((key) => {
-                const value = (client as any)[key];
-                (form as any)[key] = value ?? '';
-            });
-        }
-    } catch (err) {
-        error(t('clients.failed_to_load'));
-        router.push('/clients');
-    } finally {
-        isLoadingClient.value = false;
-    }
-};
-
 const handleSubmit = async () => {
     const isValid = await v$.value.$validate();
     if (!isValid) return;
@@ -436,7 +517,39 @@ const handleSubmit = async () => {
     }
 };
 
-onMounted(() => {
-    loadClient();
+const easyMDE = ref<EasyMDE | null>(null);
+
+const initEasyMDE = () => {
+    easyMDE.value = new EasyMDE({
+        element: document.getElementById('description') as HTMLElement,
+        initialValue: form.description,
+        spellChecker: false,
+        toolbar: ["bold", "italic", "strikethrough", "|", "heading-3", "|", "quote", "|", "unordered-list", "ordered-list", "|", "horizontal-rule"],
+    });
+    easyMDE.value.codemirror.on('change', () => {
+        form.description = easyMDE.value!.value();
+    });
+};
+
+const loadClient = async () => {
+    try {
+        const client = await clientStore.fetchClient(clientId.value);
+        if (client) {
+            Object.keys(form).forEach((key) => {
+                const value = (client as any)[key];
+                (form as any)[key] = value ?? '';
+            });
+        }
+    } catch (err) {
+        error(t('clients.failed_to_load'));
+        router.push('/clients');
+    } finally {
+        isLoadingClient.value = false;
+    }
+};
+
+onMounted(async () => {
+    await loadClient();
+    initEasyMDE();
 });
 </script>

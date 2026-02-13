@@ -198,7 +198,7 @@
                 <!-- Desktop Table -->
                 <div class="datatable hidden md:block">
                     <vue3-datatable
-                        :key="`dt-${perPage}`"
+                        :key="`dt-${perPage}-${tableKey}`"
                         :rows="clientStore.clients"
                         :columns="columns"
                         :totalRows="clientStore.totalClients"
@@ -479,6 +479,7 @@ const sortColumn = ref('created_at');
 const sortDirection = ref<'asc' | 'desc'>('desc');
 const selectedClients = ref<Client[]>([]);
 const initialLoading = ref(true);
+const tableKey = ref(0);
 
 // Computed
 const hasActiveFilters = computed(() => !!searchQuery.value || !!statusFilter.value);
@@ -660,6 +661,10 @@ const confirmConvert = async (client: Client) => {
         try {
             await clientStore.convertProspect(client.id);
             success(t('clients.converted_successfully'));
+            // Bump key to force full datatable remount (avoids vnode patch
+            // errors when conditional slot elements change between renders)
+            tableKey.value++;
+            await Promise.all([fetchClients(), clientStore.fetchStatistics()]);
         } catch (err: any) {
             error(err.response?.data?.message || t('clients.convert_failed'));
         }

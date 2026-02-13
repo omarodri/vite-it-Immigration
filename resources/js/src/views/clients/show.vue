@@ -129,6 +129,7 @@
                             @click="activeTab = 'cases'"
                         >
                             {{ $t('clients.cases') }}
+                            <span v-if="client?.cases?.length" class="badge badge-outline-primary ml-2">{{ client.cases.length }}</span>
                         </button>
                     </li>
                 </ul>
@@ -335,27 +336,45 @@
 
                     <!-- Cases Tab -->
                     <div v-else-if="activeTab === 'cases'">
+                        <div class="flex justify-between items-center mb-4">
+                            <h5 class="text-lg font-semibold">{{ $t('clients.assigned_cases') }}</h5>
+                            <router-link
+                                v-can="'cases.create'"
+                                :to="`/cases/wizard?client_id=${client.id}`"
+                                class="btn btn-primary btn-sm gap-2"
+                            >
+                                <icon-plus class="w-4 h-4" />
+                                {{ $t('cases.add_case') }}
+                            </router-link>
+                        </div>
+
                         <div v-if="!client.cases?.length" class="text-center py-10">
                             <icon-folder class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
                             <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">{{ $t('clients.no_cases_yet') }}</h3>
                             <p class="text-gray-500 mb-4">{{ $t('clients.cases_will_appear_here') }}</p>
                         </div>
                         <div v-else class="space-y-3">
-                            <div
+                            <router-link
                                 v-for="caseItem in client.cases"
                                 :key="caseItem.id"
-                                class="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                                :to="`/cases/${caseItem.id}`"
+                                class="block border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md hover:border-primary/50 transition-all"
                             >
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <h5 class="font-semibold">{{ caseItem.case_number }}</h5>
-                                        <p class="text-sm text-gray-500">{{ caseItem.case_type }}</p>
+                                        <h5 class="font-semibold text-primary">{{ caseItem.case_number }}</h5>
+                                        <p class="text-sm text-gray-500">{{ caseItem.case_type?.name || '-' }}</p>
                                     </div>
-                                    <span class="badge" :class="getCaseBadgeClass(caseItem.status)">
-                                        {{ caseItem.status }}
-                                    </span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="badge" :class="getCaseBadgeClass(caseItem.status)">
+                                            {{ $t(`cases.${caseItem.status}`) }}
+                                        </span>
+                                        <span v-if="caseItem.priority === 'urgent' || caseItem.priority === 'high'" class="badge" :class="caseItem.priority === 'urgent' ? 'badge-danger' : 'badge-warning'">
+                                            {{ $t(`cases.${caseItem.priority}`) }}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
+                            </router-link>
                         </div>
                     </div>
                 </div>
@@ -479,11 +498,17 @@
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label class="block text-sm font-medium mb-1">{{ $t('companions.date_of_birth') }}</label>
-                                            <input
+                                            <!-- <input
                                                 v-model="companionForm.date_of_birth"
                                                 type="date"
                                                 class="form-input"
                                                 :max="today"
+                                            /> -->
+                                            <flat-pickr
+                                                v-model="companionForm.date_of_birth"
+                                                :config="dateConfig"
+                                                class="form-input"
+                                                :placeholder="$t('clients.select_date')"
                                             />
                                         </div>
                                         <div>
@@ -500,10 +525,15 @@
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label class="block text-sm font-medium mb-1">{{ $t('companions.nationality') }}</label>
-                                            <input
+                                            <!-- <input
                                                 v-model="companionForm.nationality"
                                                 type="text"
                                                 class="form-input"
+                                            /> -->
+                                            <CountrySelect
+                                                id="nationality"
+                                                v-model="companionForm.nationality"
+                                                :placeholder="$t('clients.select_nationality')"
                                             />
                                         </div>
                                         <div>
@@ -519,18 +549,29 @@
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label class="block text-sm font-medium mb-1">{{ $t('companions.passport_country') }}</label>
-                                            <input
+                                            <!-- <input
                                                 v-model="companionForm.passport_country"
                                                 type="text"
                                                 class="form-input"
+                                            /> -->
+                                            <CountrySelect
+                                                id="passport_country"
+                                                v-model="companionForm.passport_country"
+                                                :placeholder="$t('clients.select_nationality')"
                                             />
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium mb-1">{{ $t('companions.passport_expiry') }}</label>
-                                            <input
+                                            <!-- <input
                                                 v-model="companionForm.passport_expiry_date"
                                                 type="date"
                                                 class="form-input"
+                                            /> -->
+                                            <flat-pickr
+                                                v-model="companionForm.passport_expiry_date"
+                                                :config="passportExpiryDateConfig"
+                                                class="form-input"
+                                                :placeholder="$t('clients.select_date')"
                                             />
                                         </div>
                                     </div>
@@ -583,6 +624,9 @@ import { formatDate } from '@/utils/formatters';
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue';
 import type { Client, ClientStatus } from '@/types/client';
 import type { Companion, CreateCompanionData, UpdateCompanionData, RelationshipType } from '@/types/companion';
+import CountrySelect from '@/components/CountrySelect.vue';
+import flatPickr from 'vue-flatpickr-component';
+import 'flatpickr/dist/flatpickr.css';
 
 // Icons
 import IconArrowLeft from '@/components/icon/icon-arrow-left.vue';
@@ -627,6 +671,20 @@ const companionForm = ref<CreateCompanionData>({
     passport_expiry_date: '',
     notes: '',
 });
+
+// Date picker config
+const maxBirthDate = new Date();
+maxBirthDate.setDate(maxBirthDate.getDate() - 1);
+
+const dateConfig = {
+    dateFormat: 'Y-m-d',
+    allowInput: true,
+    maxDate: maxBirthDate.toISOString().split('T')[0],
+};
+const passportExpiryDateConfig = {
+    dateFormat: 'Y-m-d',
+    allowInput: true,
+};
 
 const getInitials = (firstName: string, lastName: string): string => {
     return ((firstName?.[0] || '') + (lastName?.[0] || '')).toUpperCase();
@@ -804,7 +862,9 @@ const confirmConvert = async () => {
     if (confirmed) {
         try {
             await clientStore.convertProspect(client.value.id);
-            client.value = clientStore.currentClient;
+            // Re-fetch the full client with all relations (cases, companions, user)
+            // since the convert endpoint returns the client without relations loaded
+            client.value = await clientStore.fetchClient(client.value.id);
             success(t('clients.converted_successfully'));
         } catch (err: any) {
             error(err.response?.data?.message || t('clients.convert_failed'));

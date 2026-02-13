@@ -235,27 +235,21 @@ export const useClientStore = defineStore('client', {
         },
 
         async convertProspect(id: number) {
-            this.isLoading = true;
             this.error = null;
 
             try {
                 const response = await clientService.convertProspect(id);
-                // Update client in list
-                const index = this.clients.findIndex((c) => c.id === id);
-                if (index !== -1) {
-                    this.clients[index] = response.client;
-                }
-                // Update currentClient if it's the same
+                // Update currentClient if it's the same (show.vue)
                 if (this.currentClient?.id === id) {
                     this.currentClient = response.client;
                 }
-                await this.fetchStatistics();
+                // Don't mutate this.clients in-place — the list view will
+                // re-fetch to avoid vue3-datatable vnode patch errors when
+                // conditional slot elements (e.g. convert button) are removed.
                 return response;
             } catch (error: any) {
                 this.error = error.response?.data?.message || 'Failed to convert prospect';
                 throw error;
-            } finally {
-                this.isLoading = false;
             }
         },
 

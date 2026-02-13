@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\ImmigrationCase;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
@@ -25,6 +26,9 @@ class RouteServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureRateLimiting();
+
+        // Route model binding for ImmigrationCase (table is 'cases' but model is ImmigrationCase)
+        Route::model('case', ImmigrationCase::class);
 
         $this->routes(function () {
             Route::middleware('api')

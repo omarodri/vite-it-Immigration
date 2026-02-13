@@ -18,7 +18,27 @@
       "Bash(git -C /Users/omar/Herd/vite-it diff)",
       "Bash(npx:*)",
       "WebFetch(domain:dev.vite-it.com)",
-      "Bash(php artisan migrate:rollback:*)"
+      "Bash(php artisan migrate:rollback:*)",
+      "Bash(php artisan tinker:*)",
+      "Bash(xargs:*)",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_click",
+      "Bash(find:*)",
+      "Bash(php artisan make:migration:*)",
+      "Bash(mysql:*)",
+      "Bash(php artisan migrate:status:*)",
+      "Bash(php artisan route:list:*)",
+      "Bash(for icon in alert-circle arrow-forward arrow-left calendar circle-check folder globe loader mail phone search user-plus users-group users)",
+      "Bash(do)",
+      "Bash(if [ -f \"/Users/omar/Herd/vite-it/resources/js/src/components/icon/icon-$icon.vue\" ])",
+      "Bash(then)",
+      "Bash(echo:*)",
+      "Bash(else)",
+      "Bash(fi)",
+      "Bash(done)",
+      "mcp__ide__getDiagnostics",
+      "Bash(while read f)",
+      "Bash(do echo \"$f\")"
     ]
   }
 }

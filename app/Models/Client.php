@@ -84,15 +84,15 @@ class Client extends Model
         return $this->hasMany(Companion::class);
     }
 
-    // Note: ImmigrationCase and FollowUp models will be implemented in future epics
-    // /**
-    //  * Get the cases for this client.
-    //  */
-    // public function cases(): HasMany
-    // {
-    //     return $this->hasMany(ImmigrationCase::class);
-    // }
+    /**
+     * Get the cases for this client.
+     */
+    public function cases(): HasMany
+    {
+        return $this->hasMany(ImmigrationCase::class);
+    }
 
+    // Note: FollowUp model will be implemented in future epics
     // /**
     //  * Get the follow-ups for this client.
     //  */

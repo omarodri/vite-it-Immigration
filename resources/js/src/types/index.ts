@@ -73,3 +73,29 @@ export {
     getErrorMessage,
     getValidationErrors,
 } from './api';
+
+// Case types
+export type {
+    CaseStatus,
+    CasePriority,
+    CaseTypeCategory,
+    CaseType,
+    ImmigrationCase,
+    CreateCaseData,
+    UpdateCaseData,
+    AssignCaseData,
+    CaseFilters,
+    CaseStatistics,
+    CaseActivityLog,
+    CaseResponse,
+    CaseDeleteResponse,
+} from './case';
+export {
+    CASE_STATUS_OPTIONS,
+    CASE_PRIORITY_OPTIONS,
+    CASE_TYPE_CATEGORY_OPTIONS,
+    LANGUAGE_OPTIONS,
+    CASE_STATUS_LABELS_ES,
+    CASE_PRIORITY_LABELS_ES,
+    CASE_TYPE_CATEGORY_LABELS_ES,
+} from './case';
