@@ -22,6 +22,13 @@ yarn-error.log
 *.swp
 *.swo
 .DS_Store
+/.claude
+/.bmad
+/.playwright-mcp
+/_bmad-output
+/_bmad
+/AGENTS.md
+/CLAUDE.md
 
 # Claude Code
 /.claude/settings.local.json
@@ -33,3 +40,7 @@ yarn-error.log
 # Build
 /dist
 node_modules
+
+#clients
+clients-create-page.png
+clients-list-page.png
