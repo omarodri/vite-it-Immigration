@@ -21,10 +21,10 @@ class DatabaseSeeder extends Seeder
 
         // Create admin user if not exists
         $admin = User::firstOrCreate(
-            ['email' => 'admin@vristo.com'],
+            ['email' => 'admin@vite-it.com'],
             [
                 'name' => 'Admin User',
-                'email' => 'admin@vristo.com',
+                'email' => 'admin@vite-it.com',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
@@ -33,10 +33,10 @@ class DatabaseSeeder extends Seeder
 
         // Create editor user if not exists
         $editor = User::firstOrCreate(
-            ['email' => 'editor@vristo.com'],
+            ['email' => 'editor@vite-it.com'],
             [
                 'name' => 'Editor User',
-                'email' => 'editor@vristo.com',
+                'email' => 'editor@vite-it.com',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
@@ -45,10 +45,10 @@ class DatabaseSeeder extends Seeder
 
         // Create regular user if not exists
         $user = User::firstOrCreate(
-            ['email' => 'user@vristo.com'],
+            ['email' => 'user@vite-it.com'],
             [
                 'name' => 'Regular User',
-                'email' => 'user@vristo.com',
+                'email' => 'user@vite-it.com',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]

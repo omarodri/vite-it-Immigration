@@ -148,6 +148,50 @@
                                 </div>
                             </div>
 
+                            <!-- Companions -->
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="font-semibold text-lg dark:text-white-light">
+                                        {{ $t('cases.companions') }}
+                                    </h3>
+                                    <span v-if="currentCase.companions?.length" class="badge badge-outline-secondary">
+                                        {{ currentCase.companions.length }}
+                                    </span>
+                                </div>
+
+                                <p v-if="!currentCase.companions || currentCase.companions.length === 0"
+                                   class="text-sm text-gray-500 italic">
+                                    {{ $t('cases.no_companions') }}
+                                </p>
+
+                                <div v-else class="space-y-3">
+                                    <div v-for="companion in currentCase.companions" :key="companion.id"
+                                         class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                        <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
+                                            <span class="text-lg font-semibold text-secondary">
+                                                {{ companion.initials || getInitials(companion.first_name, companion.last_name) }}
+                                            </span>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="font-semibold truncate">
+                                                {{ companion.full_name || `${companion.first_name} ${companion.last_name}` }}
+                                            </div>
+                                            <div class="flex flex-wrap items-center gap-2 mt-1">
+                                                <span class="badge badge-outline-secondary text-xs">
+                                                    {{ companion.relationship_label || companion.relationship }}
+                                                </span>
+                                                <span v-if="companion.age" class="text-xs text-gray-500">
+                                                    · {{ $t('cases.companion_age', { age: companion.age }) }}
+                                                </span>
+                                                <span v-if="companion.nationality" class="text-xs text-gray-500">
+                                                    · {{ companion.nationality }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Important Dates -->
                             <div class="space-y-4">
                                 <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.important_dates') }}</h3>

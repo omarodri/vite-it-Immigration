@@ -170,6 +170,64 @@
                     <input id="archive_box_number" v-model="form.archive_box_number" type="text" class="form-input" placeholder="BOX-001" />
                 </div>
 
+                <!-- Companions Section -->
+                <div class="mt-6">
+                    <h6 class="font-semibold border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
+                        {{ $t('cases.select_companions') }}
+                        <span class="text-gray-500 font-normal text-sm ml-1">
+                            ({{ selectedCompanionIds.length }}/{{ availableCompanions.length }})
+                        </span>
+                    </h6>
+                    <p class="text-sm text-gray-500 mb-4">{{ $t('cases.select_companions_description') }}</p>
+
+                    <!-- Loading skeleton -->
+                    <div v-if="isLoadingCompanions" class="space-y-3">
+                        <div v-for="i in 3" :key="i" class="animate-pulse flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                            <div class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+                            <div class="flex-1 space-y-2">
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+                                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div v-else-if="availableCompanions.length === 0" class="text-center py-6 text-gray-500">
+                        <p class="text-sm">{{ $t('cases.no_companions') }}</p>
+                    </div>
+
+                    <!-- Companions list -->
+                    <div v-else class="space-y-3">
+                        <div v-for="companion in availableCompanions" :key="companion.id"
+                             class="flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-colors"
+                             :class="selectedCompanionIds.includes(companion.id)
+                                 ? 'border-secondary bg-secondary/5 dark:bg-secondary/10'
+                                 : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'"
+                             @click="toggleCompanion(companion.id)">
+                            <input type="checkbox"
+                                   :checked="selectedCompanionIds.includes(companion.id)"
+                                   class="form-checkbox text-secondary w-5 h-5"
+                                   @click.stop="toggleCompanion(companion.id)" />
+                            <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
+                                <span class="text-sm font-semibold text-secondary">
+                                    {{ ((companion.first_name?.[0] || '') + (companion.last_name?.[0] || '')).toUpperCase() }}
+                                </span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium truncate">{{ companion.full_name }}</div>
+                                <div class="text-sm text-gray-500">
+                                    {{ companion.relationship_label || companion.relationship }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selected count info -->
+                    <div v-if="selectedCompanionIds.length > 0" class="mt-3 p-3 bg-info/10 rounded-lg text-sm text-info">
+                        {{ selectedCompanionIds.length }} {{ $t('cases.companions') }}
+                    </div>
+                </div>
+
                 <!-- Actions -->
                 <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                     <router-link :to="`/cases/${route.params.id}`" class="btn btn-outline-secondary">{{ $t('cases.cancel') }}</router-link>
@@ -191,13 +249,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from '@/composables/use-meta';
 import { useCaseStore } from '@/stores/case';
+import { useCompanionStore } from '@/stores/companion';
 import { useNotification } from '@/composables/useNotification';
 import type { UpdateCaseData } from '@/types/case';
+import type { Companion } from '@/types/companion';
 import flatPickr from 'vue-flatpickr-component';
 import 'flatpickr/dist/flatpickr.css';
 import userService from '@/services/userService';
@@ -224,7 +284,12 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const caseStore = useCaseStore();
+const companionStore = useCompanionStore();
 const { success, error } = useNotification();
+
+const availableCompanions = ref<Companion[]>([]);
+const selectedCompanionIds = ref<number[]>([]);
+const isLoadingCompanions = ref(false);
 
 const languageOptions = computed(() => [
     { value: 'es', label: t('common.spanish') },
@@ -250,7 +315,18 @@ const form = reactive<UpdateCaseData>({
     archive_box_number: '',
     closure_notes: '',
     assigned_to: null,
+    companion_ids: [],
 });
+
+function toggleCompanion(id: number) {
+    const idx = selectedCompanionIds.value.indexOf(id);
+    if (idx === -1) selectedCompanionIds.value.push(id);
+    else selectedCompanionIds.value.splice(idx, 1);
+}
+
+watch(selectedCompanionIds, (ids) => {
+    form.companion_ids = [...ids];
+}, { deep: true });
 
 const currentCase = computed(() => caseStore.currentCase);
 
@@ -299,6 +375,21 @@ onMounted(async () => {
             form.archive_box_number = currentCase.value.archive_box_number || '';
             form.closure_notes = currentCase.value.closure_notes || '';
             form.assigned_to = currentCase.value.assigned_to ?? null;
+
+            // Load companions from the case
+            if (currentCase.value.companions) {
+                selectedCompanionIds.value = currentCase.value.companions.map((c: any) => c.id);
+            }
+            // Load available companions from the client
+            if (currentCase.value.client_id) {
+                isLoadingCompanions.value = true;
+                try {
+                    await companionStore.fetchCompanions(currentCase.value.client_id);
+                    availableCompanions.value = companionStore.companions;
+                } finally {
+                    isLoadingCompanions.value = false;
+                }
+            }
         }
     } catch (err) {
         error(t('cases.failed_to_load'));

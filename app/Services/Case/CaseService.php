@@ -86,20 +86,31 @@ class CaseService
     public function updateCase(ImmigrationCase $case, array $data): ImmigrationCase
     {
         return DB::transaction(function () use ($case, $data) {
+            $companionIds = array_key_exists('companion_ids', $data) ? $data['companion_ids'] : null;
+            unset($data['companion_ids']);
+
+            $oldCompanionIds = $companionIds !== null ? $case->companions()->pluck('companions.id')->toArray() : null;
+
             $oldValues = $case->only(array_keys($data));
 
             $updatedCase = $this->caseRepository->update($case, $data);
 
+            if ($companionIds !== null) {
+                $updatedCase->companions()->sync($companionIds);
+            }
+
             activity()
                 ->causedBy(Auth::user())
                 ->performedOn($updatedCase)
-                ->withProperties([
+                ->withProperties(array_filter([
                     'old' => $oldValues,
                     'new' => $data,
-                ])
+                    'old_companion_ids' => $oldCompanionIds,
+                    'new_companion_ids' => $companionIds,
+                ], fn ($v) => $v !== null))
                 ->log('Updated case: ' . $updatedCase->case_number);
 
-            return $updatedCase;
+            return $updatedCase->load(['client', 'caseType', 'assignedTo', 'companions']);
         });
     }
 

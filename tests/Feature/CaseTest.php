@@ -769,6 +769,107 @@ class CaseTest extends TestCase
             ->assertJsonValidationErrors(['companion_ids']);
     }
 
+    // ==================== Update Case Companions ====================
+
+    public function test_can_update_case_companions(): void
+    {
+        $case = ImmigrationCase::factory()->active()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'case_type_id' => $this->caseType->id,
+        ]);
+
+        $companions = Companion::factory()->count(2)->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+        ]);
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->putJson("/api/cases/{$case->id}", [
+                'companion_ids' => $companions->pluck('id')->toArray(),
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonCount(2, 'data.companions');
+
+        $this->assertDatabaseCount('case_companions', 2);
+    }
+
+    public function test_can_remove_all_companions_from_case(): void
+    {
+        $case = ImmigrationCase::factory()->active()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'case_type_id' => $this->caseType->id,
+        ]);
+
+        $companions = Companion::factory()->count(2)->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+        ]);
+
+        $case->companions()->sync($companions->pluck('id'));
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->putJson("/api/cases/{$case->id}", [
+                'companion_ids' => [],
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonCount(0, 'data.companions');
+
+        $this->assertDatabaseCount('case_companions', 0);
+    }
+
+    public function test_cannot_update_case_with_companions_from_different_client(): void
+    {
+        $case = ImmigrationCase::factory()->active()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'case_type_id' => $this->caseType->id,
+        ]);
+
+        $otherClient = Client::factory()->create(['tenant_id' => $this->tenant->id]);
+        $companions = Companion::factory()->count(2)->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $otherClient->id,
+        ]);
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->putJson("/api/cases/{$case->id}", [
+                'companion_ids' => $companions->pluck('id')->toArray(),
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['companion_ids']);
+    }
+
+    public function test_update_without_companion_ids_does_not_change_companions(): void
+    {
+        $case = ImmigrationCase::factory()->active()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'case_type_id' => $this->caseType->id,
+        ]);
+
+        $companions = Companion::factory()->count(2)->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+        ]);
+
+        $case->companions()->sync($companions->pluck('id'));
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->putJson("/api/cases/{$case->id}", [
+                'priority' => 'urgent',
+            ]);
+
+        $response->assertStatus(200);
+
+        // Companions should remain unchanged
+        $this->assertDatabaseCount('case_companions', 2);
+    }
+
     public function test_can_create_case_with_assigned_user(): void
     {
         $response = $this->actingAs($this->adminUser, 'sanctum')

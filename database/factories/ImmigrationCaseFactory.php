@@ -83,6 +83,18 @@ class ImmigrationCaseFactory extends Factory
     }
 
     /**
+     * Indicate that the case is inactive.
+     */
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => ImmigrationCase::STATUS_INACTIVE,
+            'closed_at' => null,
+            'closure_notes' => null,
+        ]);
+    }
+
+    /**
      * Indicate that the case is closed.
      */
     public function closed(): static

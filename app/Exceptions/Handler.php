@@ -44,5 +44,14 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+
+        $this->renderable(function (CompanionHasActiveCasesException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => [
+                    'companion' => [$e->getMessage()],
+                ],
+            ], 422);
+        });
     }
 }

@@ -164,7 +164,9 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         <!-- Email -->
                         <div>
-                            <label for="email" class="mb-2 block">{{ $t('clients.email') }}</label>
+                            <label for="email" class="mb-2 block">{{ $t('clients.email') }}
+                                <span class="text-danger">*</span>
+                            </label>
                             <input
                                 id="email"
                                 v-model="form.email"
@@ -178,26 +180,32 @@
 
                         <!-- Phone -->
                         <div>
-                            <label for="phone" class="mb-2 block">{{ $t('clients.phone') }}</label>
+                            <label for="phone" class="mb-2 block">{{ $t('clients.phone') }}
+                                <span class="text-danger">*</span>
+                            </label> 
                             <input
                                 id="phone"
                                 v-model="form.phone"
                                 type="text"
-                                :placeholder="$t('clients.enter_phone')"
+                                :placeholder="'(___) ___-____'"
                                 class="form-input"
+                                :class="{ 'border-danger': v$.phone.$error }"
+                                v-maska="'(###) ###-####'"
                             />
+                            <p v-if="v$.phone.$error" class="text-danger mt-1 text-sm">{{ v$.phone.$errors[0]?.$message }}</p>
                         </div>
 
                         <!-- Secondary Phone -->
                         <div>
                             <label for="secondary_phone" class="mb-2 block">{{ $t('clients.secondary_phone') }}</label>
-                            <input
-                                id="secondary_phone"
-                                v-model="form.secondary_phone"
-                                type="text"
-                                :placeholder="$t('clients.enter_secondary_phone')"
-                                class="form-input"
-                            />
+                                <input
+                                    id="secondary_phone"
+                                    v-model="form.secondary_phone"
+                                    type="text"
+                                    :placeholder="'(___) ___-____'"
+                                    class="form-input"
+                                    v-maska="'(###) ###-####'"
+                                />
                         </div>
 
                         <!-- Residential Address -->
@@ -257,6 +265,39 @@
                                 :placeholder="$t('clients.select_country')"
                             />
                         </div>
+
+                        <!-- Passport Number -->
+                        <div>
+                            <label for="passport_number" class="mb-2 block">{{ $t('clients.passport_number') }}</label>
+                            <input
+                                id="passport_number"
+                                v-model="form.passport_number"
+                                type="text"
+                                :placeholder="$t('clients.enter_passport_number')"
+                                class="form-input"
+                            />
+                        </div>
+
+                        <!-- Passport Country -->
+                        <div>
+                            <label for="passport_country" class="mb-2 block">{{ $t('clients.passport_country') }}</label>
+                            <CountrySelect
+                                id="passport_country"
+                                v-model="form.passport_country"
+                                :placeholder="$t('clients.select_passport_country')"
+                            />
+                        </div>
+
+                        <!-- Passport Expiry -->
+                        <div>
+                            <label for="passport_expiry_date" class="mb-2 block">{{ $t('clients.passport_expiry') }}</label>
+                            <flat-pickr
+                                v-model="form.passport_expiry_date"
+                                :config="passportExpiryDateConfig"
+                                class="form-input"
+                                :placeholder="$t('clients.select_date')"
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -291,39 +332,6 @@
                             <flat-pickr
                                 v-model="form.arrival_date"
                                 :config="dateConfig"
-                                class="form-input"
-                                :placeholder="$t('clients.select_date')"
-                            />
-                        </div>
-
-                        <!-- Passport Number -->
-                        <div>
-                            <label for="passport_number" class="mb-2 block">{{ $t('clients.passport_number') }}</label>
-                            <input
-                                id="passport_number"
-                                v-model="form.passport_number"
-                                type="text"
-                                :placeholder="$t('clients.enter_passport_number')"
-                                class="form-input"
-                            />
-                        </div>
-
-                        <!-- Passport Country -->
-                        <div>
-                            <label for="passport_country" class="mb-2 block">{{ $t('clients.passport_country') }}</label>
-                            <CountrySelect
-                                id="passport_country"
-                                v-model="form.passport_country"
-                                :placeholder="$t('clients.select_passport_country')"
-                            />
-                        </div>
-
-                        <!-- Passport Expiry -->
-                        <div>
-                            <label for="passport_expiry_date" class="mb-2 block">{{ $t('clients.passport_expiry') }}</label>
-                            <flat-pickr
-                                v-model="form.passport_expiry_date"
-                                :config="passportExpiryDateConfig"
                                 class="form-input"
                                 :placeholder="$t('clients.select_date')"
                             />
@@ -442,6 +450,7 @@ import { useMeta } from '@/composables/use-meta';
 import { useClientStore } from '@/stores/client';
 import { useNotification } from '@/composables/useNotification';
 import { useI18n } from 'vue-i18n';
+import { vMaska } from 'maska/vue';
 import flatPickr from 'vue-flatpickr-component';
 import 'flatpickr/dist/flatpickr.css';
 
@@ -484,15 +493,19 @@ const GenderOptions = computed(() => [
 ]);
 
 const MaritalStatusOptions = computed(() => [
-    { value: 'single', label: t('clients.single') as string },
-    { value: 'married', label: t('clients.married') as string },
     { value: 'divorced', label: t('clients.divorced') as string },
     { value: 'widowed', label: t('clients.widowed') as string },
+    { value: 'annulled_marriage', label: t('clients.annulled_marriage') as string },
+    { value: 'common_law', label: t('clients.common_law') as string },
+    { value: 'legally_separated', label: t('clients.legally_separated') as string },
+    { value: 'married', label: t('clients.married') as string },
+    { value: 'single', label: t('clients.single') as string },
+    { value: 'unknown', label: t('clients.unknown') as string },
 ]);
 
 const CanadaStatusOptions = computed(() => [
-    { value: 'asylum_seeker', label: t('clients.asylum_seeker') as string },
-    { value: 'refugee', label: t('clients.refugee') as string },
+    { value: 'protected_person', label: t('clients.protected_person') as string },
+    { value: 'refugee_claimant', label: t('clients.refugee_claimant') as string },
     { value: 'temporary_resident', label: t('clients.temporary_resident') as string },
     { value: 'permanent_resident', label: t('clients.permanent_resident') as string },
     { value: 'citizen', label: t('clients.citizen') as string },
@@ -567,7 +580,11 @@ const rules = computed(() => ({
         required: helpers.withMessage(() => t('clients.last_name_required'), required),
     },
     email: {
+        required: helpers.withMessage(() => t('clients.email_required'), required),
         email: helpers.withMessage(() => t('clients.invalid_email'), email),
+    },
+    phone: {
+        required: helpers.withMessage(() => t('clients.phone_required'), required),
     },
 }));
 

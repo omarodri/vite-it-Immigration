@@ -5,7 +5,7 @@
 
 import type { Gender } from './client';
 
-export type RelationshipType = 'spouse' | 'child' | 'parent' | 'sibling' | 'other';
+export type RelationshipType = 'spouse' | 'common-law partner' | 'dependent child' | 'grandchild' | 'parent' | 'grandparent' | 'sibling' | 'half-sibling' | 'step-sibling' | 'aunt / uncle' | 'niece / nephew' | 'cousin' | 'child-in-law' | 'parent-in-law' | 'other';
 
 export interface Companion {
     id: number;

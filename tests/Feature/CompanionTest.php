@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\CaseType;
 use App\Models\Client;
 use App\Models\Companion;
+use App\Models\ImmigrationCase;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -327,6 +329,84 @@ class CompanionTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonPath('message', 'Companion deleted successfully');
 
+        $this->assertSoftDeleted('companions', ['id' => $companion->id]);
+    }
+
+    public function test_cannot_delete_companion_with_active_cases(): void
+    {
+        $caseType = CaseType::first() ?? CaseType::factory()->create();
+
+        $companion = Companion::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+        ]);
+
+        $case = ImmigrationCase::factory()->active()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'case_type_id' => $caseType->id,
+        ]);
+
+        $case->companions()->attach($companion->id);
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->deleteJson("/api/clients/{$this->client->id}/companions/{$companion->id}");
+
+        $response->assertStatus(422)
+            ->assertJsonPath('errors.companion.0', fn ($message) => str_contains($message, $companion->full_name));
+
+        // Companion should NOT be soft deleted
+        $this->assertDatabaseHas('companions', [
+            'id' => $companion->id,
+            'deleted_at' => null,
+        ]);
+    }
+
+    public function test_can_delete_companion_with_only_closed_cases(): void
+    {
+        $caseType = CaseType::first() ?? CaseType::factory()->create();
+
+        $companion = Companion::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+        ]);
+
+        $case = ImmigrationCase::factory()->closed()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'case_type_id' => $caseType->id,
+        ]);
+
+        $case->companions()->attach($companion->id);
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->deleteJson("/api/clients/{$this->client->id}/companions/{$companion->id}");
+
+        $response->assertStatus(200);
+        $this->assertSoftDeleted('companions', ['id' => $companion->id]);
+    }
+
+    public function test_can_delete_companion_with_only_archived_cases(): void
+    {
+        $caseType = CaseType::first() ?? CaseType::factory()->create();
+
+        $companion = Companion::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+        ]);
+
+        $case = ImmigrationCase::factory()->archived()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'case_type_id' => $caseType->id,
+        ]);
+
+        $case->companions()->attach($companion->id);
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->deleteJson("/api/clients/{$this->client->id}/companions/{$companion->id}");
+
+        $response->assertStatus(200);
         $this->assertSoftDeleted('companions', ['id' => $companion->id]);
     }
 

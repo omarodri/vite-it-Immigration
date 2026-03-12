@@ -24,6 +24,7 @@ class CaseTypeFactory extends Factory
             CaseType::CATEGORY_TEMPORARY,
             CaseType::CATEGORY_PERMANENT,
             CaseType::CATEGORY_HUMANITARIAN,
+            CaseType::CATEGORY_CITIZENSHIP,
         ]);
 
         return [
@@ -77,7 +78,16 @@ class CaseTypeFactory extends Factory
     }
 
     /**
-     * Indicate that the case type belongs to a specific tenant.
+     * Indicate that the case type is for citizenship.
+     */
+    public function citizenship(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'category' => CaseType::CATEGORY_CITIZENSHIP,
+        ]);
+    }
+
+     /* Indicate that the case type belongs to a specific tenant.
      */
     public function forTenant(Tenant $tenant): static
     {

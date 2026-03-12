@@ -23,17 +23,17 @@
                 getCategoryClass(caseType.category),
             ]"
         >
-            {{ caseType.category_label || $t(`case_types.${caseType.category}`) }}
+            {{ $t(`case_types.${caseType.category}`) }}
         </span>
 
         <!-- Case Type Name -->
         <h4 class="font-semibold text-gray-900 dark:text-white mb-1">
-            {{ caseType.name }}
+            {{ $t(`case_types.${caseType.name}`) }}
         </h4>
 
         <!-- Code -->
         <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-            {{ caseType.code }}
+            {{ $t(`case_types.${caseType.code}`) }}
         </p>
 
         <!-- Description -->
@@ -41,7 +41,7 @@
             v-if="caseType.description"
             class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2"
         >
-            {{ caseType.description }}
+            {{ $t(`case_types.${caseType.description}`) }}
         </p>
     </div>
 </template>
@@ -64,9 +64,10 @@ defineEmits<Emits>();
 
 function getCategoryClass(category: CaseTypeCategory): string {
     const classes: Record<CaseTypeCategory, string> = {
-        temporary_residence: 'bg-info/20 text-info',
-        permanent_residence: 'bg-success/20 text-success',
-        humanitarian: 'bg-warning/20 text-warning',
+        'category.temporary_residence': 'bg-info/20 text-info',
+        'category.permanent_residence': 'bg-success/20 text-success',
+        'category.refugee': 'bg-warning/20 text-warning',
+        'category.citizenship': 'bg-danger/20 text-danger',
     };
     return classes[category] || 'bg-gray-200 text-gray-700';
 }

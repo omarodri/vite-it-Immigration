@@ -20,7 +20,7 @@
                 <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-3 mt-6 first:mt-0">
                     {{ $t(`case_types.${category}`) }}
                 </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <CaseTypeCard
                         v-for="caseType in typesByCategory[category]"
                         :key="caseType.id"

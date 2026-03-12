@@ -38,7 +38,7 @@
                                 <!-- Name Row -->
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium mb-1">
+                                        <label class="block text-sm font-medium mb-1 dark:text-white">
                                             {{ $t('clients.first_name') }} *
                                         </label>
                                         <input
@@ -53,7 +53,7 @@
                                         </p>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium mb-1">
+                                        <label class="block text-sm font-medium mb-1 dark:text-white">
                                             {{ $t('clients.last_name') }} *
                                         </label>
                                         <input
@@ -72,28 +72,32 @@
                                 <!-- Contact Row -->
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium mb-1">
-                                            {{ $t('clients.email') }}
+                                        <label class="block text-sm font-medium mb-1 dark:text-white">
+                                            {{ $t('clients.email') }} *
                                         </label>
                                         <input
                                             v-model="form.email"
                                             type="email"
                                             class="form-input"
                                             :class="{ 'border-danger': errors.email }"
+                                            required
                                         />
                                         <p v-if="errors.email" class="text-danger text-xs mt-1">
                                             {{ errors.email[0] }}
                                         </p>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium mb-1">
-                                            {{ $t('clients.phone') }}
+                                        <label class="block text-sm font-medium mb-1 dark:text-white">
+                                            {{ $t('clients.phone') }} *
                                         </label>
                                         <input
                                             v-model="form.phone"
                                             type="tel"
                                             class="form-input"
+                                            :placeholder="'(___) ___-____'"
                                             :class="{ 'border-danger': errors.phone }"
+                                            v-maska="'(###) ###-####'"
+                                            required
                                         />
                                         <p v-if="errors.phone" class="text-danger text-xs mt-1">
                                             {{ errors.phone[0] }}
@@ -104,16 +108,17 @@
                                 <!-- Extra Info Row -->
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium mb-1">
+                                        <label class="block text-sm font-medium mb-1 dark:text-white">
                                             {{ $t('clients.nationality') }}
                                         </label>
                                         <CountrySelect
-                                            v-model="form.nationality"
+                                            v-model="form.nationality as string | null" 
                                             :placeholder="$t('clients.select_nationality')"
+                                            class="dark:bg-gray-900 dark:text-white"
                                         />
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium mb-1">
+                                        <label class="block text-sm font-medium mb-1 dark:text-white">
                                             {{ $t('clients.language') }}
                                         </label>
                                         <select v-model="form.language" class="form-select">
@@ -146,6 +151,7 @@
 <script lang="ts" setup>
 import { ref, reactive, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { vMaska } from 'maska/vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue';
 import clientService from '@/services/clientService';
 import { useNotification } from '@/composables/useNotification';

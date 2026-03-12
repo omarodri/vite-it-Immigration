@@ -35,6 +35,10 @@
                     <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('clients.edit_client') }}</h5>
                     <!-- header/actions -->
                     <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <router-link to="/clients" class="btn btn-outline-primary gap-2">
+                            <icon-arrow-left class="w-5 h-5" />
+                            {{ $t('clients.back_to_list') }}
+                        </router-link>
                         <router-link :to="`/clients/${clientId}`" class="btn btn-outline-secondary gap-2">
                             <icon-arrow-left class="w-4 h-4" />
                             {{ $t('clients.back_to_profile') }}
@@ -163,54 +167,108 @@
                         {{ $t('clients.contact_information') }}
                     </h6>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <!-- Email -->
                         <div>
-                            <label for="email" class="mb-2 block">{{ $t('clients.email') }}</label>
+                            <label for="email" class="mb-2 block">{{ $t('clients.email') }}
+                                <span class="text-danger">*</span>
+                            </label>
                             <input
                                 id="email"
                                 v-model="form.email"
                                 type="email"
+                                :placeholder="$t('clients.enter_email')"
                                 class="form-input"
                                 :class="{ 'border-danger': v$.email.$error }"
                             />
                             <p v-if="v$.email.$error" class="text-danger mt-1 text-sm">{{ v$.email.$errors[0]?.$message }}</p>
                         </div>
-
+                        <!-- Phone -->
                         <div>
-                            <label for="phone" class="mb-2 block">{{ $t('clients.phone') }}</label>
-                            <input id="phone" v-model="form.phone" type="text" class="form-input" />
+                            <label for="phone" class="mb-2 block">{{ $t('clients.phone') }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                id="phone" 
+                                v-model="form.phone" 
+                                type="text" 
+                                placeholder="(___) ___-____" 
+                                class="form-input" 
+                                v-maska="'(###) ###-####'" 
+                                :class="{ 'border-danger': v$.phone.$error }"
+                            />
+                            <p v-if="v$.phone.$error" class="text-danger mt-1 text-sm">{{ v$.phone.$errors[0]?.$message }}</p>
                         </div>
 
+                        <!-- Secondary Phone -->
                         <div>
                             <label for="secondary_phone" class="mb-2 block">{{ $t('clients.secondary_phone') }}</label>
-                            <input id="secondary_phone" v-model="form.secondary_phone" type="text" class="form-input" />
+                            <input id="secondary_phone" v-model="form.secondary_phone" type="text" placeholder="(___) ___-____" class="form-input" v-maska="'(###) ###-####'" />
                         </div>
 
+                        <!-- Residential Address -->
                         <div class="md:col-span-2">
                             <label for="residential_address" class="mb-2 block">{{ $t('clients.residential_address') }}</label>
                             <input id="residential_address" v-model="form.residential_address" type="text" class="form-input" />
                         </div>
 
+                        <!-- City -->
                         <div>
                             <label for="city" class="mb-2 block">{{ $t('clients.city') }}</label>
                             <input id="city" v-model="form.city" type="text" class="form-input" />
                         </div>
 
+                        <!-- Province -->
                         <div>
                             <label for="province" class="mb-2 block">{{ $t('clients.province') }}</label>
                             <input id="province" v-model="form.province" type="text" class="form-input" />
                         </div>
 
+                        <!-- Postal Code -->
                         <div>
                             <label for="postal_code" class="mb-2 block">{{ $t('clients.postal_code') }}</label>
                             <input id="postal_code" v-model="form.postal_code" type="text" class="form-input" />
                         </div>
 
+                        <!-- Country -->
                         <div>
                             <label for="country" class="mb-2 block">{{ $t('clients.country') }}</label>
                             <CountrySelect
                                 id="country"
                                 v-model="form.country"
                                 :placeholder="$t('clients.select_country')"
+                            />
+                        </div>
+
+                        <!-- Passport Number -->
+                        <div>
+                            <label for="passport_number" class="mb-2 block">{{ $t('clients.passport_number') }}</label>
+                            <input
+                                id="passport_number"
+                                v-model="form.passport_number"
+                                type="text"
+                                :placeholder="$t('clients.enter_passport_number')"
+                                class="form-input"
+                            />
+                        </div>
+
+                        <!-- Passport Country -->
+                        <div>
+                            <label for="passport_country" class="mb-2 block">{{ $t('clients.passport_country') }}</label>
+                            <CountrySelect
+                                id="passport_country"
+                                v-model="form.passport_country"
+                                :placeholder="$t('clients.select_passport_country')"
+                            />
+                        </div>
+
+                        <!-- Passport Expiry -->
+                        <div>
+                            <label for="passport_expiry_date" class="mb-2 block">{{ $t('clients.passport_expiry') }}</label>
+                            <flat-pickr
+                                v-model="form.passport_expiry_date"
+                                :config="passportExpiryDateConfig"
+                                class="form-input"
+                                :placeholder="$t('clients.select_date')"
                             />
                         </div>
                     </div>
@@ -223,6 +281,7 @@
                         {{ $t('clients.canada_legal_status') }}
                     </h6>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <!-- Canada Status -->
                         <div>
                             <label for="canada_status" class="mb-2 block">{{ $t('clients.status_in_canada') }}</label>
                             <select id="canada_status" v-model="form.canada_status" class="form-select">
@@ -231,6 +290,7 @@
                             </select>
                         </div>
 
+                        <!-- Entry Point -->
                         <div>
                             <label for="entry_point" class="mb-2 block">{{ $t('clients.entry_point') }}</label>
                             <select id="entry_point" v-model="form.entry_point" class="form-select">
@@ -239,35 +299,19 @@
                             </select>
                         </div>
 
+                        <!-- Arrival Date -->
                         <div>
                             <label for="arrival_date" class="mb-2 block">{{ $t('clients.arrival_date') }}</label>
                             <flat-pickr v-model="form.arrival_date" :config="dateConfig" class="form-input" />
                         </div>
 
-                        <div>
-                            <label for="passport_number" class="mb-2 block">{{ $t('clients.passport_number') }}</label>
-                            <input id="passport_number" v-model="form.passport_number" type="text" class="form-input" />
-                        </div>
-
-                        <div>
-                            <label for="passport_country" class="mb-2 block">{{ $t('clients.passport_country') }}</label>
-                            <CountrySelect
-                                id="passport_country"
-                                v-model="form.passport_country"
-                                :placeholder="$t('clients.select_passport_country')"
-                            />
-                        </div>
-
-                        <div>
-                            <label for="passport_expiry_date" class="mb-2 block">{{ $t('clients.passport_expiry') }}</label>
-                            <flat-pickr v-model="form.passport_expiry_date" :config="passportExpiryDateConfig" class="form-input" />
-                        </div>
-
+                        <!-- IUC -->
                         <div>
                             <label for="iuc" class="mb-2 block">{{ $t('clients.iuc') }}</label>
                             <input id="iuc" v-model="form.iuc" type="text" class="form-input" />
                         </div>
 
+                        <!-- Work Permit Number -->
                         <div>
                             <label for="work_permit_number" class="mb-2 block">{{ $t('clients.work_permit_number') }}</label>
                             <input id="work_permit_number" v-model="form.work_permit_number" type="text" class="form-input" />
@@ -344,6 +388,7 @@ import { useMeta } from '@/composables/use-meta';
 import { useClientStore } from '@/stores/client';
 import { useNotification } from '@/composables/useNotification';
 import { useI18n } from 'vue-i18n';
+import { vMaska } from 'maska/vue';
 import flatPickr from 'vue-flatpickr-component';
 import 'flatpickr/dist/flatpickr.css';
 import {
@@ -394,15 +439,19 @@ const GenderOptions = computed(() => [
 ]);
 
 const MaritalStatusOptions = computed(() => [
-    { value: 'single', label: t('clients.single') as string },
-    { value: 'married', label: t('clients.married') as string },
     { value: 'divorced', label: t('clients.divorced') as string },
     { value: 'widowed', label: t('clients.widowed') as string },
+    { value: 'annulled_marriage', label: t('clients.annulled_marriage') as string },
+    { value: 'common_law', label: t('clients.common_law') as string },
+    { value: 'legally_separated', label: t('clients.legally_separated') as string },
+    { value: 'married', label: t('clients.married') as string },
+    { value: 'single', label: t('clients.single') as string },
+    { value: 'unknown', label: t('clients.unknown') as string },
 ]);
 
 const CanadaStatusOptions = computed(() => [
-    { value: 'asylum_seeker', label: t('clients.asylum_seeker') as string },
-    { value: 'refugee', label: t('clients.refugee') as string },
+    { value: 'protected_person', label: t('clients.protected_person') as string },
+    { value: 'refugee_claimant', label: t('clients.refugee_claimant') as string },
     { value: 'temporary_resident', label: t('clients.temporary_resident') as string },
     { value: 'permanent_resident', label: t('clients.permanent_resident') as string },
     { value: 'citizen', label: t('clients.citizen') as string },
@@ -481,7 +530,11 @@ const rules = computed(() => ({
         required: helpers.withMessage(() => t('clients.last_name_required'), required),
     },
     email: {
+        required: helpers.withMessage(() => t('clients.email_required'), required),
         email: helpers.withMessage(() => t('clients.invalid_email'), email),
+    },
+    phone: {
+        required: helpers.withMessage(() => t('clients.phone_required'), required),
     },
 }));
 

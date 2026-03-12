@@ -101,7 +101,7 @@
                                 <form @submit.prevent="saveCompanion" class="space-y-4">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.first_name') }} *</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.first_name') }} *</label>
                                             <input
                                                 v-model="companionForm.first_name"
                                                 type="text"
@@ -112,7 +112,7 @@
                                             <p v-if="companionErrors.first_name" class="text-danger text-xs mt-1">{{ companionErrors.first_name[0] }}</p>
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.last_name') }} *</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.last_name') }} *</label>
                                             <input
                                                 v-model="companionForm.last_name"
                                                 type="text"
@@ -126,7 +126,7 @@
 
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.relationship') }} *</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.relationship') }} *</label>
                                             <select
                                                 v-model="companionForm.relationship"
                                                 class="form-select"
@@ -138,12 +138,23 @@
                                                 <option value="child">{{ $t('companions.child') }}</option>
                                                 <option value="parent">{{ $t('companions.parent') }}</option>
                                                 <option value="sibling">{{ $t('companions.sibling') }}</option>
+                                                <option value="common-law partner">{{ $t('companions.common-law partner') }}</option>
+                                                <option value="dependent child">{{ $t('companions.dependent child') }}</option>
+                                                <option value="grandchild">{{ $t('companions.grandchild') }}</option>
+                                                <option value="grandparent">{{ $t('companions.grandparent') }}</option>
+                                                <option value="half-sibling">{{ $t('companions.half-sibling') }}</option>
+                                                <option value="step-sibling">{{ $t('companions.step-sibling') }}</option>
+                                                <option value="aunt / uncle">{{ $t('companions.aunt / uncle') }}</option>
+                                                <option value="niece / nephew">{{ $t('companions.niece / nephew') }}</option>
+                                                <option value="cousin">{{ $t('companions.cousin') }}</option>
+                                                <option value="child-in-law">{{ $t('companions.child-in-law') }}</option>
+                                                <option value="parent-in-law">{{ $t('companions.parent-in-law') }}</option>
                                                 <option value="other">{{ $t('companions.other') }}</option>
                                             </select>
                                             <p v-if="companionErrors.relationship" class="text-danger text-xs mt-1">{{ companionErrors.relationship[0] }}</p>
                                         </div>
                                         <div v-if="companionForm.relationship === 'other'">
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.specify_relationship') }} *</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.specify_relationship') }} *</label>
                                             <input
                                                 v-model="companionForm.relationship_other"
                                                 type="text"
@@ -156,7 +167,7 @@
 
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.date_of_birth') }}</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.date_of_birth') }}</label>
                                             <input
                                                 v-model="companionForm.date_of_birth"
                                                 type="date"
@@ -165,7 +176,7 @@
                                             />
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.gender') }}</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.gender') }}</label>
                                             <select v-model="companionForm.gender" class="form-select">
                                                 <option value="">{{ $t('companions.select_gender') }}</option>
                                                 <option value="male">{{ $t('companions.male') }}</option>
@@ -177,15 +188,20 @@
 
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.nationality') }}</label>
-                                            <input
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.nationality') }}</label>
+                                            <!-- <input
                                                 v-model="companionForm.nationality"
                                                 type="text"
                                                 class="form-input"
+                                            /> -->
+                                            <CountrySelect
+                                            v-model="companionForm.nationality as string | null" 
+                                            :placeholder="$t('companions.select_nationality')"
+                                            class="dark:bg-gray-900 dark:text-white"
                                             />
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.passport_number') }}</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.passport_number') }}</label>
                                             <input
                                                 v-model="companionForm.passport_number"
                                                 type="text"
@@ -196,15 +212,20 @@
 
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.passport_country') }}</label>
-                                            <input
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.passport_country') }}</label>
+                                            <!-- <input
                                                 v-model="companionForm.passport_country"
                                                 type="text"
                                                 class="form-input"
+                                            /> -->
+                                            <CountrySelect
+                                            v-model="companionForm.passport_country as string | null" 
+                                            :placeholder="$t('companions.select_passport_country')"
+                                            class="dark:bg-gray-900 dark:text-white"
                                             />
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.passport_expiry') }}</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.passport_expiry') }}</label>
                                             <input
                                                 v-model="companionForm.passport_expiry_date"
                                                 type="date"
@@ -214,7 +235,7 @@
                                     </div>
 
                                     <div>
-                                        <label class="block text-sm font-medium mb-1">{{ $t('companions.notes') }}</label>
+                                        <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.notes') }}</label>
                                         <textarea
                                             v-model="companionForm.notes"
                                             rows="2"
@@ -260,6 +281,7 @@ import CompanionCheckbox from '../components/CompanionCheckbox.vue';
 import IconUsers from '@/components/icon/icon-users.vue';
 import IconInfoTriangle from '@/components/icon/icon-info-triangle.vue';
 import IconPlus from '@/components/icon/icon-plus.vue';
+import CountrySelect from '@/components/CountrySelect.vue';
 
 // Get wizard from parent
 const wizard = inject<ReturnType<typeof import('@/composables/useCaseWizard').useCaseWizard>>('wizard')!;

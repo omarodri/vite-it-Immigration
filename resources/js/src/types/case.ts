@@ -9,7 +9,7 @@
 
 export type CaseStatus = 'active' | 'inactive' | 'archived' | 'closed';
 export type CasePriority = 'urgent' | 'high' | 'medium' | 'low';
-export type CaseTypeCategory = 'temporary_residence' | 'permanent_residence' | 'humanitarian';
+export type CaseTypeCategory = 'category.temporary_residence' | 'category.permanent_residence' | 'category.refugee' | 'category.citizenship';
 
 // =============================================
 // Main Interfaces
@@ -88,8 +88,13 @@ export interface ImmigrationCase {
         first_name: string;
         last_name: string;
         full_name?: string;
+        initials?: string;
         relationship: string;
         relationship_label?: string;
+        age?: number;
+        nationality?: string;
+        date_of_birth?: string;
+        gender?: string;
     }>;
 }
 
@@ -126,6 +131,7 @@ export interface UpdateCaseData {
     archive_box_number?: string | null;
     closure_notes?: string;
     assigned_to?: number | null;
+    companion_ids?: number[];
 }
 
 export interface AssignCaseData {
@@ -224,9 +230,10 @@ export const CASE_PRIORITY_OPTIONS: Array<{ value: CasePriority; label: string; 
 ];
 
 export const CASE_TYPE_CATEGORY_OPTIONS: Array<{ value: CaseTypeCategory; label: string }> = [
-    { value: 'temporary_residence', label: 'Temporary Residence' },
-    { value: 'permanent_residence', label: 'Permanent Residence' },
-    { value: 'humanitarian', label: 'Humanitarian' },
+    { value: 'category.temporary_residence', label: 'Temporary Residence' },
+    { value: 'category.permanent_residence', label: 'Permanent Residence' },
+    { value: 'category.refugee', label: 'Refugee' },
+    { value: 'category.citizenship', label: 'Citizenship' },
 ];
 
 export const LANGUAGE_OPTIONS: Array<{ value: string; label: string }> = [
@@ -251,7 +258,8 @@ export const CASE_PRIORITY_LABELS_ES: Record<CasePriority, string> = {
 };
 
 export const CASE_TYPE_CATEGORY_LABELS_ES: Record<CaseTypeCategory, string> = {
-    temporary_residence: 'Residencia Temporal',
-    permanent_residence: 'Residencia Permanente',
-    humanitarian: 'Humanitario',
+    'category.temporary_residence': 'Residencia Temporal',
+    'category.permanent_residence': 'Residencia Permanente',
+    'category.refugee': 'Refugio/Asilo',
+    'category.citizenship': 'Ciudadanía',
 };

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Case;
 
+use App\Models\Companion;
 use App\Models\ImmigrationCase;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
@@ -50,6 +51,8 @@ class UpdateCaseRequest extends FormRequest
             'archive_box_number' => ['nullable', 'string', 'max:50'],
             'closure_notes' => ['nullable', 'string', 'max:2000', 'required_if:status,closed'],
             'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
+            'companion_ids' => ['sometimes', 'array'],
+            'companion_ids.*' => ['integer', 'exists:companions,id'],
         ];
     }
 
@@ -63,6 +66,23 @@ class UpdateCaseRequest extends FormRequest
                 $assignedUser = User::withoutGlobalScopes()->find($this->assigned_to);
                 if (! $assignedUser || $assignedUser->tenant_id !== Auth::user()->tenant_id) {
                     $validator->errors()->add('assigned_to', 'The selected staff member is invalid.');
+                }
+            }
+
+            if (! empty($this->companion_ids) && $this->route('case')) {
+                $clientId = $this->route('case')?->client_id;
+
+                $validIds = Companion::withoutGlobalScopes()
+                    ->where('client_id', $clientId)
+                    ->where('tenant_id', Auth::user()->tenant_id)
+                    ->whereIn('id', $this->companion_ids)
+                    ->pluck('id')
+                    ->toArray();
+
+                $invalidIds = array_diff($this->companion_ids, $validIds);
+
+                if (! empty($invalidIds)) {
+                    $validator->errors()->add('companion_ids', 'One or more selected companions do not belong to this client.');
                 }
             }
         });
@@ -85,6 +105,8 @@ class UpdateCaseRequest extends FormRequest
             'closure_notes.max' => 'Closure notes cannot exceed 2000 characters.',
             'archive_box_number.max' => 'Archive box number cannot exceed 50 characters.',
             'assigned_to.exists' => 'The selected staff member does not exist.',
+            'companion_ids.array' => 'Companions must be provided as a list.',
+            'companion_ids.*.exists' => 'One or more selected companions do not exist.',
         ];
     }
 }

@@ -111,6 +111,7 @@ export const useUserStore = defineStore('user', {
                     };
                 }
             } catch (error: any) {
+                if (error?.response?.status === 401) throw error; // auth redirect, suppress notification
                 this.error = error.response?.data?.message || 'Failed to fetch users';
                 throw error;
             } finally {

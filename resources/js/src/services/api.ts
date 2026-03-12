@@ -95,13 +95,12 @@ api.interceptors.response.use(
         switch (status) {
             case 401:
                 // Unauthorized - session expired or not authenticated
-                // Redirect to login and suppress the error so component-level
-                // catch handlers don't show stale notifications (e.g. "Failed to load users")
+                // Redirect to login; reject so fetchUser() and the router guard can complete
                 if (router.currentRoute.value.name !== 'boxed-signin' &&
                     router.currentRoute.value.name !== 'cover-login') {
                     router.push({ name: 'boxed-signin' });
                 }
-                return new Promise(() => {});
+                return Promise.reject(error);
 
 
             case 403:

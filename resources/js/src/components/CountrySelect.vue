@@ -7,7 +7,7 @@
         :placeholder="placeholder"
         :id="id"
         :disabled="disabled"
-        class="custom-multiselect"
+        class="custom-multiselect dark:bg-gray-900 dark:text-white"
         :allow-empty="true"
         :show-labels="false"
     />

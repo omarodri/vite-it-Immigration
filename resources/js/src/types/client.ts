@@ -5,8 +5,8 @@
 
 export type ClientStatus = 'prospect' | 'active' | 'inactive' | 'archived';
 export type Gender = 'male' | 'female' | 'other';
-export type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed' | 'common_law' | 'separated';
-export type CanadaStatus = 'asylum_seeker' | 'refugee' | 'temporary_resident' | 'permanent_resident' | 'citizen' | 'visitor' | 'student' | 'worker' | 'other';
+export type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed' | 'common_law' | 'legally_separated' | 'annulled_marriage' | 'unknown';
+export type CanadaStatus = 'asylum_seeker' | 'refugee' | 'temporary_resident' | 'permanent_resident' | 'citizen' | 'visitor' | 'student' | 'worker' | 'protected_person' | 'other';
 export type EntryPoint = 'airport' | 'land_border' | 'green_path';
 export type Language = 'es' | 'en' | 'fr';
 

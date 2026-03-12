@@ -32,6 +32,8 @@ class CaseType extends Model
 
     public const CATEGORY_HUMANITARIAN = 'humanitarian';
 
+    public const CATEGORY_CITIZENSHIP = 'citizenship';
+
     /**
      * Category labels in Spanish.
      */
@@ -39,6 +41,7 @@ class CaseType extends Model
         self::CATEGORY_TEMPORARY => 'Residencia Temporal',
         self::CATEGORY_PERMANENT => 'Residencia Permanente',
         self::CATEGORY_HUMANITARIAN => 'Humanitario',
+        self::CATEGORY_CITIZENSHIP => 'Ciudadanía',
     ];
 
     /**
