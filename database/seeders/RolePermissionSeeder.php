@@ -65,6 +65,7 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'cases.update', 'display_name' => 'Update Cases'],
             ['name' => 'cases.delete', 'display_name' => 'Delete Cases'],
             ['name' => 'cases.assign', 'display_name' => 'Assign Cases'],
+            ['name' => 'cases.view-fees', 'display_name' => 'View Case Fees'],
 
             // Tasks
             ['name' => 'tasks.view', 'display_name' => 'View Tasks'],
@@ -117,7 +118,7 @@ class RolePermissionSeeder extends Seeder
                     'activity-logs.view',
                     'clients.view', 'clients.create', 'clients.update', 'clients.delete',
                     'companions.view', 'companions.create', 'companions.update', 'companions.delete',
-                    'cases.view', 'cases.create', 'cases.update', 'cases.delete', 'cases.assign',
+                    'cases.view', 'cases.create', 'cases.update', 'cases.delete', 'cases.assign', 'cases.view-fees',
                     'tasks.view', 'tasks.create', 'tasks.update', 'tasks.delete',
                     'follow-ups.view', 'follow-ups.create', 'follow-ups.update', 'follow-ups.delete',
                     'documents.view', 'documents.create', 'documents.update', 'documents.delete',
@@ -158,7 +159,7 @@ class RolePermissionSeeder extends Seeder
                     'profile.view', 'profile.update',
                     'clients.view',
                     'companions.view',
-                    'cases.view',
+                    'cases.view', 'cases.view-fees',
                     'reports.view',
                 ],
             ],

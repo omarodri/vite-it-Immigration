@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CaseController;
+use App\Http\Controllers\Api\CaseTaskController;
 use App\Http\Controllers\Api\CaseTypeController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\CompanionController;
@@ -92,6 +93,10 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     Route::apiResource('cases', CaseController::class);
     Route::post('/cases/{case}/assign', [CaseController::class, 'assign']);
     Route::get('/cases/{case}/timeline', [CaseController::class, 'timeline']);
+
+    // Case Tasks routes
+    Route::put('/cases/{case}/tasks', [CaseTaskController::class, 'bulkUpdate']);
+    Route::patch('/cases/{case}/tasks/{task}/toggle', [CaseTaskController::class, 'toggle']);
 
     // Role management routes
     Route::get('/roles', [RoleController::class, 'index']);

@@ -53,6 +53,23 @@ class UpdateCaseRequest extends FormRequest
             'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
             'companion_ids' => ['sometimes', 'array'],
             'companion_ids.*' => ['integer', 'exists:companions,id'],
+            'case_tasks' => ['sometimes', 'array', 'max:50'],
+            'case_tasks.*.label' => ['required_with:case_tasks', 'string', 'max:150'],
+            'case_tasks.*.is_custom' => ['sometimes', 'boolean'],
+            'case_tasks.*.sort_order' => ['sometimes', 'integer', 'min:0', 'max:255'],
+            'stage' => ['sometimes', 'nullable', Rule::in(array_keys(ImmigrationCase::STAGE_LABELS))],
+            'ircc_status' => ['sometimes', 'nullable', Rule::in(array_keys(ImmigrationCase::IRCC_STATUS_LABELS))],
+            'final_result' => ['nullable', Rule::in([
+                ImmigrationCase::FINAL_RESULT_APPROVED,
+                ImmigrationCase::FINAL_RESULT_DENIED,
+            ])],
+            'ircc_code' => ['nullable', 'string', 'max:50'],
+            'contract_number' => ['nullable', 'string', 'max:50'],
+            'service_type' => ['sometimes', Rule::in([
+                ImmigrationCase::SERVICE_TYPE_PRO_BONO,
+                ImmigrationCase::SERVICE_TYPE_FEE_BASED,
+            ])],
+            'fees' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
         ];
     }
 
@@ -61,6 +78,11 @@ class UpdateCaseRequest extends FormRequest
      */
     public function withValidator($validator): void
     {
+        // Strip fees if user lacks permission
+        if ($this->has('fees') && ! $this->user()->can('cases.view-fees')) {
+            $this->request->remove('fees');
+        }
+
         $validator->after(function ($validator) {
             // Validate assigned_to with grandfather clause
             if ($this->has('assigned_to')) {
@@ -131,8 +153,19 @@ class UpdateCaseRequest extends FormRequest
             'assigned_to.exists' => 'The selected staff member does not exist.',
             'companion_ids.array' => 'Companions must be provided as a list.',
             'companion_ids.*.exists' => 'One or more selected companions do not exist.',
+            'case_tasks.*.label.required_with' => 'Each task must have a label.',
+            'case_tasks.*.label.max' => 'Task label cannot exceed 150 characters.',
             'assigned_to.consultor_role' => 'Solo se pueden asignar consultores a los expedientes.',
             'assigned_to.active_status' => 'El consultor asignado debe estar activo.',
+            'stage.in' => 'Invalid stage selected.',
+            'ircc_status.in' => 'Invalid IRCC status selected.',
+            'final_result.in' => 'Invalid final result selected.',
+            'ircc_code.max' => 'IRCC code cannot exceed 50 characters.',
+            'service_type.in' => 'Invalid service type selected.',
+            'fees.numeric' => 'Fees must be a valid number.',
+            'fees.min' => 'Fees cannot be negative.',
+            'fees.max' => 'Fees cannot exceed 999,999.99.',
+            'contract_number.max' => 'Contract number cannot exceed 50 characters.',
         ];
     }
 }

@@ -16,7 +16,7 @@ class CaseRepository implements CaseRepositoryInterface
      */
     public function findById(int $id): ?ImmigrationCase
     {
-        return ImmigrationCase::with(['client', 'caseType', 'assignedTo', 'importantDates'])
+        return ImmigrationCase::with(['client', 'caseType', 'assignedTo', 'importantDates', 'tasks'])
             ->find($id);
     }
 
@@ -57,6 +57,18 @@ class CaseRepository implements CaseRepositoryInterface
             $query->byClient($filters['client_id']);
         }
 
+        if (! empty($filters['stage'])) {
+            $query->byStage($filters['stage']);
+        }
+
+        if (! empty($filters['ircc_status'])) {
+            $query->byIrccStatus($filters['ircc_status']);
+        }
+
+        if (! empty($filters['service_type'])) {
+            $query->byServiceType($filters['service_type']);
+        }
+
         if (! empty($filters['date_from'])) {
             $query->whereHas('importantDates', function ($q) use ($filters) {
                 $q->whereDate('due_date', '>=', $filters['date_from']);
@@ -79,6 +91,9 @@ class CaseRepository implements CaseRepositoryInterface
             'status',
             'priority',
             'progress',
+            'stage',
+            'service_type',
+            'fees',
             'created_at',
             'updated_at',
         ];
@@ -217,6 +232,11 @@ class CaseRepository implements CaseRepositoryInterface
                 'medium' => $this->countByPriority(ImmigrationCase::PRIORITY_MEDIUM),
                 'low' => $this->countByPriority(ImmigrationCase::PRIORITY_LOW),
             ],
+            'by_stage' => ImmigrationCase::whereNotNull('stage')
+                ->selectRaw('stage, count(*) as count')
+                ->groupBy('stage')
+                ->pluck('count', 'stage')
+                ->toArray(),
             'upcoming_deadlines' => ImmigrationCase::upcoming(30)->count(),
             'unassigned' => ImmigrationCase::unassigned()->count(),
         ];

@@ -38,6 +38,9 @@ class CaseController extends Controller
             'client_id',
             'hearing_from',
             'hearing_to',
+            'stage',
+            'ircc_status',
+            'service_type',
             'sort_by',
             'sort_direction',
         ]);

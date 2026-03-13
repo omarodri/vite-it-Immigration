@@ -118,6 +118,44 @@
                     </select>
                 </div>
 
+                <!-- Stage Filter -->
+                <div class="w-44">
+                    <select v-model="stageFilter" class="form-select" aria-label="Filter by stage" @change="applyFilters">
+                        <option value="">{{ $t('cases.all_stages') }}</option>
+                        <option v-for="opt in CASE_STAGE_OPTIONS" :key="opt.value" :value="opt.value">
+                            {{ opt.label }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Column Chooser -->
+                <div class="relative">
+                    <button type="button" class="btn btn-outline-secondary gap-1" @click="showColumnChooser = !showColumnChooser">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7"/>
+                        </svg>
+                        {{ $t('cases.columns') }}
+                    </button>
+                    <div v-if="showColumnChooser" class="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-[#1b2e4b] border border-[#e0e6ed] dark:border-[#191e3a] rounded-lg shadow-lg p-3 min-w-[200px]">
+                        <p class="text-xs font-semibold text-gray-500 mb-2">{{ $t('cases.columns') }}</p>
+                        <div v-for="col in visibleOptions" :key="col.field" class="flex items-center gap-2 py-1">
+                            <input
+                                type="checkbox"
+                                :id="`col-${col.field}`"
+                                :checked="col.visible"
+                                :disabled="col.locked"
+                                class="form-checkbox"
+                                @change="toggleColumn(col.field)"
+                            />
+                            <label :for="`col-${col.field}`" class="text-sm cursor-pointer" :class="col.locked ? 'text-gray-400' : ''">
+                                {{ $t(col.titleKey) }}
+                            </label>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger btn-sm w-full mt-2" @click="resetColumns">
+                            {{ $t('cases.reset_columns') }}
+                        </button>
+                    </div>
+                </div>
 
                 <!-- Per Page -->
                 <div class="w-32">
@@ -234,6 +272,57 @@
                             <span class="badge" :class="getPriorityBadgeClass(data.value.priority)">
                                 {{ $t(`cases.${data.value.priority}`) }}
                             </span>
+                        </template>
+
+                        <!-- Stage Column -->
+                        <template #stage="data">
+                            <span v-if="data.value.stage"
+                                :class="`badge badge-outline-${CASE_STAGE_OPTIONS.find(o => o.value === data.value.stage)?.color ?? 'dark'}`"
+                                class="text-xs">
+                                {{ data.value.stage_label }}
+                            </span>
+                            <span v-else class="text-gray-400 text-xs">---</span>
+                        </template>
+
+                        <!-- Progress Column -->
+                        <template #progress="data">
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 min-w-[60px]">
+                                    <div
+                                        class="h-2 rounded-full transition-all"
+                                        :class="getProgressBarClass(data.value.progress)"
+                                        :style="{ width: `${data.value.progress ?? 0}%` }"
+                                    ></div>
+                                </div>
+                                <span class="text-xs text-gray-500 w-8 text-right shrink-0">{{ data.value.progress ?? 0 }}%</span>
+                            </div>
+                        </template>
+
+                        <!-- IRCC Status Column -->
+                        <template #ircc_status="data">
+                            <span v-if="data.value.ircc_status"
+                                class="badge text-xs"
+                                :class="`badge-outline-${['not_submitted','received','in_process','approved','refused','withdrawn','cancelled'].includes(data.value.ircc_status) ? {not_submitted:'dark',received:'info',in_process:'primary',approved:'success',refused:'danger',withdrawn:'warning',cancelled:'dark'}[data.value.ircc_status as string] : 'dark'}`">
+                                {{ data.value.ircc_status_label }}
+                            </span>
+                            <span v-else class="text-gray-400 text-xs">---</span>
+                        </template>
+
+                        <!-- Service Type Column -->
+                        <template #service_type="data">
+                            <span v-if="data.value.service_type" class="badge text-xs"
+                                :class="data.value.service_type === 'pro_bono' ? 'badge-outline-success' : 'badge-outline-primary'">
+                                {{ data.value.service_type_label }}
+                            </span>
+                            <span v-else class="text-gray-400 text-xs">---</span>
+                        </template>
+
+                        <!-- Fees Column -->
+                        <template #fees="data">
+                            <span v-if="data.value.fees !== undefined && data.value.fees !== null" class="text-sm font-semibold text-success">
+                                ${{ Number(data.value.fees).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}
+                            </span>
+                            <span v-else class="text-gray-400 text-xs">---</span>
                         </template>
 
                         <!-- Nearest Date Column -->
@@ -404,7 +493,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Vue3Datatable from '@bhplugin/vue3-datatable';
 import { useMeta } from '@/composables/use-meta';
@@ -412,7 +501,9 @@ import { useCaseStore } from '@/stores/case';
 import { useNotification } from '@/composables/useNotification';
 import { useDebounce } from '@/composables/useDebounce';
 import { formatDate } from '@/utils/formatters';
-import type { ImmigrationCase, CaseStatus, CasePriority, ImportantDate } from '@/types/case';
+import type { ImmigrationCase, CaseStatus, CasePriority, CaseStage, ImportantDate } from '@/types/case';
+import { CASE_STAGE_OPTIONS } from '@/types/case';
+import { useCaseColumnChooser } from '@/composables/useCaseColumnChooser';
 
 // Icons
 import IconFolder from '@/components/icon/icon-folder.vue';
@@ -433,10 +524,15 @@ const caseStore = useCaseStore();
 const { confirm: confirmDialog, success, error } = useNotification();
 const { debounce, isDebouncing } = useDebounce(300);
 
+// Column chooser
+const { columns: columnConfigs, visibleOptions, toggleColumn, resetColumns, isVisible } = useCaseColumnChooser();
+const showColumnChooser = ref(false);
+
 // Local state
 const searchQuery = ref('');
 const statusFilter = ref('active');
 const priorityFilter = ref('');
+const stageFilter = ref('');
 const caseTypeFilter = ref<number | ''>('');
 const perPage = ref(10);
 const currentPage = ref(1);
@@ -445,21 +541,32 @@ const sortDirection = ref<'asc' | 'desc'>('asc');
 const initialLoading = ref(true);
 
 // Computed
-const hasActiveFilters = computed(() => !!searchQuery.value || !!statusFilter.value || !!priorityFilter.value || !!caseTypeFilter.value);
+const hasActiveFilters = computed(() => !!searchQuery.value || !!statusFilter.value || !!priorityFilter.value || !!caseTypeFilter.value || !!stageFilter.value);
 const showSkeleton = computed(() => initialLoading.value && caseStore.cases.length === 0);
 const showEmptyState = computed(() => !caseStore.isLoading && !initialLoading.value && caseStore.cases.length === 0);
 
-// Table columns
-const columns = computed(() => [
-    { field: 'case_number', title: t('cases.case_number'), width: '140px', isUnique: true },
-    { field: 'client', title: t('cases.client'), minWidth: '200px', sort: false },
-    { field: 'case_type', title: t('cases.case_type'), width: '150px', sort: false },
-    { field: 'status', title: t('cases.status'), width: '100px' },
-    { field: 'priority', title: t('cases.priority'), width: '100px' },
-    { field: 'nearest_date', title: t('cases.important_dates'), width: '180px', sort: false },
-    { field: 'assigned_to', title: t('cases.assigned_to'), width: '140px', sort: false },
-    { field: 'actions', title: t('cases.actions'), sort: false, width: '130px', headerClass: 'justify-center' },
-]);
+// Table columns — dynamic based on column chooser
+const allColumns = [
+    { field: 'case_number', title: () => t('cases.case_number'), width: '140px', isUnique: true },
+    { field: 'client', title: () => t('cases.client'), minWidth: '200px', sort: false },
+    { field: 'case_type', title: () => t('cases.case_type'), width: '150px', sort: false },
+    { field: 'status', title: () => t('cases.status'), width: '100px' },
+    { field: 'priority', title: () => t('cases.priority'), width: '100px' },
+    { field: 'stage', title: () => t('cases.stage'), width: '160px', sort: false },
+    { field: 'progress', title: () => t('cases.progress'), width: '130px', sort: false },
+    { field: 'ircc_status', title: () => t('cases.ircc_status'), width: '130px', sort: false },
+    { field: 'service_type', title: () => t('cases.service_type'), width: '120px', sort: false },
+    { field: 'fees', title: () => t('cases.fees'), width: '100px', sort: false },
+    { field: 'nearest_date', title: () => t('cases.important_dates'), width: '180px', sort: false },
+    { field: 'assigned_to', title: () => t('cases.assigned_to'), width: '140px', sort: false },
+    { field: 'actions', title: () => t('cases.actions'), sort: false, width: '130px', headerClass: 'justify-center' },
+];
+
+const columns = computed(() =>
+    allColumns
+        .filter(col => isVisible(col.field))
+        .map(col => ({ ...col, title: col.title() }))
+);
 
 // Helper methods
 const getNearestDate = (importantDates: ImportantDate[] | undefined) => {
@@ -519,6 +626,7 @@ const clearFilters = () => {
     searchQuery.value = '';
     statusFilter.value = '';
     priorityFilter.value = '';
+    stageFilter.value = '';
     caseTypeFilter.value = '';
     currentPage.value = 1;
     fetchCases();
@@ -557,6 +665,7 @@ const fetchCases = async () => {
             search: searchQuery.value || undefined,
             status: (statusFilter.value as CaseStatus) || undefined,
             priority: (priorityFilter.value as CasePriority) || undefined,
+            stage: (stageFilter.value as CaseStage) || undefined,
             case_type_id: caseTypeFilter.value || undefined,
             sort_by: sortColumn.value,
             sort_direction: sortDirection.value,
@@ -587,8 +696,21 @@ const confirmDelete = async (caseItem: ImmigrationCase) => {
     }
 };
 
+// Close column chooser on click outside
+const handleClickOutside = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (showColumnChooser.value && !target.closest('.relative')) {
+        showColumnChooser.value = false;
+    }
+};
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
+
 // Initialize
 onMounted(async () => {
+    document.addEventListener('click', handleClickOutside);
     try {
         await Promise.all([
             caseStore.fetchCaseTypes(),

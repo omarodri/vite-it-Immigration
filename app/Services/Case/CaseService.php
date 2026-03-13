@@ -17,7 +17,8 @@ class CaseService
 {
     public function __construct(
         private CaseRepositoryInterface $caseRepository,
-        private CaseTypeRepositoryInterface $caseTypeRepository
+        private CaseTypeRepositoryInterface $caseTypeRepository,
+        private CaseTaskService $caseTaskService
     ) {}
 
     /**
@@ -33,7 +34,7 @@ class CaseService
      */
     public function getCase(ImmigrationCase $case): ImmigrationCase
     {
-        return $case->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates']);
+        return $case->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates', 'tasks']);
     }
 
     /**
@@ -45,6 +46,10 @@ class CaseService
             // Extract companion_ids before creating the case
             $companionIds = $data['companion_ids'] ?? [];
             unset($data['companion_ids']);
+
+            // Extract case_tasks before creating the case
+            $caseTasks = $data['case_tasks'] ?? [];
+            unset($data['case_tasks']);
 
             // Extract important_dates before creating the case
             $importantDatesData = array_key_exists('important_dates', $data) && !empty($data['important_dates'])
@@ -78,6 +83,11 @@ class CaseService
 
             $case->importantDates()->createMany($datesWithCaseId);
 
+            // Sync case tasks if provided
+            if (! empty($caseTasks)) {
+                $this->caseTaskService->syncTasks($case, $caseTasks);
+            }
+
             activity()
                 ->causedBy(Auth::user())
                 ->performedOn($case)
@@ -89,7 +99,7 @@ class CaseService
                 ])
                 ->log('Created case: ' . $case->case_number);
 
-            return $case->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates']);
+            return $case->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates', 'tasks']);
         });
     }
 
@@ -105,6 +115,11 @@ class CaseService
             // Extract important_dates before updating
             $importantDates = array_key_exists('important_dates', $data) ? $data['important_dates'] : null;
             unset($data['important_dates']);
+
+            // Extract case_tasks before updating
+            $hasCaseTasks = array_key_exists('case_tasks', $data);
+            $caseTasks = $hasCaseTasks ? $data['case_tasks'] : null;
+            unset($data['case_tasks']);
 
             $oldCompanionIds = $companionIds !== null ? $case->companions()->pluck('companions.id')->toArray() : null;
 
@@ -125,6 +140,11 @@ class CaseService
                 }
             }
 
+            // Handle case tasks (replace strategy)
+            if ($hasCaseTasks) {
+                $this->caseTaskService->syncTasks($updatedCase, $caseTasks ?? []);
+            }
+
             activity()
                 ->causedBy(Auth::user())
                 ->performedOn($updatedCase)
@@ -136,7 +156,7 @@ class CaseService
                 ], fn ($v) => $v !== null))
                 ->log('Updated case: ' . $updatedCase->case_number);
 
-            return $updatedCase->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates']);
+            return $updatedCase->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates', 'tasks']);
         });
     }
 

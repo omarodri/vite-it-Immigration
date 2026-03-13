@@ -8,6 +8,7 @@ import caseService from '@/services/caseService';
 import type {
     ImmigrationCase,
     CaseType,
+    CaseTask,
     CreateCaseData,
     UpdateCaseData,
     CaseFilters,
@@ -400,6 +401,40 @@ export const useCaseStore = defineStore('case', {
 
         clearError() {
             this.error = null;
+        },
+
+        // ===============================
+        // TASK OPERATIONS (Lifecycle)
+        // ===============================
+
+        async toggleTask(caseId: number, taskId: number): Promise<{ task: CaseTask; progress: number }> {
+            try {
+                const result = await caseService.toggleTask(caseId, taskId);
+
+                // Update currentCase tasks and progress if applicable
+                if (this.currentCase?.id === caseId) {
+                    const taskIdx = this.currentCase.tasks?.findIndex(t => t.id === taskId);
+                    if (taskIdx !== undefined && taskIdx !== -1 && this.currentCase.tasks) {
+                        this.currentCase.tasks[taskIdx] = result.task;
+                    }
+                    this.currentCase.progress = result.progress;
+                }
+
+                return result;
+            } catch (error: any) {
+                this.error = error.response?.data?.message || 'Failed to toggle task';
+                throw error;
+            }
+        },
+
+        async bulkUpdateTasks(caseId: number, tasks: Omit<CaseTask, 'id' | 'completed_at'>[]) {
+            try {
+                const response = await caseService.bulkUpdateTasks(caseId, tasks);
+                return response;
+            } catch (error: any) {
+                this.error = error.response?.data?.message || 'Failed to update tasks';
+                throw error;
+            }
         },
     },
 });

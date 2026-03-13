@@ -11,6 +11,28 @@ export type CaseStatus = 'active' | 'inactive' | 'archived' | 'closed';
 export type CasePriority = 'urgent' | 'high' | 'medium' | 'low';
 export type CaseTypeCategory = 'category.temporary_residence' | 'category.permanent_residence' | 'category.refugee' | 'category.citizenship';
 
+export type CaseStage =
+    | 'initial_consultation'
+    | 'document_collection'
+    | 'application_preparation'
+    | 'submitted'
+    | 'under_review'
+    | 'additional_info_requested'
+    | 'decision_pending'
+    | 'closed';
+
+export type IrccStatus =
+    | 'not_submitted'
+    | 'received'
+    | 'in_process'
+    | 'approved'
+    | 'refused'
+    | 'withdrawn'
+    | 'cancelled';
+
+export type FinalResult = 'approved' | 'denied';
+export type ServiceType = 'pro_bono' | 'fee_based';
+
 // =============================================
 // Main Interfaces
 // =============================================
@@ -34,6 +56,37 @@ export interface ImportantDate {
     due_date: string | null;
     sort_order: number;
 }
+
+// =============================================
+// Case Task Types (Lifecycle Checklist)
+// =============================================
+
+export interface CaseTask {
+    id?: number;
+    label: string;
+    is_completed: boolean;
+    is_custom: boolean;
+    sort_order: number;
+    completed_at?: string | null;
+}
+
+export interface DefaultCaseTask {
+    key: string;
+    sort_order: number;
+}
+
+export const DEFAULT_CASE_TASKS: DefaultCaseTask[] = [
+    { key: 'contract_signature',      sort_order: 0 },
+    { key: 'document_reception',      sort_order: 1 },
+    { key: 'document_review',         sort_order: 2 },
+    { key: 'application_preparation', sort_order: 3 },
+    { key: 'application_submission',  sort_order: 4 },
+    { key: 'acknowledgment_receipt',  sort_order: 5 },
+    { key: 'biometric_verification',  sort_order: 6 },
+    { key: 'interview',               sort_order: 7 },
+    { key: 'additional_info_request', sort_order: 8 },
+    { key: 'final_decision',          sort_order: 9 },
+];
 
 export interface ImmigrationCase {
     id: number;
@@ -59,6 +112,24 @@ export interface ImmigrationCase {
 
     // Important Dates
     important_dates?: ImportantDate[];
+
+    // Lifecycle Tasks
+    tasks?: CaseTask[];
+
+    // Operational
+    stage: CaseStage | null;
+    stage_label: string | null;
+    ircc_status: IrccStatus | null;
+    ircc_status_label: string | null;
+    final_result: FinalResult | null;
+    final_result_label: string | null;
+    ircc_code: string | null;
+
+    // Financial
+    contract_number: string | null;
+    service_type: ServiceType;
+    service_type_label: string;
+    fees?: number | null;
 
     // Archive
     archive_box_number: string | null;
@@ -114,6 +185,10 @@ export interface CreateCaseData {
     language?: string;
     description?: string;
     important_dates?: Omit<ImportantDate, 'id'>[];
+    case_tasks?: Omit<CaseTask, 'id' | 'completed_at'>[];
+    service_type?: ServiceType;
+    contract_number?: string | null;
+    fees?: number | null;
 }
 
 export interface UpdateCaseData {
@@ -125,10 +200,18 @@ export interface UpdateCaseData {
     language?: string;
     description?: string;
     important_dates?: Omit<ImportantDate, 'id'>[];
+    case_tasks?: Omit<CaseTask, 'id' | 'completed_at'>[];
     archive_box_number?: string | null;
     closure_notes?: string;
     assigned_to?: number | null;
     companion_ids?: number[];
+    stage?: CaseStage | null;
+    ircc_status?: IrccStatus | null;
+    final_result?: FinalResult | null;
+    ircc_code?: string | null;
+    contract_number?: string | null;
+    service_type?: ServiceType;
+    fees?: number | null;
 }
 
 export interface AssignCaseData {
@@ -152,6 +235,9 @@ export interface CaseFilters {
     sort_direction?: 'asc' | 'desc';
     per_page?: number;
     page?: number;
+    stage?: CaseStage;
+    ircc_status?: IrccStatus;
+    service_type?: ServiceType;
 }
 
 export interface CaseStatistics {
@@ -231,6 +317,37 @@ export const CASE_TYPE_CATEGORY_OPTIONS: Array<{ value: CaseTypeCategory; label:
     { value: 'category.permanent_residence', label: 'Permanent Residence' },
     { value: 'category.refugee', label: 'Refugee' },
     { value: 'category.citizenship', label: 'Citizenship' },
+];
+
+export const CASE_STAGE_OPTIONS: Array<{ value: CaseStage; label: string; color: string }> = [
+    { value: 'initial_consultation',      label: 'Consulta Inicial',                   color: 'secondary' },
+    { value: 'document_collection',       label: 'Recolección de Documentos',          color: 'info' },
+    { value: 'application_preparation',   label: 'Preparación de Solicitud',           color: 'info' },
+    { value: 'submitted',                 label: 'Enviada',                            color: 'primary' },
+    { value: 'under_review',              label: 'En Revisión IRCC',                   color: 'warning' },
+    { value: 'additional_info_requested', label: 'Información Adicional Solicitada',   color: 'danger' },
+    { value: 'decision_pending',          label: 'Decisión Pendiente',                 color: 'warning' },
+    { value: 'closed',                    label: 'Cerrada',                            color: 'dark' },
+];
+
+export const IRCC_STATUS_OPTIONS: Array<{ value: IrccStatus; label: string; color: string }> = [
+    { value: 'not_submitted', label: 'No Enviada',  color: 'dark' },
+    { value: 'received',      label: 'Recibida',    color: 'info' },
+    { value: 'in_process',    label: 'En Proceso',  color: 'primary' },
+    { value: 'approved',      label: 'Aprobada',    color: 'success' },
+    { value: 'refused',       label: 'Rechazada',   color: 'danger' },
+    { value: 'withdrawn',     label: 'Retirada',    color: 'warning' },
+    { value: 'cancelled',     label: 'Cancelada',   color: 'dark' },
+];
+
+export const SERVICE_TYPE_OPTIONS: Array<{ value: ServiceType; label: string }> = [
+    { value: 'pro_bono',   label: 'Pro Bono' },
+    { value: 'fee_based',  label: 'Con Honorarios' },
+];
+
+export const FINAL_RESULT_OPTIONS: Array<{ value: FinalResult; label: string; color: string }> = [
+    { value: 'approved', label: 'Aprobado', color: 'success' },
+    { value: 'denied',   label: 'Denegado', color: 'danger' },
 ];
 
 export const LANGUAGE_OPTIONS: Array<{ value: string; label: string }> = [

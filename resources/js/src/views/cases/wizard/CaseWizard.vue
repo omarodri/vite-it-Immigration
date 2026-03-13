@@ -92,6 +92,7 @@ const StepCaseType = defineAsyncComponent(() => import('./steps/StepCaseType.vue
 const StepClient = defineAsyncComponent(() => import('./steps/StepClient.vue'));
 const StepCompanions = defineAsyncComponent(() => import('./steps/StepCompanions.vue'));
 const StepDetails = defineAsyncComponent(() => import('./steps/StepDetails.vue'));
+const StepChecklist = defineAsyncComponent(() => import('./steps/StepChecklist.vue'));
 const StepSummary = defineAsyncComponent(() => import('./steps/StepSummary.vue'));
 
 const { t } = useI18n();
@@ -116,6 +117,8 @@ const currentStepComponent = computed(() => {
         case 4:
             return StepDetails;
         case 5:
+            return StepChecklist;
+        case 6:
             return StepSummary;
         default:
             return StepCaseType;

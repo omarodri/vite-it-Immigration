@@ -8,7 +8,7 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import caseService from '@/services/caseService';
 import { useNotification } from './useNotification';
-import type { WizardState, WizardStep, CaseDetailsForm } from '@/types/wizard';
+import type { WizardState, WizardStep, CaseDetailsForm, WizardTaskItem } from '@/types/wizard';
 import { WIZARD_STEPS } from '@/types/wizard';
 import type { ImmigrationCase, CreateCaseData } from '@/types/case';
 
@@ -20,6 +20,7 @@ const createDefaultState = (): WizardState => ({
     caseTypeId: null,
     clientId: null,
     selectedCompanionIds: [],
+    selectedTasks: [] as WizardTaskItem[],
     caseDetails: {
         priority: 'medium',
         language: 'es',
@@ -31,6 +32,9 @@ const createDefaultState = (): WizardState => ({
             { label: 'Fecha de decision',   due_date: null, sort_order: 3 },
         ],
         assigned_to: null,
+        service_type: 'fee_based',
+        contract_number: '',
+        fees: null,
     },
     isSubmitting: false,
     errors: {},
@@ -55,7 +59,7 @@ export function useCaseWizard() {
 
     // Navigation computed
     const canGoNext = computed(() => {
-        return isStepValid(state.currentStep) && state.currentStep < 5;
+        return isStepValid(state.currentStep) && state.currentStep < 6;
     });
 
     const canGoPrev = computed(() => {
@@ -63,7 +67,7 @@ export function useCaseWizard() {
     });
 
     const isLastStep = computed(() => {
-        return state.currentStep === 5;
+        return state.currentStep === 6;
     });
 
     const currentStepKey = computed(() => {
@@ -85,6 +89,9 @@ export function useCaseWizard() {
                 // Details are optional
                 return true;
             case 5:
+                // Checklist is optional
+                return true;
+            case 6:
                 // Summary - all previous steps must be valid
                 return isStepValid(1) && isStepValid(2);
             default:
@@ -94,7 +101,7 @@ export function useCaseWizard() {
 
     // Navigation methods
     function goToStep(step: number): void {
-        if (step >= 1 && step <= 5) {
+        if (step >= 1 && step <= 6) {
             // Can only go forward if current step is valid
             if (step > state.currentStep && !isStepValid(state.currentStep)) {
                 return;
@@ -161,6 +168,7 @@ export function useCaseWizard() {
                 caseTypeId: state.caseTypeId,
                 clientId: state.clientId,
                 selectedCompanionIds: state.selectedCompanionIds,
+                selectedTasks: state.selectedTasks,
                 caseDetails: state.caseDetails,
             };
             sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -178,6 +186,7 @@ export function useCaseWizard() {
                 state.caseTypeId = data.caseTypeId || null;
                 state.clientId = data.clientId || null;
                 state.selectedCompanionIds = data.selectedCompanionIds || [];
+                state.selectedTasks = data.selectedTasks || [];
                 if (data.caseDetails) {
                     Object.assign(state.caseDetails, data.caseDetails);
                 }
@@ -224,6 +233,17 @@ export function useCaseWizard() {
                     sort_order: d.sort_order,
                 })),
                 assigned_to: state.caseDetails.assigned_to || undefined,
+                service_type: state.caseDetails.service_type,
+                contract_number: state.caseDetails.contract_number || undefined,
+                fees: state.caseDetails.fees ?? undefined,
+                case_tasks: state.selectedTasks.length > 0
+                    ? state.selectedTasks.map((t, idx) => ({
+                        label: t.label,
+                        is_completed: false,
+                        is_custom: t.is_custom,
+                        sort_order: idx,
+                    }))
+                    : undefined,
             };
 
             const response = await caseService.createCase(payload);

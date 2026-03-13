@@ -86,8 +86,22 @@
 
                         <!-- Progress -->
                         <div>
-                            <label for="progress" class="block text-sm font-medium mb-2">{{ $t('cases.progress') }}: {{ form.progress }}%</label>
-                            <input id="progress" v-model.number="form.progress" type="range" min="0" max="100" class="w-full" />
+                            <template v-if="form.tasks.length === 0">
+                                <label for="progress" class="block text-sm font-medium mb-2">{{ $t('cases.progress') }}: {{ form.progress }}%</label>
+                                <input id="progress" v-model.number="form.progress" type="range" min="0" max="100" class="w-full" />
+                            </template>
+                            <template v-else>
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-500">{{ $t('cases.progress') }}</span>
+                                        <span class="font-semibold">{{ form.progress }}%</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                        <div class="h-2 rounded-full bg-primary transition-all" :style="{ width: `${form.progress}%` }"></div>
+                                    </div>
+                                    <p class="text-xs text-gray-400">{{ $t('cases.lifecycle_auto_progress') }}</p>
+                                </div>
+                            </template>
                         </div>
 
                         <!-- Language -->
@@ -96,7 +110,49 @@
                             <select id="language" v-model="form.language" class="form-select">
                                 <option value="">{{ $t('clients.enter_language') }}</option>
                                 <option v-for="opt in languageOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                            </select> 
+                            </select>
+                        </div>
+
+                        <!-- Operational Tracking -->
+                        <h6 class="font-semibold border-b border-gray-200 dark:border-gray-700 pb-2 mt-4">{{ $t('cases.operational_info') }}</h6>
+
+                        <!-- Stage -->
+                        <div>
+                            <label for="stage" class="block text-sm font-medium mb-2">{{ $t('cases.stage') }}</label>
+                            <select id="stage" v-model="form.stage" class="form-select">
+                                <option :value="null">{{ $t('cases.no_stage') }}</option>
+                                <option v-for="opt in CASE_STAGE_OPTIONS" :key="opt.value" :value="opt.value">
+                                    {{ opt.label }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- IRCC Status -->
+                        <div>
+                            <label for="ircc_status" class="block text-sm font-medium mb-2">{{ $t('cases.ircc_status') }}</label>
+                            <select id="ircc_status" v-model="form.ircc_status" class="form-select">
+                                <option :value="null">{{ $t('cases.no_ircc_status') }}</option>
+                                <option v-for="opt in IRCC_STATUS_OPTIONS" :key="opt.value" :value="opt.value">
+                                    {{ opt.label }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Final Result (only when ircc_status is approved or refused) -->
+                        <div v-if="form.ircc_status === 'approved' || form.ircc_status === 'refused'">
+                            <label for="final_result" class="block text-sm font-medium mb-2">{{ $t('cases.final_result') }}</label>
+                            <select id="final_result" v-model="form.final_result" class="form-select">
+                                <option :value="null">---</option>
+                                <option v-for="opt in FINAL_RESULT_OPTIONS" :key="opt.value" :value="opt.value">
+                                    {{ opt.label }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- IRCC Code -->
+                        <div>
+                            <label for="ircc_code" class="block text-sm font-medium mb-2">{{ $t('cases.ircc_code') }}</label>
+                            <input id="ircc_code" v-model="form.ircc_code" type="text" class="form-input" placeholder="B000123456" maxlength="50" />
                         </div>
                     </div>
 
@@ -124,6 +180,34 @@
                 <div v-if="form.status === 'archived' || form.status === 'closed'" class="mt-6">
                     <label for="archive_box_number" class="block text-sm font-medium mb-2">{{ $t('cases.archive_box_number') }}</label>
                     <input id="archive_box_number" v-model="form.archive_box_number" type="text" class="form-input" placeholder="BOX-001" />
+                </div>
+
+                <!-- Financial Information Section -->
+                <div class="mt-6">
+                    <h6 class="text-base font-semibold text-[#3b3f5c] dark:text-white-light mb-4 border-b border-[#e0e6ed] dark:border-[#1b2e4b] pb-2">
+                        {{ $t('cases.financial_info') }}
+                    </h6>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                            <label for="service_type" class="block text-sm font-medium mb-1">{{ $t('cases.service_type') }}</label>
+                            <select id="service_type" v-model="form.service_type" class="form-select">
+                                <option v-for="opt in SERVICE_TYPE_OPTIONS" :key="opt.value" :value="opt.value">
+                                    {{ opt.label }}
+                                </option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="contract_number" class="block text-sm font-medium mb-1">{{ $t('cases.contract_number') }}</label>
+                            <input id="contract_number" v-model="form.contract_number" type="text" class="form-input" maxlength="50" />
+                        </div>
+                        <div v-if="canViewFees">
+                            <label for="fees" class="block text-sm font-medium mb-1">{{ $t('cases.fees') }}</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                                <input id="fees" v-model.number="form.fees" type="number" class="form-input pl-7" min="0" step="0.01" placeholder="0.00" />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Companions Section -->
@@ -184,6 +268,14 @@
                     </div>
                 </div>
 
+                <!-- Lifecycle / Tasks Section -->
+                <div class="mt-6">
+                    <h6 class="text-base font-semibold text-[#3b3f5c] dark:text-white-light mb-4 border-b border-[#e0e6ed] dark:border-[#1b2e4b] pb-2">
+                        {{ $t('cases.lifecycle_title') }}
+                    </h6>
+                    <LifecycleChecklist v-model="form.tasks" :readonly="false" />
+                </div>
+
                 <!-- Actions -->
                 <div class="flex justify-end gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                     <router-link :to="`/cases/${route.params.id}`" class="btn btn-outline-secondary">{{ $t('cases.cancel') }}</router-link>
@@ -212,15 +304,21 @@ import { useMeta } from '@/composables/use-meta';
 import { useCaseStore } from '@/stores/case';
 import { useCompanionStore } from '@/stores/companion';
 import { useNotification } from '@/composables/useNotification';
-import type { UpdateCaseData, ImportantDate } from '@/types/case';
+import type { UpdateCaseData, ImportantDate, CaseTask, CaseStage, IrccStatus, FinalResult, ServiceType } from '@/types/case';
+import { CASE_STAGE_OPTIONS, IRCC_STATUS_OPTIONS, FINAL_RESULT_OPTIONS, SERVICE_TYPE_OPTIONS } from '@/types/case';
 import type { Companion } from '@/types/companion';
 import DateManager from '@/components/DateManager.vue';
+import LifecycleChecklist from '@/components/LifecycleChecklist.vue';
 import userService from '@/services/userService';
+import { usePermissions } from '@/composables/usePermissions';
 import type { StaffMember } from '@/types/wizard';
 
 const staffMembers = ref<StaffMember[]>([]);
 const isLoadingStaff = ref(false);
 const staffError = ref(false);
+
+const { can } = usePermissions();
+const canViewFees = computed(() => can('cases.view-fees'));
 
 // Icons
 import IconFolder from '@/components/icon/icon-folder.vue';
@@ -249,17 +347,25 @@ const isLoading = ref(true);
 const isSubmitting = ref(false);
 const errors = reactive<Record<string, string>>({});
 
-const form = reactive<UpdateCaseData & { important_dates: ImportantDate[] }>({
+const form = reactive<UpdateCaseData & { important_dates: ImportantDate[]; tasks: CaseTask[] }>({
     status: 'active',
     priority: 'medium',
     progress: 0,
     language: 'es',
     description: '',
     important_dates: [],
+    tasks: [] as CaseTask[],
     archive_box_number: '',
     closure_notes: '',
     assigned_to: null,
     companion_ids: [],
+    stage: null as CaseStage | null,
+    ircc_status: null as IrccStatus | null,
+    final_result: null as FinalResult | null,
+    ircc_code: '',
+    contract_number: '',
+    service_type: 'fee_based' as ServiceType,
+    fees: null as number | null,
 });
 
 function toggleCompanion(id: number) {
@@ -270,6 +376,14 @@ function toggleCompanion(id: number) {
 
 watch(selectedCompanionIds, (ids) => {
     form.companion_ids = [...ids];
+}, { deep: true });
+
+// Auto-calculate progress from tasks when tasks have entries
+watch(() => form.tasks, (tasks) => {
+    if (tasks.length > 0) {
+        const completed = tasks.filter(t => t.is_completed).length;
+        form.progress = Math.round((completed / tasks.length) * 100);
+    }
 }, { deep: true });
 
 const currentCase = computed(() => caseStore.currentCase);
@@ -288,7 +402,19 @@ const handleSubmit = async () => {
 
     try {
         const caseId = parseInt(route.params.id as string);
-        await caseStore.updateCase(caseId, form);
+        const payload: UpdateCaseData & { important_dates: ImportantDate[] } = {
+            ...form,
+            ircc_code: form.ircc_code || null,
+            contract_number: form.contract_number || null,
+            fees: canViewFees.value ? form.fees : undefined,
+            case_tasks: form.tasks.map((t, idx) => ({
+                label: t.label,
+                is_completed: t.is_completed,
+                is_custom: t.is_custom,
+                sort_order: idx,
+            })),
+        };
+        await caseStore.updateCase(caseId, payload);
         success(t('cases.updated_successfully'));
         router.push(`/cases/${caseId}`);
     } catch (err: any) {
@@ -321,6 +447,14 @@ onMounted(async () => {
             form.archive_box_number = currentCase.value.archive_box_number || '';
             form.closure_notes = currentCase.value.closure_notes || '';
             form.assigned_to = currentCase.value.assigned_to ?? null;
+            form.stage = currentCase.value.stage;
+            form.ircc_status = currentCase.value.ircc_status;
+            form.final_result = currentCase.value.final_result;
+            form.ircc_code = currentCase.value.ircc_code ?? '';
+            form.contract_number = currentCase.value.contract_number ?? '';
+            form.service_type = currentCase.value.service_type ?? 'fee_based';
+            form.fees = currentCase.value.fees ?? null;
+            form.tasks = currentCase.value.tasks?.map(t => ({ ...t })) ?? [];
 
             // Load staff members (include current assignee even if inactive)
             isLoadingStaff.value = true;

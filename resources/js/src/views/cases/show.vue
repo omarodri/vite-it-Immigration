@@ -106,6 +106,26 @@
                                     <span class="text-gray-500">{{ $t('cases.language') }}</span>
                                     <span>{{ currentCase.language?.toUpperCase() || '-' }}</span>
                                 </div>
+                                <!-- Stage -->
+                                <div v-if="currentCase.stage" class="flex items-center justify-between py-1">
+                                    <span class="text-gray-500">{{ $t('cases.stage') }}</span>
+                                    <span :class="`badge badge-outline-${stageColor}`">{{ currentCase.stage_label }}</span>
+                                </div>
+                                <!-- IRCC Status -->
+                                <div v-if="currentCase.ircc_status" class="flex items-center justify-between py-1">
+                                    <span class="text-gray-500">{{ $t('cases.ircc_status') }}</span>
+                                    <span :class="`badge badge-outline-${irccColor}`">{{ currentCase.ircc_status_label }}</span>
+                                </div>
+                                <!-- Final Result -->
+                                <div v-if="currentCase.final_result" class="flex items-center justify-between py-1">
+                                    <span class="text-gray-500">{{ $t('cases.final_result') }}</span>
+                                    <span :class="`badge badge-outline-${finalResultColor}`">{{ currentCase.final_result_label }}</span>
+                                </div>
+                                <!-- IRCC Code -->
+                                <div v-if="currentCase.ircc_code" class="flex items-center justify-between py-1">
+                                    <span class="text-gray-500">{{ $t('cases.ircc_code') }}</span>
+                                    <span class="text-sm font-mono font-medium">{{ currentCase.ircc_code }}</span>
+                                </div>
                             </div>
 
                             <!-- Progress -->
@@ -123,6 +143,27 @@
                             <div v-if="currentCase.description" class="pt-4">
                                 <h4 class="font-medium mb-2">{{ $t('cases.description') }}</h4>
                                 <p class="text-gray-600 dark:text-gray-400">{{ currentCase.description }}</p>
+                            </div>
+
+                            <!-- Financial Info -->
+                            <div v-if="currentCase.service_type" class="mt-4 pt-4 border-t border-[#e0e6ed] dark:border-[#1b2e4b]">
+                                <h6 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">{{ $t('cases.financial_info') }}</h6>
+                                <div class="space-y-1">
+                                    <div class="flex items-center justify-between py-1">
+                                        <span class="text-sm text-gray-500">{{ $t('cases.service_type') }}</span>
+                                        <span class="badge" :class="currentCase.service_type === 'pro_bono' ? 'badge-outline-success' : 'badge-outline-primary'">
+                                            {{ currentCase.service_type_label }}
+                                        </span>
+                                    </div>
+                                    <div v-if="currentCase.contract_number" class="flex items-center justify-between py-1">
+                                        <span class="text-sm text-gray-500">{{ $t('cases.contract_number') }}</span>
+                                        <span class="text-sm font-medium">{{ currentCase.contract_number }}</span>
+                                    </div>
+                                    <div v-if="currentCase.fees !== undefined && currentCase.fees !== null" class="flex items-center justify-between py-1">
+                                        <span class="text-sm text-gray-500">{{ $t('cases.fees') }}</span>
+                                        <span class="text-sm font-semibold text-success">${{ Number(currentCase.fees).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -228,6 +269,16 @@
                         </div>
                     </div>
 
+                    <!-- Lifecycle Tab -->
+                    <div v-else-if="activeTab === 'lifecycle'">
+                        <LifecycleChecklist
+                            :model-value="currentCase.tasks ?? []"
+                            :readonly="true"
+                            :case-id="currentCase.id"
+                            @progress-updated="(p: number) => { if (currentCase) currentCase.progress = p }"
+                        />
+                    </div>
+
                     <!-- Timeline Tab -->
                     <div v-else-if="activeTab === 'timeline'">
                         <div v-if="caseStore.isLoadingTimeline" class="text-center py-8">
@@ -279,7 +330,9 @@ import { useCaseStore } from '@/stores/case';
 import { useNotification } from '@/composables/useNotification';
 import { formatDate } from '@/utils/formatters';
 import type { CaseStatus, CasePriority } from '@/types/case';
+import { CASE_STAGE_OPTIONS, IRCC_STATUS_OPTIONS, FINAL_RESULT_OPTIONS, SERVICE_TYPE_OPTIONS } from '@/types/case';
 import DateManager from '@/components/DateManager.vue';
+import LifecycleChecklist from '@/components/LifecycleChecklist.vue';
 
 // Icons
 import IconFolder from '@/components/icon/icon-folder.vue';
@@ -301,6 +354,7 @@ const showAssignModal = ref(false);
 
 const tabs = [
     { id: 'info', label: 'cases.tab_information' },
+    { id: 'lifecycle', label: 'cases.tab_lifecycle' },
     { id: 'timeline', label: 'cases.tab_timeline' },
     { id: 'documents', label: 'cases.tab_documents' },
 ];
@@ -338,6 +392,10 @@ const getProgressBarClass = (progress: number): string => {
     if (progress >= 25) return 'bg-warning';
     return 'bg-danger';
 };
+
+const stageColor = computed(() => CASE_STAGE_OPTIONS.find(o => o.value === currentCase.value?.stage)?.color ?? 'dark');
+const irccColor = computed(() => IRCC_STATUS_OPTIONS.find(o => o.value === currentCase.value?.ircc_status)?.color ?? 'dark');
+const finalResultColor = computed(() => FINAL_RESULT_OPTIONS.find(o => o.value === currentCase.value?.final_result)?.color ?? 'dark');
 
 const formatDateTime = (date: string): string => {
     return new Date(date).toLocaleString();

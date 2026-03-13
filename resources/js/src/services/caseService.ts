@@ -7,6 +7,7 @@ import api from './api';
 import type {
     ImmigrationCase,
     CaseType,
+    CaseTask,
     CreateCaseData,
     UpdateCaseData,
     CaseFilters,
@@ -125,6 +126,29 @@ const caseService = {
     async getStatistics(): Promise<CaseStatistics> {
         const response = await api.get<{ data: CaseStatistics }>('/cases/statistics');
         return response.data.data;
+    },
+
+    // ===============================
+    // CASE TASKS (Lifecycle)
+    // ===============================
+
+    /**
+     * Bulk update tasks for a case
+     */
+    async bulkUpdateTasks(caseId: number, tasks: Omit<CaseTask, 'id' | 'completed_at'>[]): Promise<any> {
+        const response = await api.put(`/cases/${caseId}/tasks`, { tasks });
+        return response.data;
+    },
+
+    /**
+     * Toggle a single task's completion status
+     */
+    async toggleTask(caseId: number, taskId: number): Promise<{ task: CaseTask; progress: number }> {
+        const response = await api.patch(`/cases/${caseId}/tasks/${taskId}/toggle`);
+        return {
+            task: response.data.data,
+            progress: response.data.meta.case_progress,
+        };
     },
 };
 

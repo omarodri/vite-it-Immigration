@@ -95,14 +95,66 @@
                 <DateManager v-model="wizard.state.caseDetails.important_dates" />
             </div>
         </div>
+
+        <!-- Financial Information Section -->
+        <div class="mt-6">
+            <h6 class="text-base font-semibold text-[#3b3f5c] dark:text-white-light mb-4 border-b border-[#e0e6ed] dark:border-[#1b2e4b] pb-2">
+                {{ $t('cases.financial_info') }}
+            </h6>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Service Type -->
+                <div>
+                    <label class="block text-sm font-medium mb-1">{{ $t('cases.service_type') }}</label>
+                    <select
+                        :value="wizard.state.caseDetails.service_type"
+                        class="form-select"
+                        @change="updateField('service_type', ($event.target as HTMLSelectElement).value as ServiceType)"
+                    >
+                        <option v-for="opt in SERVICE_TYPE_OPTIONS" :key="opt.value" :value="opt.value">
+                            {{ opt.label }}
+                        </option>
+                    </select>
+                </div>
+                <!-- Contract Number -->
+                <div>
+                    <label class="block text-sm font-medium mb-1">{{ $t('cases.contract_number') }}</label>
+                    <input
+                        :value="wizard.state.caseDetails.contract_number"
+                        type="text"
+                        class="form-input"
+                        :placeholder="$t('cases.contract_number')"
+                        maxlength="50"
+                        @input="updateField('contract_number', ($event.target as HTMLInputElement).value)"
+                    />
+                </div>
+                <!-- Fees (conditional on permission) -->
+                <div v-if="canViewFees">
+                    <label class="block text-sm font-medium mb-1">{{ $t('cases.fees') }}</label>
+                    <input
+                        :value="wizard.state.caseDetails.fees"
+                        type="number"
+                        class="form-input"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        @input="updateField('fees', ($event.target as HTMLInputElement).value ? parseFloat(($event.target as HTMLInputElement).value) : null)"
+                    />
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, inject } from 'vue';
+import { ref, computed, onMounted, inject } from 'vue';
 import userService from '@/services/userService';
 import type { StaffMember, CaseDetailsForm } from '@/types/wizard';
+import { SERVICE_TYPE_OPTIONS, type ServiceType } from '@/types/case';
+import { usePermissions } from '@/composables/usePermissions';
 import DateManager from '@/components/DateManager.vue';
+
+const { can } = usePermissions();
+const canViewFees = computed(() => can('cases.view-fees'));
 
 // Get wizard from parent
 const wizard = inject<ReturnType<typeof import('@/composables/useCaseWizard').useCaseWizard>>('wizard')!;

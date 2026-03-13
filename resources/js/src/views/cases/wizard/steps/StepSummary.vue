@@ -1,10 +1,10 @@
 <template>
     <div>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            {{ $t('wizard.step5.title') }}
+            {{ $t('wizard.step6.title') }}
         </h3>
         <p class="text-gray-500 dark:text-gray-400 mb-6">
-            {{ $t('wizard.step5.description') }}
+            {{ $t('wizard.step6.description') }}
         </p>
 
         <div class="space-y-6">
@@ -12,12 +12,12 @@
             <section class="panel" aria-labelledby="case-type-heading">
                 <div class="flex justify-between items-center mb-4">
                     <h4 id="case-type-heading" class="font-semibold text-gray-900 dark:text-white">
-                        {{ $t('wizard.step5.case_type') }}
+                        {{ $t('wizard.step6.case_type') }}
                     </h4>
                     <button
                         type="button"
                         class="text-primary text-sm hover:underline"
-                        :aria-label="`${$t('wizard.edit')} ${$t('wizard.step5.case_type')}`"
+                        :aria-label="`${$t('wizard.edit')} ${$t('wizard.step6.case_type')}`"
                         @click="wizard.goToStep(1)"
                     >
                         {{ $t('wizard.edit') }}
@@ -45,12 +45,12 @@
             <section class="panel" aria-labelledby="client-heading">
                 <div class="flex justify-between items-center mb-4">
                     <h4 id="client-heading" class="font-semibold text-gray-900 dark:text-white">
-                        {{ $t('wizard.step5.client') }}
+                        {{ $t('wizard.step6.client') }}
                     </h4>
                     <button
                         type="button"
                         class="text-primary text-sm hover:underline"
-                        :aria-label="`${$t('wizard.edit')} ${$t('wizard.step5.client')}`"
+                        :aria-label="`${$t('wizard.edit')} ${$t('wizard.step6.client')}`"
                         @click="wizard.goToStep(2)"
                     >
                         {{ $t('wizard.edit') }}
@@ -77,12 +77,12 @@
             <section class="panel" aria-labelledby="companions-heading">
                 <div class="flex justify-between items-center mb-4">
                     <h4 id="companions-heading" class="font-semibold text-gray-900 dark:text-white">
-                        {{ $t('wizard.step5.companions') }}
+                        {{ $t('wizard.step6.companions') }}
                     </h4>
                     <button
                         type="button"
                         class="text-primary text-sm hover:underline"
-                        :aria-label="`${$t('wizard.edit')} ${$t('wizard.step5.companions')}`"
+                        :aria-label="`${$t('wizard.edit')} ${$t('wizard.step6.companions')}`"
                         @click="wizard.goToStep(3)"
                     >
                         {{ $t('wizard.edit') }}
@@ -102,7 +102,7 @@
                     </span>
                 </div>
                 <p v-else class="text-gray-500 dark:text-gray-400 text-sm">
-                    {{ $t('wizard.step5.no_companions_selected') }}
+                    {{ $t('wizard.step6.no_companions_selected') }}
                 </p>
             </section>
 
@@ -110,12 +110,12 @@
             <section class="panel" aria-labelledby="details-heading">
                 <div class="flex justify-between items-center mb-4">
                     <h4 id="details-heading" class="font-semibold text-gray-900 dark:text-white">
-                        {{ $t('wizard.step5.details') }}
+                        {{ $t('wizard.step6.details') }}
                     </h4>
                     <button
                         type="button"
                         class="text-primary text-sm hover:underline"
-                        :aria-label="`${$t('wizard.edit')} ${$t('wizard.step5.details')}`"
+                        :aria-label="`${$t('wizard.edit')} ${$t('wizard.step6.details')}`"
                         @click="wizard.goToStep(4)"
                     >
                         {{ $t('wizard.edit') }}
@@ -140,6 +140,24 @@
                             {{ assignedStaff.name }}
                         </p>
                     </div>
+                    <div>
+                        <p class="text-gray-500 dark:text-gray-400 mb-1">{{ $t('cases.service_type') }}</p>
+                        <span class="badge" :class="wizard.state.caseDetails.service_type === 'pro_bono' ? 'badge-outline-success' : 'badge-outline-primary'">
+                            {{ serviceTypeLabel }}
+                        </span>
+                    </div>
+                    <div v-if="wizard.state.caseDetails.contract_number">
+                        <p class="text-gray-500 dark:text-gray-400 mb-1">{{ $t('cases.contract_number') }}</p>
+                        <p class="font-medium text-gray-900 dark:text-white">
+                            {{ wizard.state.caseDetails.contract_number }}
+                        </p>
+                    </div>
+                    <div v-if="canViewFees && wizard.state.caseDetails.fees !== null">
+                        <p class="text-gray-500 dark:text-gray-400 mb-1">{{ $t('cases.fees') }}</p>
+                        <p class="font-medium text-success">
+                            ${{ Number(wizard.state.caseDetails.fees).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Description -->
@@ -162,10 +180,36 @@
                 </div>
             </section>
 
+            <!-- Checklist / Lifecycle Section -->
+            <section v-if="wizard.state.selectedTasks?.length > 0" class="panel" aria-labelledby="checklist-heading">
+                <div class="flex justify-between items-center mb-4">
+                    <h4 id="checklist-heading" class="font-semibold text-gray-900 dark:text-white">
+                        {{ $t('wizard.step6.checklist') }}
+                    </h4>
+                    <button
+                        type="button"
+                        class="text-primary text-sm hover:underline"
+                        :aria-label="`${$t('wizard.edit')} ${$t('wizard.step6.checklist')}`"
+                        @click="wizard.goToStep(5)"
+                    >
+                        {{ $t('wizard.edit') }}
+                    </button>
+                </div>
+                <ul class="space-y-1">
+                    <li v-for="(task, idx) in wizard.state.selectedTasks" :key="idx" class="text-sm flex items-center gap-2">
+                        <span class="text-gray-400">{{ idx + 1 }}.</span>
+                        <span>{{ task.label }}</span>
+                        <span v-if="task.is_custom" class="badge badge-outline-secondary text-xs">
+                            {{ $t('case_tasks.custom_task_label') }}
+                        </span>
+                    </li>
+                </ul>
+            </section>
+
             <!-- Confirmation Message -->
             <div class="p-4 bg-warning/10 border border-warning/20 rounded-lg">
                 <p class="text-sm text-warning-dark dark:text-warning">
-                    {{ $t('wizard.step5.confirmation_message') }}
+                    {{ $t('wizard.step6.confirmation_message') }}
                 </p>
             </div>
         </div>
@@ -180,11 +224,19 @@ import clientService from '@/services/clientService';
 import { useCompanionStore } from '@/stores/companion';
 import userService from '@/services/userService';
 import type { CaseType, CaseTypeCategory, CasePriority } from '@/types/case';
+import { SERVICE_TYPE_OPTIONS } from '@/types/case';
+import { usePermissions } from '@/composables/usePermissions';
 import type { Client } from '@/types/client';
 import type { Companion } from '@/types/companion';
 import type { StaffMember } from '@/types/wizard';
 
 const { t } = useI18n();
+const { can } = usePermissions();
+const canViewFees = computed(() => can('cases.view-fees'));
+
+const serviceTypeLabel = computed(() => {
+    return SERVICE_TYPE_OPTIONS.find(o => o.value === wizard.state.caseDetails.service_type)?.label ?? '';
+});
 
 // Get wizard from parent
 const wizard = inject<ReturnType<typeof import('@/composables/useCaseWizard').useCaseWizard>>('wizard')!;
