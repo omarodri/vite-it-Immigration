@@ -27,9 +27,11 @@ class UserController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]
-    public function staff(): JsonResponse
+    public function staff(Request $request): JsonResponse
     {
-        $staff = $this->userService->getStaffMembers();
+        $includeUserId = $request->query('include_user_id') ? (int) $request->query('include_user_id') : null;
+
+        $staff = $this->userService->getStaffMembers($includeUserId);
 
         return response()->json(['data' => $staff]);
     }

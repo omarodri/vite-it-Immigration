@@ -67,33 +67,10 @@
                         </div>
                     </div>
 
-                    <!-- Dates -->
+                    <!-- Important Dates -->
                     <div class="space-y-5">
-                        <h6 class="font-semibold border-b border-gray-200 dark:border-gray-700 pb-2">{{ $t('cases.dates_section') }}</h6>
-
-                        <!-- Hearing Date -->
-                        <div>
-                            <label for="hearing_date" class="block text-sm font-medium mb-2">{{ $t('cases.hearing_date') }}</label>
-                            <input id="hearing_date" v-model="form.hearing_date" type="date" class="form-input" />
-                        </div>
-
-                        <!-- FDA Deadline -->
-                        <div>
-                            <label for="fda_deadline" class="block text-sm font-medium mb-2">{{ $t('cases.fda_deadline') }}</label>
-                            <input id="fda_deadline" v-model="form.fda_deadline" type="date" class="form-input" />
-                        </div>
-
-                        <!-- Evidence Deadline -->
-                        <div>
-                            <label for="evidence_deadline" class="block text-sm font-medium mb-2">{{ $t('cases.evidence_deadline') }}</label>
-                            <input id="evidence_deadline" v-model="form.evidence_deadline" type="date" class="form-input" />
-                        </div>
-
-                        <!-- Brown Sheet Date -->
-                        <div>
-                            <label for="brown_sheet_date" class="block text-sm font-medium mb-2">{{ $t('cases.brown_sheet_date') }}</label>
-                            <input id="brown_sheet_date" v-model="form.brown_sheet_date" type="date" class="form-input" />
-                        </div>
+                        <h6 class="font-semibold border-b border-gray-200 dark:border-gray-700 pb-2">{{ $t('cases.important_dates') }}</h6>
+                        <DateManager v-model="form.important_dates" />
                     </div>
                 </div>
 
@@ -124,8 +101,9 @@ import { useMeta } from '@/composables/use-meta';
 import { useCaseStore } from '@/stores/case';
 import { useNotification } from '@/composables/useNotification';
 import clientService from '@/services/clientService';
-import type { CreateCaseData } from '@/types/case';
+import type { CreateCaseData, ImportantDate } from '@/types/case';
 import type { Client } from '@/types/client';
+import DateManager from '@/components/DateManager.vue';
 
 useMeta({ title: 'Create Case' });
 
@@ -138,16 +116,18 @@ const clients = ref<Client[]>([]);
 const isSubmitting = ref(false);
 const errors = reactive<Record<string, string>>({});
 
-const form = reactive<CreateCaseData>({
+const form = reactive<CreateCaseData & { important_dates: Omit<ImportantDate, 'id'>[] }>({
     client_id: 0,
     case_type_id: 0,
     priority: 'medium',
     language: 'es',
     description: '',
-    hearing_date: '',
-    fda_deadline: '',
-    brown_sheet_date: '',
-    evidence_deadline: '',
+    important_dates: [
+        { label: 'Fecha de inicio',     due_date: new Date().toISOString().split('T')[0], sort_order: 0 },
+        { label: 'Fecha limite legal',  due_date: null, sort_order: 1 },
+        { label: 'Fecha de envio IRCC', due_date: null, sort_order: 2 },
+        { label: 'Fecha de decision',   due_date: null, sort_order: 3 },
+    ],
 });
 
 const handleSubmit = async () => {
@@ -167,17 +147,18 @@ const handleSubmit = async () => {
     isSubmitting.value = true;
 
     try {
-        // Clean empty date fields
+        // Build payload
         const data: CreateCaseData = {
             client_id: form.client_id,
             case_type_id: form.case_type_id,
             priority: form.priority,
             language: form.language,
             description: form.description || undefined,
-            hearing_date: form.hearing_date || undefined,
-            fda_deadline: form.fda_deadline || undefined,
-            brown_sheet_date: form.brown_sheet_date || undefined,
-            evidence_deadline: form.evidence_deadline || undefined,
+            important_dates: form.important_dates.map(d => ({
+                label: d.label,
+                due_date: d.due_date,
+                sort_order: d.sort_order,
+            })),
         };
 
         const response = await caseStore.createCase(data);

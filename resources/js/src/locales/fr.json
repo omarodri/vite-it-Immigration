@@ -631,5 +631,16 @@
     "cases.companions_count": "Accompagnants ({count})",
     "cases.companion_age": "{age} ans",
     "cases.select_companions": "Sélectionner les accompagnants",
-    "cases.select_companions_description": "Sélectionnez les accompagnants à inclure dans ce dossier"
+    "cases.select_companions_description": "Sélectionnez les accompagnants à inclure dans ce dossier",
+    "cases.no_active_consultants": "Aucun consultant actif disponible",
+    "cases.staff_load_error": "Erreur lors du chargement des consultants",
+    "cases.retry": "Réessayer",
+    "cases.inactive_consultant": "(inactif — réassignation recommandée)",
+    "cases.important_dates": "Dates importantes",
+    "cases.add_date": "Ajouter une date",
+    "cases.remove_date": "Supprimer",
+    "cases.date_label": "Nom de la date",
+    "cases.pick_date": "Sélectionner une date",
+    "cases.no_dates": "Aucune date associée",
+    "cases.max_dates_reached": "Maximum de 20 dates atteint"
 }

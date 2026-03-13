@@ -68,7 +68,7 @@
                             >
                                 <option value="">{{ $t('cases.unassigned') }}</option>
                                 <option v-for="staff in staffMembers" :key="staff.id" :value="staff.id">
-                                    {{ staff.name }}
+                                    {{ staff.name }}{{ staff.is_current_assignment ? ` — ${$t('cases.inactive_consultant')}` : '' }}
                                 </option>
                             </select>
                         </div>
@@ -100,54 +100,10 @@
                         </div>
                     </div>
 
-                    <!-- Dates -->
+                    <!-- Important Dates -->
                     <div class="space-y-5">
-                        <h6 class="font-semibold border-b border-gray-200 dark:border-gray-700 pb-2">{{ $t('cases.dates_section') }}</h6>
-
-                        <!-- Hearing Date -->
-                        <div>
-                            <label for="hearing_date" class="block text-sm font-medium mb-2">{{ $t('cases.hearing_date') }}</label>
-                            <flat-pickr
-                                    v-model="form.hearing_date"
-                                    :config="dateConfig"
-                                    class="form-input"
-                                    :placeholder="$t('clients.select_date')"
-                                />  
-                        </div>
-
-                        <!-- FDA Deadline -->
-                        <div>
-                            <label for="fda_deadline" class="block text-sm font-medium mb-2">{{ $t('cases.fda_deadline') }}</label>
-                            <flat-pickr
-                                    v-model="form.fda_deadline"
-                                    :config="dateConfig"
-                                    class="form-input"
-                                    :placeholder="$t('clients.select_date')"
-                                />  
-                        </div>
-
-                        <!-- Evidence Deadline -->
-                        <div>
-                            <label for="evidence_deadline" class="block text-sm font-medium mb-2">{{ $t('cases.evidence_deadline') }}</label>
-                            <flat-pickr
-                                    v-model="form.evidence_deadline"
-                                    :config="dateConfig"
-                                    class="form-input"
-                                    :placeholder="$t('clients.select_date')"
-                                    
-                                />                        
-                            </div>
-
-                        <!-- Brown Sheet Date -->
-                        <div>
-                            <label for="brown_sheet_date" class="block text-sm font-medium mb-2">{{ $t('cases.brown_sheet_date') }}</label>
-                            <flat-pickr
-                                    v-model="form.brown_sheet_date"
-                                    :config="dateConfig"
-                                    class="form-input"
-                                    :placeholder="$t('clients.select_date')"
-                                />  
-                        </div>
+                        <h6 class="font-semibold border-b border-gray-200 dark:border-gray-700 pb-2">{{ $t('cases.important_dates') }}</h6>
+                        <DateManager v-model="form.important_dates" />
                     </div>
                 </div>
 
@@ -256,24 +212,15 @@ import { useMeta } from '@/composables/use-meta';
 import { useCaseStore } from '@/stores/case';
 import { useCompanionStore } from '@/stores/companion';
 import { useNotification } from '@/composables/useNotification';
-import type { UpdateCaseData } from '@/types/case';
+import type { UpdateCaseData, ImportantDate } from '@/types/case';
 import type { Companion } from '@/types/companion';
-import flatPickr from 'vue-flatpickr-component';
-import 'flatpickr/dist/flatpickr.css';
+import DateManager from '@/components/DateManager.vue';
 import userService from '@/services/userService';
 import type { StaffMember } from '@/types/wizard';
 
 const staffMembers = ref<StaffMember[]>([]);
-
-onMounted(async () => {
-    staffMembers.value = await userService.getStaff();
-});
-
-const dateConfig = ref({
-    dateFormat: 'Y-m-d H:i',
-    allowInput: true,
-    enableTime: true,
-});
+const isLoadingStaff = ref(false);
+const staffError = ref(false);
 
 // Icons
 import IconFolder from '@/components/icon/icon-folder.vue';
@@ -302,16 +249,13 @@ const isLoading = ref(true);
 const isSubmitting = ref(false);
 const errors = reactive<Record<string, string>>({});
 
-const form = reactive<UpdateCaseData>({
+const form = reactive<UpdateCaseData & { important_dates: ImportantDate[] }>({
     status: 'active',
     priority: 'medium',
     progress: 0,
     language: 'es',
     description: '',
-    hearing_date: '',
-    fda_deadline: '',
-    brown_sheet_date: '',
-    evidence_deadline: '',
+    important_dates: [],
     archive_box_number: '',
     closure_notes: '',
     assigned_to: null,
@@ -368,13 +312,27 @@ onMounted(async () => {
             form.progress = currentCase.value.progress;
             form.language = currentCase.value.language;
             form.description = currentCase.value.description || '';
-            form.hearing_date = currentCase.value.hearing_date || '';
-            form.fda_deadline = currentCase.value.fda_deadline || '';
-            form.brown_sheet_date = currentCase.value.brown_sheet_date || '';
-            form.evidence_deadline = currentCase.value.evidence_deadline || '';
+            form.important_dates = currentCase.value.important_dates?.map(d => ({
+                id: d.id,
+                label: d.label,
+                due_date: d.due_date,
+                sort_order: d.sort_order,
+            })) ?? [];
             form.archive_box_number = currentCase.value.archive_box_number || '';
             form.closure_notes = currentCase.value.closure_notes || '';
             form.assigned_to = currentCase.value.assigned_to ?? null;
+
+            // Load staff members (include current assignee even if inactive)
+            isLoadingStaff.value = true;
+            staffError.value = false;
+            try {
+                staffMembers.value = await userService.getStaff(currentCase.value.assigned_to ?? undefined);
+            } catch (err) {
+                staffError.value = true;
+                console.error('Failed to load staff members:', err);
+            } finally {
+                isLoadingStaff.value = false;
+            }
 
             // Load companions from the case
             if (currentCase.value.companions) {

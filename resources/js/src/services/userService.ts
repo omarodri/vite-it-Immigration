@@ -83,8 +83,11 @@ const userService = {
     /**
      * Get staff members available for case assignment
      */
-    async getStaff(): Promise<StaffMember[]> {
-        const response = await api.get<{ data: StaffMember[] }>('/users/staff');
+    async getStaff(includeUserId?: number | null): Promise<StaffMember[]> {
+        const url = includeUserId != null
+            ? `/users/staff?include_user_id=${includeUserId}`
+            : '/users/staff';
+        const response = await api.get<{ data: StaffMember[] }>(url);
         return response.data.data;
     },
 };

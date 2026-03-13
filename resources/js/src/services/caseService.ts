@@ -54,8 +54,8 @@ const caseService = {
         if (filters.case_type_id) params.append('case_type_id', filters.case_type_id.toString());
         if (filters.assigned_to) params.append('assigned_to', filters.assigned_to.toString());
         if (filters.client_id) params.append('client_id', filters.client_id.toString());
-        if (filters.hearing_from) params.append('hearing_from', filters.hearing_from);
-        if (filters.hearing_to) params.append('hearing_to', filters.hearing_to);
+        if (filters.date_from) params.append('date_from', filters.date_from);
+        if (filters.date_to) params.append('date_to', filters.date_to);
         if (filters.sort_by) params.append('sort_by', filters.sort_by);
         if (filters.sort_direction) params.append('sort_direction', filters.sort_direction);
         if (filters.per_page) params.append('per_page', filters.per_page.toString());

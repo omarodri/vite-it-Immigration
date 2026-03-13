@@ -33,7 +33,7 @@ class CaseService
      */
     public function getCase(ImmigrationCase $case): ImmigrationCase
     {
-        return $case->load(['client', 'caseType', 'assignedTo', 'companions']);
+        return $case->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates']);
     }
 
     /**
@@ -45,6 +45,12 @@ class CaseService
             // Extract companion_ids before creating the case
             $companionIds = $data['companion_ids'] ?? [];
             unset($data['companion_ids']);
+
+            // Extract important_dates before creating the case
+            $importantDatesData = array_key_exists('important_dates', $data) && !empty($data['important_dates'])
+                ? $data['important_dates']
+                : $this->getDefaultImportantDates();
+            unset($data['important_dates']);
 
             // Get case type
             $caseType = $this->caseTypeRepository->findById($data['case_type_id']);
@@ -65,6 +71,13 @@ class CaseService
                 $case->companions()->sync($companionIds);
             }
 
+            // Create important dates
+            $datesWithCaseId = array_map(function ($date) use ($case) {
+                return array_merge($date, ['case_id' => $case->id]);
+            }, $importantDatesData);
+
+            $case->importantDates()->createMany($datesWithCaseId);
+
             activity()
                 ->causedBy(Auth::user())
                 ->performedOn($case)
@@ -76,7 +89,7 @@ class CaseService
                 ])
                 ->log('Created case: ' . $case->case_number);
 
-            return $case->load(['client', 'caseType', 'assignedTo', 'companions']);
+            return $case->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates']);
         });
     }
 
@@ -89,6 +102,10 @@ class CaseService
             $companionIds = array_key_exists('companion_ids', $data) ? $data['companion_ids'] : null;
             unset($data['companion_ids']);
 
+            // Extract important_dates before updating
+            $importantDates = array_key_exists('important_dates', $data) ? $data['important_dates'] : null;
+            unset($data['important_dates']);
+
             $oldCompanionIds = $companionIds !== null ? $case->companions()->pluck('companions.id')->toArray() : null;
 
             $oldValues = $case->only(array_keys($data));
@@ -97,6 +114,15 @@ class CaseService
 
             if ($companionIds !== null) {
                 $updatedCase->companions()->sync($companionIds);
+            }
+
+            // Handle important dates (replace strategy)
+            if ($importantDates !== null) {
+                $updatedCase->importantDates()->delete();
+                if (!empty($importantDates)) {
+                    $datesWithCaseId = array_map(fn ($d) => array_merge($d, ['case_id' => $updatedCase->id]), $importantDates);
+                    $updatedCase->importantDates()->createMany($datesWithCaseId);
+                }
             }
 
             activity()
@@ -110,7 +136,7 @@ class CaseService
                 ], fn ($v) => $v !== null))
                 ->log('Updated case: ' . $updatedCase->case_number);
 
-            return $updatedCase->load(['client', 'caseType', 'assignedTo', 'companions']);
+            return $updatedCase->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates']);
         });
     }
 
@@ -241,11 +267,26 @@ class CaseService
     }
 
     /**
-     * Get cases with upcoming hearings.
+     * Get cases with upcoming deadlines (important dates within N days).
      */
-    public function getUpcomingHearings(int $days = 30): Collection
+    public function getUpcomingDeadlines(int $days = 30): Collection
     {
-        return $this->caseRepository->getUpcomingHearings($days);
+        return $this->caseRepository->getUpcomingDeadlines($days);
+    }
+
+    /**
+     * Get the default important dates for a new case.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function getDefaultImportantDates(): array
+    {
+        return [
+            ['label' => 'Fecha de inicio',     'due_date' => now()->format('Y-m-d'), 'sort_order' => 0],
+            ['label' => 'Fecha limite legal',   'due_date' => null,                   'sort_order' => 1],
+            ['label' => 'Fecha de envio IRCC',  'due_date' => null,                   'sort_order' => 2],
+            ['label' => 'Fecha de decision',    'due_date' => null,                   'sort_order' => 3],
+        ];
     }
 
     /**

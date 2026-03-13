@@ -134,12 +134,6 @@
                             {{ getLanguageLabel(wizard.state.caseDetails.language) }}
                         </p>
                     </div>
-                    <div v-if="wizard.state.caseDetails.hearing_date">
-                        <p class="text-gray-500 dark:text-gray-400 mb-1">{{ $t('cases.hearing_date') }}</p>
-                        <p class="font-medium text-gray-900 dark:text-white">
-                            {{ formatDate(wizard.state.caseDetails.hearing_date) }}
-                        </p>
-                    </div>
                     <div v-if="assignedStaff">
                         <p class="text-gray-500 dark:text-gray-400 mb-1">{{ $t('cases.assigned_to') }}</p>
                         <p class="font-medium text-gray-900 dark:text-white">
@@ -154,6 +148,17 @@
                     <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                         {{ wizard.state.caseDetails.description }}
                     </p>
+                </div>
+
+                <!-- Important Dates -->
+                <div v-if="wizard.state.caseDetails.important_dates.length > 0" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <p class="text-gray-500 dark:text-gray-400 mb-2 text-sm font-semibold">{{ $t('cases.important_dates') }}</p>
+                    <ul class="mt-1 space-y-1">
+                        <li v-for="date in wizard.state.caseDetails.important_dates" :key="date.sort_order" class="text-sm">
+                            <span class="font-medium">{{ date.label }}:</span>
+                            <span class="ml-1 text-gray-500">{{ date.due_date ?? '---' }}</span>
+                        </li>
+                    </ul>
                 </div>
             </section>
 

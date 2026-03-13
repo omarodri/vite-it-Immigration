@@ -195,30 +195,10 @@
                             <!-- Important Dates -->
                             <div class="space-y-4">
                                 <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.important_dates') }}</h3>
-                                <div class="space-y-3">
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-500">{{ $t('cases.hearing_date') }}</span>
-                                        <div v-if="currentCase.hearing_date">
-                                            <span>{{ formatDate(currentCase.hearing_date) }}</span>
-                                            <span v-if="currentCase.days_until_hearing !== null" class="text-sm ml-2" :class="getDaysUntilClass(currentCase.days_until_hearing)">
-                                                ({{ formatDaysUntil(currentCase.days_until_hearing) }})
-                                            </span>
-                                        </div>
-                                        <span v-else class="text-gray-400">-</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-500">{{ $t('cases.fda_deadline') }}</span>
-                                        <span>{{ currentCase.fda_deadline ? formatDate(currentCase.fda_deadline) : '-' }}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-500">{{ $t('cases.evidence_deadline') }}</span>
-                                        <span>{{ currentCase.evidence_deadline ? formatDate(currentCase.evidence_deadline) : '-' }}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-500">{{ $t('cases.brown_sheet_date') }}</span>
-                                        <span>{{ currentCase.brown_sheet_date ? formatDate(currentCase.brown_sheet_date) : '-' }}</span>
-                                    </div>
-                                </div>
+                                <DateManager
+                                    :model-value="currentCase.important_dates ?? []"
+                                    :readonly="true"
+                                />
                             </div>
 
                             <!-- Assignment -->
@@ -299,6 +279,7 @@ import { useCaseStore } from '@/stores/case';
 import { useNotification } from '@/composables/useNotification';
 import { formatDate } from '@/utils/formatters';
 import type { CaseStatus, CasePriority } from '@/types/case';
+import DateManager from '@/components/DateManager.vue';
 
 // Icons
 import IconFolder from '@/components/icon/icon-folder.vue';
@@ -356,18 +337,6 @@ const getProgressBarClass = (progress: number): string => {
     if (progress >= 50) return 'bg-info';
     if (progress >= 25) return 'bg-warning';
     return 'bg-danger';
-};
-
-const getDaysUntilClass = (days: number): string => {
-    if (days < 0) return 'text-danger';
-    if (days <= 7) return 'text-warning';
-    return 'text-gray-500';
-};
-
-const formatDaysUntil = (days: number): string => {
-    if (days < 0) return t('cases.past_due');
-    if (days === 0) return t('cases.today');
-    return t('cases.days_until_hearing', { days });
 };
 
 const formatDateTime = (date: string): string => {

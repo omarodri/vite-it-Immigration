@@ -60,9 +60,9 @@ interface CaseRepositoryInterface
     public function existsByCaseNumber(string $caseNumber): bool;
 
     /**
-     * Get cases with upcoming hearings within N days.
+     * Get cases with upcoming deadlines within N days.
      */
-    public function getUpcomingHearings(int $days = 30): Collection;
+    public function getUpcomingDeadlines(int $days = 30): Collection;
 
     /**
      * Get case statistics for dashboard.

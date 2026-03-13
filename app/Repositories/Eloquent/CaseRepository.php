@@ -16,7 +16,7 @@ class CaseRepository implements CaseRepositoryInterface
      */
     public function findById(int $id): ?ImmigrationCase
     {
-        return ImmigrationCase::with(['client', 'caseType', 'assignedTo'])
+        return ImmigrationCase::with(['client', 'caseType', 'assignedTo', 'importantDates'])
             ->find($id);
     }
 
@@ -29,6 +29,7 @@ class CaseRepository implements CaseRepositoryInterface
             'client:id,first_name,last_name,email,phone',
             'caseType:id,name,code,category',
             'assignedTo:id,name,email',
+            'importantDates',
         ]);
 
         // Apply filters
@@ -56,12 +57,16 @@ class CaseRepository implements CaseRepositoryInterface
             $query->byClient($filters['client_id']);
         }
 
-        if (! empty($filters['hearing_from'])) {
-            $query->whereDate('hearing_date', '>=', $filters['hearing_from']);
+        if (! empty($filters['date_from'])) {
+            $query->whereHas('importantDates', function ($q) use ($filters) {
+                $q->whereDate('due_date', '>=', $filters['date_from']);
+            });
         }
 
-        if (! empty($filters['hearing_to'])) {
-            $query->whereDate('hearing_date', '<=', $filters['hearing_to']);
+        if (! empty($filters['date_to'])) {
+            $query->whereHas('importantDates', function ($q) use ($filters) {
+                $q->whereDate('due_date', '<=', $filters['date_to']);
+            });
         }
 
         // Apply sorting
@@ -74,7 +79,6 @@ class CaseRepository implements CaseRepositoryInterface
             'status',
             'priority',
             'progress',
-            'hearing_date',
             'created_at',
             'updated_at',
         ];
@@ -184,13 +188,13 @@ class CaseRepository implements CaseRepositoryInterface
     }
 
     /**
-     * Get cases with upcoming hearings within N days.
+     * Get cases with upcoming deadlines within N days.
      */
-    public function getUpcomingHearings(int $days = 30): Collection
+    public function getUpcomingDeadlines(int $days = 30): Collection
     {
-        return ImmigrationCase::with(['client:id,first_name,last_name', 'caseType:id,name,code'])
+        return ImmigrationCase::with(['client:id,first_name,last_name', 'caseType:id,name,code', 'importantDates'])
             ->upcoming($days)
-            ->orderBy('hearing_date')
+            ->orderBy('created_at')
             ->get();
     }
 
@@ -213,7 +217,7 @@ class CaseRepository implements CaseRepositoryInterface
                 'medium' => $this->countByPriority(ImmigrationCase::PRIORITY_MEDIUM),
                 'low' => $this->countByPriority(ImmigrationCase::PRIORITY_LOW),
             ],
-            'upcoming_hearings' => ImmigrationCase::upcoming(30)->count(),
+            'upcoming_deadlines' => ImmigrationCase::upcoming(30)->count(),
             'unassigned' => ImmigrationCase::unassigned()->count(),
         ];
     }

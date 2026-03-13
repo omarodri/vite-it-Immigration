@@ -853,6 +853,16 @@
     "cases.companion_age": "{age} años",
     "cases.select_companions": "Seleccionar Acompañantes",
     "cases.select_companions_description": "Seleccione los acompañantes a incluir en este expediente",
+    "cases.no_active_consultants": "No hay consultores activos disponibles",
+    "cases.staff_load_error": "Error al cargar consultores. Intenta de nuevo",
+    "cases.retry": "Reintentar",
+    "cases.inactive_consultant": "(inactivo — se recomienda reasignar)",
+    "cases.add_date": "Agregar Fecha",
+    "cases.remove_date": "Eliminar",
+    "cases.date_label": "Nombre de la fecha",
+    "cases.pick_date": "Seleccionar fecha",
+    "cases.no_dates": "Sin fechas asociadas",
+    "cases.max_dates_reached": "Se alcanzo el maximo de 20 fechas",
 
 
     "new": "Nuevo",

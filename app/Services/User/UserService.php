@@ -30,16 +30,41 @@ class UserService
 
     /**
      * Get staff members available for case assignment.
-     * Returns active users with their id, name, and email.
+     * Returns active consultors with their id, name, and email.
      * Filtered by current user's tenant.
+     *
+     * When $includeUserId is provided and that user is inactive or not a consultor,
+     * they are prepended to the list with is_current_assignment = true (grandfather clause).
      */
-    public function getStaffMembers(): Collection
+    public function getStaffMembers(?int $includeUserId = null): Collection
     {
-        return User::query()
+        $staff = User::activeConsultors()
             ->where('tenant_id', Auth::user()->tenant_id)
             ->select('id', 'name', 'email')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function ($user) {
+                $user->is_current_assignment = false;
+                return $user;
+            });
+
+        if ($includeUserId !== null) {
+            $alreadyInList = $staff->contains('id', $includeUserId);
+
+            if (!$alreadyInList) {
+                $phantomUser = User::where('id', $includeUserId)
+                    ->where('tenant_id', Auth::user()->tenant_id)
+                    ->select('id', 'name', 'email')
+                    ->first();
+
+                if ($phantomUser) {
+                    $phantomUser->is_current_assignment = true;
+                    $staff->prepend($phantomUser);
+                }
+            }
+        }
+
+        return $staff;
     }
 
     public function createUser(array $data): User

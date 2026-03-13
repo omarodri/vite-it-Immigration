@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Notifications\ResetPasswordNotification;
 use App\Notifications\VerifyEmailNotification;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -29,6 +30,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'tenant_id',
+        'is_active',
     ];
 
     /**
@@ -50,6 +52,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'is_active' => 'boolean',
         'two_factor_secret' => 'encrypted',
         'two_factor_recovery_codes' => 'encrypted:array',
         'two_factor_confirmed_at' => 'datetime',
@@ -98,6 +101,30 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Scope: only active users.
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    /**
+     * Scope: only users with the consultor role.
+     */
+    public function scopeConsultors(Builder $query): Builder
+    {
+        return $query->role('consultor');
+    }
+
+    /**
+     * Scope: only active consultors.
+     */
+    public function scopeActiveConsultors(Builder $query): Builder
+    {
+        return $query->active()->consultors();
+    }
+
+    /**
      * Check if user is a super admin (can access all tenants).
      */
     public function isSuperAdmin(): bool
@@ -116,7 +143,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'email', 'email_verified_at', 'two_factor_confirmed_at'])
+            ->logOnly(['name', 'email', 'email_verified_at', 'is_active', 'two_factor_confirmed_at'])
             ->logOnlyDirty()
             ->useLogName('users')
             ->dontSubmitEmptyLogs();

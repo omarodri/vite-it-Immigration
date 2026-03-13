@@ -3,7 +3,7 @@
  * Interfaces for the Case Creation Wizard
  */
 
-import type { CasePriority } from './case';
+import type { CasePriority, ImportantDate } from './case';
 
 // =============================================
 // Wizard State
@@ -23,10 +23,7 @@ export interface CaseDetailsForm {
     priority: CasePriority;
     language: string;
     description: string;
-    hearing_date: string;
-    fda_deadline: string;
-    brown_sheet_date: string;
-    evidence_deadline: string;
+    important_dates: ImportantDate[];
     assigned_to: number | null;
 }
 
@@ -51,10 +48,12 @@ export const DEFAULT_CASE_DETAILS: CaseDetailsForm = {
     priority: 'medium',
     language: 'es',
     description: '',
-    hearing_date: '',
-    fda_deadline: '',
-    brown_sheet_date: '',
-    evidence_deadline: '',
+    important_dates: [
+        { label: 'Fecha de inicio',     due_date: new Date().toISOString().split('T')[0], sort_order: 0 },
+        { label: 'Fecha límite legal',  due_date: null, sort_order: 1 },
+        { label: 'Fecha de envío IRCC', due_date: null, sort_order: 2 },
+        { label: 'Fecha de decisión',   due_date: null, sort_order: 3 },
+    ],
     assigned_to: null,
 };
 
@@ -74,4 +73,5 @@ export interface StaffMember {
     id: number;
     name: string;
     email: string;
+    is_current_assignment?: boolean;
 }

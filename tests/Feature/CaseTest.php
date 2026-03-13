@@ -617,7 +617,7 @@ class CaseTest extends TestCase
                     'total',
                     'by_status' => ['active', 'inactive', 'archived', 'closed'],
                     'by_priority' => ['urgent', 'high', 'medium', 'low'],
-                    'upcoming_hearings',
+                    'upcoming_deadlines',
                     'unassigned',
                 ],
             ]);
@@ -913,21 +913,241 @@ class CaseTest extends TestCase
                 ],
             ]);
 
-        // Should include all users from the tenant (admin, consultor, regular)
-        $this->assertCount(3, $response->json('data'));
+        // Should include only active consultors from the tenant (1 consultor user)
+        $this->assertCount(1, $response->json('data'));
+        $this->assertEquals($this->consultorUser->id, $response->json('data.0.id'));
     }
 
     public function test_staff_endpoint_only_returns_tenant_users(): void
     {
-        // Create user in other tenant
-        User::factory()->create(['tenant_id' => $this->otherTenant->id]);
+        // Create consultor in other tenant
+        $otherConsultor = User::factory()->create([
+            'tenant_id' => $this->otherTenant->id,
+            'is_active' => true,
+        ]);
+        $otherConsultor->assignRole('consultor');
 
         $response = $this->actingAs($this->adminUser, 'sanctum')
             ->getJson('/api/users/staff');
 
         $response->assertStatus(200);
 
-        // Should only include users from the current tenant (3 users)
-        $this->assertCount(3, $response->json('data'));
+        // Should only include active consultors from the current tenant (1 consultor)
+        $this->assertCount(1, $response->json('data'));
+        $this->assertEquals($this->consultorUser->id, $response->json('data.0.id'));
+    }
+
+    // ==================== Assigned To - Store Validation ====================
+
+    public function test_create_case_with_active_consultant(): void
+    {
+        $activeConsultor = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => true,
+        ]);
+        $activeConsultor->assignRole('consultor');
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->postJson('/api/cases', [
+                'client_id' => $this->client->id,
+                'case_type_id' => $this->caseType->id,
+                'assigned_to' => $activeConsultor->id,
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.assigned_to', $activeConsultor->id);
+    }
+
+    public function test_cannot_create_case_with_admin_as_assignee(): void
+    {
+        $adminUser = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => true,
+        ]);
+        $adminUser->assignRole('admin');
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->postJson('/api/cases', [
+                'client_id' => $this->client->id,
+                'case_type_id' => $this->caseType->id,
+                'assigned_to' => $adminUser->id,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['assigned_to']);
+    }
+
+    public function test_cannot_create_case_with_inactive_consultant(): void
+    {
+        $inactiveConsultor = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => false,
+        ]);
+        $inactiveConsultor->assignRole('consultor');
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->postJson('/api/cases', [
+                'client_id' => $this->client->id,
+                'case_type_id' => $this->caseType->id,
+                'assigned_to' => $inactiveConsultor->id,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['assigned_to']);
+    }
+
+    public function test_create_case_with_null_assigned_to(): void
+    {
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->postJson('/api/cases', [
+                'client_id' => $this->client->id,
+                'case_type_id' => $this->caseType->id,
+                'assigned_to' => null,
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.assigned_to', null);
+    }
+
+    // ==================== Assigned To - Update Validation (Grandfather Clause) ====================
+
+    public function test_update_case_preserves_inactive_consultant_if_unchanged(): void
+    {
+        // Consultor who was active at assignment time but is now inactive
+        $nowInactiveConsultor = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => false,
+        ]);
+        $nowInactiveConsultor->assignRole('consultor');
+
+        $case = ImmigrationCase::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'case_type_id' => $this->caseType->id,
+            'assigned_to' => $nowInactiveConsultor->id,
+        ]);
+
+        // Update with the SAME assigned_to value (grandfather clause)
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->putJson("/api/cases/{$case->id}", [
+                'assigned_to' => $nowInactiveConsultor->id,
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.assigned_to', $nowInactiveConsultor->id);
+    }
+
+    public function test_update_case_can_reassign_to_active_consultant(): void
+    {
+        $case = ImmigrationCase::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'case_type_id' => $this->caseType->id,
+            'assigned_to' => null,
+        ]);
+
+        $activeConsultor = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => true,
+        ]);
+        $activeConsultor->assignRole('consultor');
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->putJson("/api/cases/{$case->id}", [
+                'assigned_to' => $activeConsultor->id,
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.assigned_to', $activeConsultor->id);
+    }
+
+    public function test_cannot_update_case_reassigning_to_inactive_consultant(): void
+    {
+        $activeConsultor = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => true,
+        ]);
+        $activeConsultor->assignRole('consultor');
+
+        $inactiveConsultor = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => false,
+        ]);
+        $inactiveConsultor->assignRole('consultor');
+
+        $case = ImmigrationCase::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'case_type_id' => $this->caseType->id,
+            'assigned_to' => $activeConsultor->id,
+        ]);
+
+        // Try to reassign to a DIFFERENT inactive consultor
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->putJson("/api/cases/{$case->id}", [
+                'assigned_to' => $inactiveConsultor->id,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['assigned_to']);
+    }
+
+    public function test_cannot_update_case_reassigning_to_admin(): void
+    {
+        $case = ImmigrationCase::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'case_type_id' => $this->caseType->id,
+            'assigned_to' => null,
+        ]);
+
+        $adminUser = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => true,
+        ]);
+        $adminUser->assignRole('admin');
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->putJson("/api/cases/{$case->id}", [
+                'assigned_to' => $adminUser->id,
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['assigned_to']);
+    }
+
+    public function test_update_case_can_unassign(): void
+    {
+        $case = ImmigrationCase::factory()->assignedTo($this->consultorUser)->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'case_type_id' => $this->caseType->id,
+        ]);
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->putJson("/api/cases/{$case->id}", [
+                'assigned_to' => null,
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.assigned_to', null);
+    }
+
+    public function test_update_case_without_assigned_to_field_preserves_assignment(): void
+    {
+        $case = ImmigrationCase::factory()->assignedTo($this->consultorUser)->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'case_type_id' => $this->caseType->id,
+        ]);
+
+        // Update only priority, do NOT send assigned_to at all
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->putJson("/api/cases/{$case->id}", [
+                'priority' => 'urgent',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.assigned_to', $this->consultorUser->id);
     }
 }

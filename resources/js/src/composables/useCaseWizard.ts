@@ -24,10 +24,12 @@ const createDefaultState = (): WizardState => ({
         priority: 'medium',
         language: 'es',
         description: '',
-        hearing_date: '',
-        fda_deadline: '',
-        brown_sheet_date: '',
-        evidence_deadline: '',
+        important_dates: [
+            { label: 'Fecha de inicio',     due_date: new Date().toISOString().split('T')[0], sort_order: 0 },
+            { label: 'Fecha limite legal',  due_date: null, sort_order: 1 },
+            { label: 'Fecha de envio IRCC', due_date: null, sort_order: 2 },
+            { label: 'Fecha de decision',   due_date: null, sort_order: 3 },
+        ],
         assigned_to: null,
     },
     isSubmitting: false,
@@ -216,10 +218,11 @@ export function useCaseWizard() {
                 priority: state.caseDetails.priority,
                 language: state.caseDetails.language || undefined,
                 description: state.caseDetails.description || undefined,
-                hearing_date: state.caseDetails.hearing_date || undefined,
-                fda_deadline: state.caseDetails.fda_deadline || undefined,
-                brown_sheet_date: state.caseDetails.brown_sheet_date || undefined,
-                evidence_deadline: state.caseDetails.evidence_deadline || undefined,
+                important_dates: state.caseDetails.important_dates.map(d => ({
+                    label: d.label,
+                    due_date: d.due_date,
+                    sort_order: d.sort_order,
+                })),
                 assigned_to: state.caseDetails.assigned_to || undefined,
             };
 

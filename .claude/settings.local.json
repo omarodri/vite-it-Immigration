@@ -38,7 +38,8 @@
       "Bash(done)",
       "mcp__ide__getDiagnostics",
       "Bash(while read f)",
-      "Bash(do echo \"$f\")"
+      "Bash(do echo \"$f\")",
+      "Bash(php:*)"
     ]
   }
 }

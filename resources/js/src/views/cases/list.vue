@@ -236,13 +236,11 @@
                             </span>
                         </template>
 
-                        <!-- Hearing Date Column -->
-                        <template #hearing_date="data">
-                            <div v-if="data.value.hearing_date">
-                                <span>{{ formatDate(data.value.hearing_date) }}</span>
-                                <span v-if="data.value.days_until_hearing !== null" class="text-xs ml-1" :class="getDaysUntilClass(data.value.days_until_hearing)">
-                                    ({{ formatDaysUntil(data.value.days_until_hearing) }})
-                                </span>
+                        <!-- Nearest Date Column -->
+                        <template #nearest_date="data">
+                            <div v-if="getNearestDate(data.value.important_dates)">
+                                <span class="text-xs text-gray-500 block">{{ getNearestDate(data.value.important_dates)!.label }}</span>
+                                <span>{{ formatDate(getNearestDate(data.value.important_dates)!.due_date!) }}</span>
                             </div>
                             <span v-else class="text-gray-400">-</span>
                         </template>
@@ -342,10 +340,12 @@
 
                         <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
                             <div class="text-xs text-gray-500">
-                                <span v-if="caseItem.hearing_date">
-                                    <icon-calendar class="w-3 h-3 inline" /> {{ formatDate(caseItem.hearing_date) }}
+                                <span v-if="getNearestDate(caseItem.important_dates)">
+                                    <icon-calendar class="w-3 h-3 inline" />
+                                    {{ getNearestDate(caseItem.important_dates)!.label }}:
+                                    {{ formatDate(getNearestDate(caseItem.important_dates)!.due_date!) }}
                                 </span>
-                                <span v-else>{{ $t('cases.no_hearing') }}</span>
+                                <span v-else>{{ $t('cases.no_dates') }}</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <router-link :to="`/cases/${caseItem.id}`" class="btn btn-sm btn-outline-info p-1.5">
@@ -412,7 +412,7 @@ import { useCaseStore } from '@/stores/case';
 import { useNotification } from '@/composables/useNotification';
 import { useDebounce } from '@/composables/useDebounce';
 import { formatDate } from '@/utils/formatters';
-import type { ImmigrationCase, CaseStatus, CasePriority } from '@/types/case';
+import type { ImmigrationCase, CaseStatus, CasePriority, ImportantDate } from '@/types/case';
 
 // Icons
 import IconFolder from '@/components/icon/icon-folder.vue';
@@ -456,12 +456,21 @@ const columns = computed(() => [
     { field: 'case_type', title: t('cases.case_type'), width: '150px', sort: false },
     { field: 'status', title: t('cases.status'), width: '100px' },
     { field: 'priority', title: t('cases.priority'), width: '100px' },
-    { field: 'hearing_date', title: t('cases.hearing_date'), width: '150px' },
+    { field: 'nearest_date', title: t('cases.important_dates'), width: '180px', sort: false },
     { field: 'assigned_to', title: t('cases.assigned_to'), width: '140px', sort: false },
     { field: 'actions', title: t('cases.actions'), sort: false, width: '130px', headerClass: 'justify-center' },
 ]);
 
 // Helper methods
+const getNearestDate = (importantDates: ImportantDate[] | undefined) => {
+    if (!importantDates?.length) return null;
+    const withDates = importantDates.filter(d => d.due_date);
+    if (!withDates.length) return null;
+    return withDates.sort((a, b) =>
+        new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime()
+    )[0];
+};
+
 const getInitials = (firstName: string, lastName: string): string => {
     return ((firstName?.[0] || '') + (lastName?.[0] || '')).toUpperCase();
 };
@@ -491,18 +500,6 @@ const getProgressBarClass = (progress: number): string => {
     if (progress >= 50) return 'bg-info';
     if (progress >= 25) return 'bg-warning';
     return 'bg-danger';
-};
-
-const getDaysUntilClass = (days: number): string => {
-    if (days < 0) return 'text-danger';
-    if (days <= 7) return 'text-warning';
-    return 'text-gray-500';
-};
-
-const formatDaysUntil = (days: number): string => {
-    if (days < 0) return `${Math.abs(days)}d ago`;
-    if (days === 0) return 'Today';
-    return `${days}d`;
 };
 
 // Actions

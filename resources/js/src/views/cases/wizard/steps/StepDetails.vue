@@ -48,7 +48,18 @@
                     <label class="block text-sm font-medium mb-2">
                         {{ $t('cases.assigned_to') }}
                     </label>
+                    <!-- Loading state -->
+                    <div v-if="isLoadingStaff" class="animate-pulse h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    <!-- Error state -->
+                    <div v-else-if="staffError" class="text-sm text-danger">
+                        {{ $t('cases.staff_load_error') }}
+                        <button type="button" class="ml-2 text-primary underline" @click="loadStaff">{{ $t('cases.retry') }}</button>
+                    </div>
+                    <!-- Empty state -->
+                    <div v-else-if="staffMembers.length === 0" class="text-sm text-warning">{{ $t('cases.no_active_consultants') }}</div>
+                    <!-- Normal state -->
                     <select
+                        v-else
                         :value="wizard.state.caseDetails.assigned_to || ''"
                         class="form-select"
                         @change="updateField('assigned_to', ($event.target as HTMLSelectElement).value ? parseInt(($event.target as HTMLSelectElement).value) : null)"
@@ -75,92 +86,13 @@
                 </div>
             </div>
 
-            <!-- Right Column: Dates -->
+            <!-- Right Column: Important Dates -->
             <div class="space-y-5">
                 <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-4">
                     {{ $t('cases.important_dates') }}
                 </h4>
 
-                <!-- Hearing Date -->
-                <div>
-                    <label class="block text-sm font-medium mb-2">
-                        {{ $t('cases.hearing_date') }}
-                    </label>
-                    <!-- <input
-                        type="date"
-                        :value="wizard.state.caseDetails.hearing_date"
-                        class="form-input"
-                        :min="today"
-                        @change="updateField('hearing_date', ($event.target as HTMLInputElement).value)"
-                    /> -->
-                    <flat-pickr
-                        v-model="wizard.state.caseDetails.hearing_date"
-                        :config="dateConfig"
-                        class="form-input"
-                        :min="today"
-                        :placeholder="$t('clients.select_date')"
-                    />
-                </div>
-
-                <!-- FDA Deadline -->
-                <div>
-                    <label class="block text-sm font-medium mb-2">
-                        {{ $t('cases.fda_deadline') }}
-                    </label>
-                    <!-- <input
-                        type="date"
-                        :value="wizard.state.caseDetails.fda_deadline"
-                        class="form-input"
-                        @change="updateField('fda_deadline', ($event.target as HTMLInputElement).value)"
-                    /> -->
-                    <flat-pickr
-                        v-model="wizard.state.caseDetails.fda_deadline"
-                        :config="dateConfig"
-                        class="form-input"
-                        :min="today"
-                        :placeholder="$t('clients.select_date')"
-                    />
-                </div>
-
-                <!-- Brown Sheet Date -->
-                <div>
-                    <label class="block text-sm font-medium mb-2">
-                        {{ $t('cases.brown_sheet_date') }}
-                    </label>
-                    <!-- <input
-                        type="date"
-                        :value="wizard.state.caseDetails.brown_sheet_date"
-                        class="form-input"
-                        @change="updateField('brown_sheet_date', ($event.target as HTMLInputElement).value)"
-                    /> -->
-                    <flat-pickr
-                        v-model="wizard.state.caseDetails.brown_sheet_date"
-                        :config="dateConfig"
-                        class="form-input"
-                        :min="today"
-                        :placeholder="$t('clients.select_date')"
-                    />
-                </div>
-
-                <!-- Evidence Deadline -->
-                <div>
-                    <label class="block text-sm font-medium mb-2">
-                        {{ $t('cases.evidence_deadline') }}
-                    </label>
-                    <!-- <input
-                        type="date"
-                        :value="wizard.state.caseDetails.evidence_deadline"
-                        class="form-input"
-                        @change="updateField('evidence_deadline', ($event.target as HTMLInputElement).value)"
-                    /> -->
-                    <flat-pickr
-                        v-model="wizard.state.caseDetails.evidence_deadline"
-                        :config="dateConfig"
-                        class="form-input"
-                        :min="today"
-                        :placeholder="$t('clients.select_date')"
-                    />
-                </div>
+                <DateManager v-model="wizard.state.caseDetails.important_dates" />
             </div>
         </div>
     </div>
@@ -170,32 +102,36 @@
 import { ref, onMounted, inject } from 'vue';
 import userService from '@/services/userService';
 import type { StaffMember, CaseDetailsForm } from '@/types/wizard';
-import flatPickr from 'vue-flatpickr-component';
-import 'flatpickr/dist/flatpickr.css';
+import DateManager from '@/components/DateManager.vue';
 
 // Get wizard from parent
 const wizard = inject<ReturnType<typeof import('@/composables/useCaseWizard').useCaseWizard>>('wizard')!;
 
 const staffMembers = ref<StaffMember[]>([]);
-const today = new Date().toISOString().split('T')[0];
-
-const dateConfig = ref({
-    dateFormat: 'Y-m-d H:i',
-    allowInput: true,
-    enableTime: true,
-});
+const isLoadingStaff = ref(false);
+const staffError = ref(false);
 
 // Update a field in the wizard state
 function updateField(field: keyof CaseDetailsForm, value: any) {
     wizard.updateDetails({ [field]: value });
 }
 
-// Load staff members on mount
-onMounted(async () => {
+// Load staff members
+const loadStaff = async () => {
+    isLoadingStaff.value = true;
+    staffError.value = false;
     try {
         staffMembers.value = await userService.getStaff();
     } catch (error) {
+        staffError.value = true;
         console.error('Failed to load staff members:', error);
+    } finally {
+        isLoadingStaff.value = false;
     }
+};
+
+// Load staff members on mount
+onMounted(async () => {
+    await loadStaff();
 });
 </script>

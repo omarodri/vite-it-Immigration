@@ -28,6 +28,13 @@ export interface CaseType {
     updated_at: string;
 }
 
+export interface ImportantDate {
+    id?: number;
+    label: string;
+    due_date: string | null;
+    sort_order: number;
+}
+
 export interface ImmigrationCase {
     id: number;
     case_number: string;
@@ -51,11 +58,7 @@ export interface ImmigrationCase {
     description: string | null;
 
     // Important Dates
-    hearing_date: string | null;
-    fda_deadline: string | null;
-    brown_sheet_date: string | null;
-    evidence_deadline: string | null;
-    days_until_hearing: number | null;
+    important_dates?: ImportantDate[];
 
     // Archive
     archive_box_number: string | null;
@@ -110,10 +113,7 @@ export interface CreateCaseData {
     priority?: CasePriority;
     language?: string;
     description?: string;
-    hearing_date?: string;
-    fda_deadline?: string;
-    brown_sheet_date?: string;
-    evidence_deadline?: string;
+    important_dates?: Omit<ImportantDate, 'id'>[];
 }
 
 export interface UpdateCaseData {
@@ -124,10 +124,7 @@ export interface UpdateCaseData {
     progress?: number;
     language?: string;
     description?: string;
-    hearing_date?: string | null;
-    fda_deadline?: string | null;
-    brown_sheet_date?: string | null;
-    evidence_deadline?: string | null;
+    important_dates?: Omit<ImportantDate, 'id'>[];
     archive_box_number?: string | null;
     closure_notes?: string;
     assigned_to?: number | null;
@@ -149,8 +146,8 @@ export interface CaseFilters {
     case_type_id?: number;
     assigned_to?: number;
     client_id?: number;
-    hearing_from?: string;
-    hearing_to?: string;
+    date_from?: string;
+    date_to?: string;
     sort_by?: string;
     sort_direction?: 'asc' | 'desc';
     per_page?: number;

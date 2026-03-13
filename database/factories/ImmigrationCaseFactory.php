@@ -48,10 +48,6 @@ class ImmigrationCaseFactory extends Factory
             'progress' => fake()->numberBetween(0, 100),
             'language' => fake()->randomElement(['es', 'en', 'fr']),
             'description' => fake()->optional()->paragraph(),
-            'hearing_date' => fake()->optional(0.6)->dateTimeBetween('+1 week', '+1 year'),
-            'fda_deadline' => fake()->optional(0.4)->dateTimeBetween('+1 week', '+6 months'),
-            'brown_sheet_date' => fake()->optional(0.3)->dateTimeBetween('-6 months', 'now'),
-            'evidence_deadline' => fake()->optional(0.4)->dateTimeBetween('+1 week', '+3 months'),
             'archive_box_number' => $isClosed ? fake()->bothify('BOX-###') : null,
             'closed_at' => $isClosed ? fake()->dateTimeBetween('-1 year', 'now') : null,
             'closure_notes' => $isClosed ? fake()->sentence() : null,
@@ -139,13 +135,15 @@ class ImmigrationCaseFactory extends Factory
     }
 
     /**
-     * Indicate that the case has a hearing date.
+     * Indicate that the case has important dates with upcoming deadlines.
      */
-    public function withHearing(int $daysFromNow = 30): static
+    public function withImportantDates(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'hearing_date' => now()->addDays($daysFromNow),
-        ]);
+        return $this->afterCreating(function (ImmigrationCase $case) {
+            \App\Models\CaseImportantDate::factory()->count(3)->create([
+                'case_id' => $case->id,
+            ]);
+        });
     }
 
     /**

@@ -34,13 +34,6 @@ class CaseResource extends JsonResource
             // Description
             'description' => $this->description,
 
-            // Dates
-            'hearing_date' => $this->hearing_date?->format('Y-m-d'),
-            'fda_deadline' => $this->fda_deadline?->format('Y-m-d'),
-            'brown_sheet_date' => $this->brown_sheet_date?->format('Y-m-d'),
-            'evidence_deadline' => $this->evidence_deadline?->format('Y-m-d'),
-            'days_until_hearing' => $this->days_until_hearing,
-
             // Archive
             'archive_box_number' => $this->archive_box_number,
 
@@ -71,6 +64,8 @@ class CaseResource extends JsonResource
             ]),
 
             'companions' => $this->whenLoaded('companions', fn () => CompanionResource::collection($this->companions)),
+
+            'important_dates' => CaseImportantDateResource::collection($this->whenLoaded('importantDates')),
         ];
     }
 }

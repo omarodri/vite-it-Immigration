@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -32,20 +33,12 @@ class ImmigrationCase extends Model
         'progress',
         'language',
         'description',
-        'hearing_date',
-        'fda_deadline',
-        'brown_sheet_date',
-        'evidence_deadline',
         'archive_box_number',
         'closed_at',
         'closure_notes',
     ];
 
     protected $casts = [
-        'hearing_date' => 'date',
-        'fda_deadline' => 'date',
-        'brown_sheet_date' => 'date',
-        'evidence_deadline' => 'date',
         'closed_at' => 'date',
         'progress' => 'integer',
     ];
@@ -126,6 +119,14 @@ class ImmigrationCase extends Model
     }
 
     /**
+     * Get the important dates for this case.
+     */
+    public function importantDates(): HasMany
+    {
+        return $this->hasMany(CaseImportantDate::class, 'case_id')->orderBy('sort_order');
+    }
+
+    /**
      * Get the status label in Spanish.
      */
     public function getStatusLabelAttribute(): string
@@ -147,18 +148,6 @@ class ImmigrationCase extends Model
     public function getProgressPercentageAttribute(): string
     {
         return $this->progress . '%';
-    }
-
-    /**
-     * Get the days until the hearing date.
-     */
-    public function getDaysUntilHearingAttribute(): ?int
-    {
-        if (! $this->hearing_date) {
-            return null;
-        }
-
-        return now()->startOfDay()->diffInDays($this->hearing_date, false);
     }
 
     /**
@@ -225,13 +214,15 @@ class ImmigrationCase extends Model
     }
 
     /**
-     * Scope a query to get cases with hearings in the next N days.
+     * Scope a query to get cases with important dates in the next N days.
      */
     public function scopeUpcoming($query, int $days = 30)
     {
-        return $query->whereNotNull('hearing_date')
-            ->whereDate('hearing_date', '>=', now())
-            ->whereDate('hearing_date', '<=', now()->addDays($days));
+        return $query->whereHas('importantDates', function ($q) use ($days) {
+            $q->whereNotNull('due_date')
+              ->whereDate('due_date', '>=', now())
+              ->whereDate('due_date', '<=', now()->addDays($days));
+        });
     }
 
     /**
@@ -253,7 +244,6 @@ class ImmigrationCase extends Model
                 'priority',
                 'progress',
                 'assigned_to',
-                'hearing_date',
                 'description',
             ])
             ->logOnlyDirty()

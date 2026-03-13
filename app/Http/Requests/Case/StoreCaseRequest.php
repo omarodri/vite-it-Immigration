@@ -39,11 +39,11 @@ class StoreCaseRequest extends FormRequest
             ])],
             'language' => ['sometimes', 'string', 'max:10'],
             'description' => ['nullable', 'string', 'max:5000'],
-            'hearing_date' => ['nullable', 'date', 'after_or_equal:today'],
-            'fda_deadline' => ['nullable', 'date'],
-            'brown_sheet_date' => ['nullable', 'date'],
-            'evidence_deadline' => ['nullable', 'date'],
             'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
+            'important_dates' => ['sometimes', 'array', 'max:20'],
+            'important_dates.*.label' => ['required_with:important_dates', 'string', 'max:100'],
+            'important_dates.*.due_date' => ['nullable', 'date'],
+            'important_dates.*.sort_order' => ['sometimes', 'integer', 'min:0', 'max:255'],
             'companion_ids' => ['nullable', 'array'],
             'companion_ids.*' => ['integer', 'exists:companions,id'],
         ];
@@ -72,11 +72,15 @@ class StoreCaseRequest extends FormRequest
                 }
             }
 
-            // Validate assigned user belongs to user's tenant
+            // Validate assigned user belongs to user's tenant, has consultor role, and is active
             if ($this->assigned_to) {
                 $assignedUser = User::withoutGlobalScopes()->find($this->assigned_to);
                 if (! $assignedUser || $assignedUser->tenant_id !== Auth::user()->tenant_id) {
                     $validator->errors()->add('assigned_to', 'The selected staff member is invalid.');
+                } elseif (! $assignedUser->hasRole('consultor')) {
+                    $validator->errors()->add('assigned_to', 'The assigned user must have the consultor role.');
+                } elseif (! $assignedUser->is_active) {
+                    $validator->errors()->add('assigned_to', 'The assigned user must be active.');
                 }
             }
 
@@ -110,11 +114,16 @@ class StoreCaseRequest extends FormRequest
             'case_type_id.required' => 'A case type must be selected.',
             'case_type_id.exists' => 'The selected case type does not exist.',
             'priority.in' => 'Invalid priority selected.',
-            'hearing_date.after_or_equal' => 'Hearing date must be today or in the future.',
             'description.max' => 'Description cannot exceed 5000 characters.',
+            'important_dates.max' => 'A case cannot have more than 20 important dates.',
+            'important_dates.*.label.required_with' => 'Each date must have a label.',
+            'important_dates.*.label.max' => 'Date label cannot exceed 100 characters.',
+            'important_dates.*.due_date.date' => 'Invalid date format.',
             'assigned_to.exists' => 'The selected staff member does not exist.',
             'companion_ids.array' => 'Companions must be provided as a list.',
             'companion_ids.*.exists' => 'One or more selected companions do not exist.',
+            'assigned_to.consultor_role' => 'Solo se pueden asignar consultores a los expedientes.',
+            'assigned_to.active_status' => 'El consultor asignado debe estar activo.',
         ];
     }
 }
