@@ -200,6 +200,22 @@
                                             class="dark:bg-gray-900 dark:text-white"
                                             />
                                         </div>
+                                        <!-- IUC -->
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">
+                                                {{ $t('companions.iuc') }}
+                                            </label>
+                                            <input
+                                                v-model="companionForm.iuc"
+                                                type="text"
+                                                class="form-input"
+                                                maxlength="20"
+                                                :placeholder="$t('companions.iuc_placeholder')"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.passport_number') }}</label>
                                             <input
@@ -208,9 +224,6 @@
                                                 class="form-input"
                                             />
                                         </div>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.passport_country') }}</label>
                                             <!-- <input
@@ -307,6 +320,7 @@ const companionForm = ref<CreateCompanionData>({
     date_of_birth: '',
     gender: undefined,
     nationality: '',
+    iuc: '' as string | null,
     passport_number: '',
     passport_country: '',
     passport_expiry_date: '',
@@ -335,6 +349,7 @@ function resetCompanionForm() {
         date_of_birth: '',
         gender: undefined,
         nationality: '',
+        iuc: '' as string | null,
         passport_number: '',
         passport_country: '',
         passport_expiry_date: '',

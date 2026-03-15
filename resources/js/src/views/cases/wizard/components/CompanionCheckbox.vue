@@ -35,6 +35,9 @@
                     <icon-calendar class="w-3.5 h-3.5" />
                     {{ companion.age }} {{ $t('common.years') }}
                 </span>
+                <span v-if="companion.iuc" class="text-xs text-gray-500 dark:text-gray-400">
+                    IUC: {{ companion.iuc }}
+                </span>
             </div>
         </div>
 

@@ -31,6 +31,7 @@ class CompanionResource extends JsonResource
             'passport_expiry_date' => $this->passport_expiry_date?->format('Y-m-d'),
             'nationality' => $this->nationality,
             'notes' => $this->notes,
+            'iuc' => $this->iuc,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

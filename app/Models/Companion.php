@@ -29,6 +29,7 @@ class Companion extends Model
         'passport_expiry_date',
         'nationality',
         'notes',
+        'iuc',
     ];
 
     protected $casts = [

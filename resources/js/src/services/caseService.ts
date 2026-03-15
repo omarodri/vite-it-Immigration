@@ -16,6 +16,7 @@ import type {
     CaseResponse,
     CaseDeleteResponse,
 } from '@/types/case';
+import type { BulkUpdateInvoicesData } from '@/types/invoice';
 import type { PaginatedResponse } from '@/types/pagination';
 
 const caseService = {
@@ -52,6 +53,7 @@ const caseService = {
         if (filters.search) params.append('search', filters.search);
         if (filters.status) params.append('status', filters.status);
         if (filters.priority) params.append('priority', filters.priority);
+        if (filters.stage) params.append('stage', filters.stage);
         if (filters.case_type_id) params.append('case_type_id', filters.case_type_id.toString());
         if (filters.assigned_to) params.append('assigned_to', filters.assigned_to.toString());
         if (filters.client_id) params.append('client_id', filters.client_id.toString());
@@ -137,6 +139,18 @@ const caseService = {
      */
     async bulkUpdateTasks(caseId: number, tasks: Omit<CaseTask, 'id' | 'completed_at'>[]): Promise<any> {
         const response = await api.put(`/cases/${caseId}/tasks`, { tasks });
+        return response.data;
+    },
+
+    // ===============================
+    // CASE INVOICES (Account Statement)
+    // ===============================
+
+    /**
+     * Bulk update invoices for a case
+     */
+    async bulkUpdateInvoices(caseId: number, invoices: BulkUpdateInvoicesData['invoices']): Promise<CaseResponse> {
+        const response = await api.put<CaseResponse>(`/cases/${caseId}/invoices`, { invoices });
         return response.data;
     },
 

@@ -127,6 +127,35 @@
                     </select>
                 </div>
 
+                <!-- Column Chooser -->
+                <div class="relative">
+                    <button type="button" class="btn btn-outline-secondary gap-1" @click="showColumnChooser = !showColumnChooser">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7"/>
+                        </svg>
+                        {{ $t('clients.columns') }}
+                    </button>
+                    <div v-if="showColumnChooser" class="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-[#1b2e4b] border border-[#e0e6ed] dark:border-[#191e3a] rounded-lg shadow-lg p-3 min-w-[200px]">
+                        <p class="text-xs font-semibold text-gray-500 mb-2">{{ $t('clients.columns') }}</p>
+                        <div v-for="col in visibleOptions" :key="col.field" class="flex items-center gap-2 py-1">
+                            <input
+                                type="checkbox"
+                                :id="`col-${col.field}`"
+                                :checked="col.visible"
+                                :disabled="col.locked"
+                                class="form-checkbox"
+                                @change="toggleColumn(col.field)"
+                            />
+                            <label :for="`col-${col.field}`" class="text-sm cursor-pointer" :class="col.locked ? 'text-gray-400' : ''">
+                                {{ $t(col.titleKey) }}
+                            </label>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger btn-sm w-full mt-2" @click="resetColumns">
+                            {{ $t('clients.reset_columns') }}
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Per Page -->
                 <div class="w-32">
                     <select v-model="perPage" class="form-select" aria-label="Results per page" @change="changePerPage">
@@ -218,11 +247,6 @@
                         previousArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M15 5L9 12L15 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
                         nextArrow='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 rtl:rotate-180"> <path d="M9 5L15 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>'
                     >
-                        <!-- ID Column -->
-                        <template #id="data">
-                            <span class="text-primary font-semibold">#{{ data.value.id }}</span>
-                        </template>
-
                         <!-- Name Column -->
                         <template #first_name="data">
                             <div class="flex items-center gap-3">
@@ -257,6 +281,36 @@
                                 {{ formatCanadaStatus(data.value.canada_status) }}
                             </span>
                             <span v-else class="text-gray-400">-</span>
+                        </template>
+
+                        <!-- Email Column -->
+                        <template #email="data">
+                            <span v-if="data.value.email" class="text-sm">{{ data.value.email }}</span>
+                            <span v-else class="text-gray-400 text-xs">---</span>
+                        </template>
+
+                        <!-- Nationality Column -->
+                        <template #nationality="data">
+                            <span v-if="data.value.nationality" class="text-sm">{{ data.value.nationality }}</span>
+                            <span v-else class="text-gray-400 text-xs">---</span>
+                        </template>
+
+                        <!-- Marital Status Column -->
+                        <template #marital_status="data">
+                            <span v-if="data.value.marital_status" class="text-sm">{{ data.value.marital_status }}</span>
+                            <span v-else class="text-gray-400 text-xs">---</span>
+                        </template>
+
+                        <!-- Profession Column -->
+                        <template #profession="data">
+                            <span v-if="data.value.profession" class="text-sm">{{ data.value.profession }}</span>
+                            <span v-else class="text-gray-400 text-xs">---</span>
+                        </template>
+
+                        <!-- Arrival Date Column -->
+                        <template #arrival_date="data">
+                            <span v-if="data.value.arrival_date" class="text-sm">{{ formatDate(data.value.arrival_date) }}</span>
+                            <span v-else class="text-gray-400 text-xs">---</span>
                         </template>
 
                         <!-- Created At Column -->
@@ -440,13 +494,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Vue3Datatable from '@bhplugin/vue3-datatable';
 import { useMeta } from '@/composables/use-meta';
 import { useClientStore } from '@/stores/client';
 import { useNotification } from '@/composables/useNotification';
 import { useDebounce } from '@/composables/useDebounce';
+import { useClientColumnChooser } from '@/composables/useClientColumnChooser';
 import { formatDate } from '@/utils/formatters';
 import type { Client, ClientStatus } from '@/types/client';
 
@@ -470,6 +525,10 @@ const clientStore = useClientStore();
 const { confirm: confirmDialog, success, error } = useNotification();
 const { debounce, isDebouncing } = useDebounce(300);
 
+// Column chooser
+const { columns: columnConfigs, visibleOptions, toggleColumn, resetColumns, isVisible } = useClientColumnChooser();
+const showColumnChooser = ref(false);
+
 // Local state
 const searchQuery = ref('');
 const statusFilter = ref('');
@@ -486,16 +545,26 @@ const hasActiveFilters = computed(() => !!searchQuery.value || !!statusFilter.va
 const showSkeleton = computed(() => initialLoading.value && clientStore.clients.length === 0);
 const showEmptyState = computed(() => !clientStore.isLoading && !initialLoading.value && clientStore.clients.length === 0);
 
-// Table columns
-const columns = computed(() => [
-    { field: 'id', title: 'ID', width: '80px', isUnique: true },
-    { field: 'first_name', title: t('clients.name'), minWidth: '250px' },
-    { field: 'phone', title: t('clients.phone'), sort: false, minWidth: '150px' },
-    { field: 'status', title: t('clients.status'), sort: true, width: '120px' },
-    { field: 'canada_status', title: t('clients.canada_status'), sort: false, width: '150px' },
-    { field: 'created_at', title: t('clients.created'), width: '150px' },
-    { field: 'actions', title: t('clients.actions'), sort: false, width: '180px', headerClass: 'justify-center' },
-]);
+// Table columns — dynamic based on column chooser
+const allColumns = [
+    { field: 'first_name',     title: () => t('clients.name'),          minWidth: '250px', isUnique: true },
+    { field: 'email',          title: () => t('clients.email'),         width: '200px', sort: false },
+    { field: 'phone',          title: () => t('clients.phone'),         width: '150px', sort: false },
+    { field: 'status',         title: () => t('clients.status'),        width: '120px' },
+    { field: 'canada_status',  title: () => t('clients.canada_status'), width: '160px', sort: false },
+    { field: 'nationality',    title: () => t('clients.nationality'),   width: '140px', sort: false },
+    { field: 'marital_status', title: () => t('clients.marital_status'),width: '140px', sort: false },
+    { field: 'profession',     title: () => t('clients.profession'),    width: '140px', sort: false },
+    { field: 'arrival_date',   title: () => t('clients.arrival_date'),  width: '140px', sort: false },
+    { field: 'created_at',     title: () => t('clients.created'),       width: '150px' },
+    { field: 'actions',        title: () => t('clients.actions'),       sort: false, width: '180px', headerClass: 'justify-center' },
+];
+
+const columns = computed(() =>
+    allColumns
+        .filter(col => isVisible(col.field))
+        .map(col => ({ ...col, title: col.title() }))
+);
 
 // Methods
 const getInitials = (firstName: string, lastName: string): string => {
@@ -671,8 +740,21 @@ const confirmConvert = async (client: Client) => {
     }
 };
 
+// Close column chooser on click outside
+const handleClickOutside = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (showColumnChooser.value && !target.closest('.relative')) {
+        showColumnChooser.value = false;
+    }
+};
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside);
+});
+
 // Initialize
 onMounted(async () => {
+    document.addEventListener('click', handleClickOutside);
     try {
         await Promise.all([
             fetchClients(),

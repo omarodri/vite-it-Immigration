@@ -122,7 +122,7 @@
                             <select id="stage" v-model="form.stage" class="form-select">
                                 <option :value="null">{{ $t('cases.no_stage') }}</option>
                                 <option v-for="opt in CASE_STAGE_OPTIONS" :key="opt.value" :value="opt.value">
-                                    {{ opt.label }}
+                                    {{ $t(opt.label) }}
                                 </option>
                             </select>
                         </div>

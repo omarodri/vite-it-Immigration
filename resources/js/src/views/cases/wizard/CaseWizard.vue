@@ -15,7 +15,7 @@
         <!-- Page Title -->
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl font-semibold dark:text-white-light">
-                {{ $t('wizard.title') }}
+                {{ wizardTitle }}
             </h1>
         </div>
 
@@ -76,7 +76,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, defineAsyncComponent, provide } from 'vue';
-import { onBeforeRouteLeave } from 'vue-router';
+import { onBeforeRouteLeave, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from '@/composables/use-meta';
 import { useCaseWizard } from '@/composables/useCaseWizard';
@@ -96,6 +96,19 @@ const StepChecklist = defineAsyncComponent(() => import('./steps/StepChecklist.v
 const StepSummary = defineAsyncComponent(() => import('./steps/StepSummary.vue'));
 
 const { t } = useI18n();
+const route = useRoute();
+
+const clientNameFromRoute = computed(() => {
+    const name = route.query.client_name as string | undefined;
+    return name ? decodeURIComponent(name) : null;
+});
+
+const wizardTitle = computed(() =>
+    clientNameFromRoute.value
+        ? `${t('wizard.title')} — ${clientNameFromRoute.value}`
+        : t('wizard.title')
+);
+
 useMeta({ title: t('wizard.title') });
 
 const notification = useNotification();

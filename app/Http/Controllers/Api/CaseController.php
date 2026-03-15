@@ -125,7 +125,7 @@ class CaseController extends Controller
         $timeline = $this->caseService->getTimeline($case);
 
         return response()->json([
-            'data' => $timeline->map(fn ($activity) => [
+                'data' => $timeline->map(fn ($activity) => [
                 'id' => $activity->id,
                 'log_name' => $activity->log_name,
                 'description' => $activity->description,

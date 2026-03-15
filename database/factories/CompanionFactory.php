@@ -38,6 +38,7 @@ class CompanionFactory extends Factory
             'passport_country' => fake()->optional(0.7)->country(),
             'passport_expiry_date' => fake()->optional(0.5)->dateTimeBetween('+1 year', '+10 years'),
             'nationality' => fake()->country(),
+            'iuc' => fake()->optional(0.3)->bothify('??######'),
             'notes' => fake()->optional(0.3)->sentence(),
         ];
     }

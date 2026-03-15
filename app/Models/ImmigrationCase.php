@@ -236,6 +236,14 @@ class ImmigrationCase extends Model
     }
 
     /**
+     * Get the invoices for this case.
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(CaseInvoice::class, 'case_id')->orderBy('sort_order');
+    }
+
+    /**
      * Get the status label in Spanish.
      */
     public function getStatusLabelAttribute(): string

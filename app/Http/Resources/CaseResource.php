@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\CaseInvoiceResource;
 use App\Http\Resources\CaseTaskResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -87,6 +88,24 @@ class CaseResource extends JsonResource
             'important_dates' => CaseImportantDateResource::collection($this->whenLoaded('importantDates')),
 
             'tasks' => CaseTaskResource::collection($this->whenLoaded('tasks')),
+
+            'invoices' => CaseInvoiceResource::collection($this->whenLoaded('invoices')),
+
+            'financial_summary' => $this->when(
+                $request->user()?->can('cases.view-fees') && $this->relationLoaded('invoices'),
+                function () {
+                    $totalInvoiced = $this->invoices->sum(fn ($i) => (float) $i->amount);
+                    $totalCollected = $this->invoices->where('is_collected', true)->sum(fn ($i) => (float) $i->amount);
+                    $fees = $this->fees !== null ? (float) $this->fees : null;
+
+                    return [
+                        'fees' => $fees,
+                        'total_invoiced' => round($totalInvoiced, 2),
+                        'total_collected' => round($totalCollected, 2),
+                        'balance' => $fees !== null ? round($fees - $totalInvoiced, 2) : null,
+                    ];
+                }
+            ),
         ];
     }
 }

@@ -25,6 +25,7 @@ export interface Companion {
     passport_expiry_date: string | null;
     nationality: string | null;
     notes: string | null;
+    iuc?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -41,6 +42,7 @@ export interface CreateCompanionData {
     passport_expiry_date?: string;
     nationality?: string;
     notes?: string;
+    iuc?: string;
 }
 
 export interface UpdateCompanionData {
@@ -55,6 +57,7 @@ export interface UpdateCompanionData {
     passport_expiry_date?: string;
     nationality?: string;
     notes?: string;
+    iuc?: string;
 }
 
 // Relationship type options for select dropdowns
@@ -63,6 +66,15 @@ export const RELATIONSHIP_TYPE_OPTIONS: Array<{ value: RelationshipType; label: 
     { value: 'child', label: 'Child' },
     { value: 'parent', label: 'Parent' },
     { value: 'sibling', label: 'Sibling' },
+    { value: 'common-law partner', label: 'Common-law partner' },
+    { value: 'dependent child', label: 'Dependent child' },
+    { value: 'grandchild', label: 'Grandchild' },
+    { value: 'grandparent', label: 'Grandparent' },
+    { value: 'aunt / uncle', label: 'Aunt / Uncle' },
+    { value: 'niece / nephew', label: 'Niece / Nephew' },
+    { value: 'cousin', label: 'Cousin' },
+    { value: 'child-in-law', label: 'Child-in-law' },
+    { value: 'parent-in-law', label: 'Parent-in-law' },
     { value: 'other', label: 'Other' },
 ];
 
@@ -73,4 +85,13 @@ export const RELATIONSHIP_TYPE_LABELS_ES: Record<RelationshipType, string> = {
     parent: 'Padre/Madre',
     sibling: 'Hermano/a',
     other: 'Otro',
+    'common-law partner': 'Pareja de hecho',
+    'dependent child': 'Hijo/a dependiente',
+    grandchild: 'Nieto/a',
+    grandparent: 'Abuelo/a',
+    'aunt / uncle': 'Tía/Tío',
+    'niece / nephew': 'Sobrino/a',
+    cousin: 'Primo/a',
+    'child-in-law': 'Hijo/a de hermano/a',
+    'parent-in-law': 'Padre/Madre de hermano/a',
 };

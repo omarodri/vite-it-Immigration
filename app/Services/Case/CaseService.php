@@ -34,7 +34,7 @@ class CaseService
      */
     public function getCase(ImmigrationCase $case): ImmigrationCase
     {
-        return $case->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates', 'tasks']);
+        return $case->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates', 'tasks', 'invoices']);
     }
 
     /**

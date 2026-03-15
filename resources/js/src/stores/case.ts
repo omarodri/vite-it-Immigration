@@ -18,6 +18,7 @@ import type {
     CasePriority,
     CaseTypeCategory,
 } from '@/types/case';
+import type { BulkUpdateInvoicesData } from '@/types/invoice';
 import type { PaginationMeta, PaginationLinks } from '@/types/pagination';
 
 interface CaseState {
@@ -433,6 +434,23 @@ export const useCaseStore = defineStore('case', {
                 return response;
             } catch (error: any) {
                 this.error = error.response?.data?.message || 'Failed to update tasks';
+                throw error;
+            }
+        },
+
+        // ===============================
+        // INVOICE OPERATIONS (Account Statement)
+        // ===============================
+
+        async bulkUpdateInvoices(caseId: number, invoices: BulkUpdateInvoicesData['invoices']) {
+            try {
+                const response = await caseService.bulkUpdateInvoices(caseId, invoices);
+                if (this.currentCase && this.currentCase.id === caseId) {
+                    this.currentCase = response.data;
+                }
+                return response;
+            } catch (error: any) {
+                this.error = error.response?.data?.message || 'Failed to update invoices';
                 throw error;
             }
         },

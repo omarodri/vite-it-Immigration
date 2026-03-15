@@ -123,7 +123,7 @@
                     <select v-model="stageFilter" class="form-select" aria-label="Filter by stage" @change="applyFilters">
                         <option value="">{{ $t('cases.all_stages') }}</option>
                         <option v-for="opt in CASE_STAGE_OPTIONS" :key="opt.value" :value="opt.value">
-                            {{ opt.label }}
+                            {{ $t(opt.label) }}
                         </option>
                     </select>
                 </div>
@@ -279,7 +279,7 @@
                             <span v-if="data.value.stage"
                                 :class="`badge badge-outline-${CASE_STAGE_OPTIONS.find(o => o.value === data.value.stage)?.color ?? 'dark'}`"
                                 class="text-xs">
-                                {{ data.value.stage_label }}
+                                {{ $t(CASE_STAGE_OPTIONS.find(o => o.value === data.value.stage)?.label ?? data.value.stage) }}
                             </span>
                             <span v-else class="text-gray-400 text-xs">---</span>
                         </template>

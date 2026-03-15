@@ -320,9 +320,10 @@ function getInitials(firstName: string, lastName: string): string {
 
 function getCategoryClass(category: CaseTypeCategory): string {
     const classes: Record<CaseTypeCategory, string> = {
-        temporary_residence: 'bg-info/20 text-info',
-        permanent_residence: 'bg-success/20 text-success',
-        humanitarian: 'bg-warning/20 text-warning',
+        'category.temporary_residence': 'bg-info/20 text-info',
+        'category.permanent_residence': 'bg-success/20 text-success',
+        'category.refugee': 'bg-warning/20 text-warning',
+        'category.citizenship': 'bg-primary/20 text-primary',
     };
     return classes[category] || 'bg-gray-200 text-gray-700';
 }

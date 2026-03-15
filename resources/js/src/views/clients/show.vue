@@ -323,12 +323,15 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div v-if="companion.passport_number" class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                                    <p class="text-xs text-gray-500">
+                                <div v-if="companion.passport_number || companion.iuc" class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                                    <p v-if="companion.passport_number" class="text-xs text-gray-500">
                                         <span class="font-medium">{{ $t('companions.passport') }}:</span>
                                         {{ companion.passport_number }}
                                         <span v-if="companion.passport_country">({{ companion.passport_country }})</span>
                                     </p>
+                                    <span v-if="companion.iuc" class="text-xs text-gray-500 dark:text-gray-400">
+                                        IUC: {{ companion.iuc }}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -340,7 +343,7 @@
                             <h5 class="text-lg font-semibold">{{ $t('clients.assigned_cases') }}</h5>
                             <router-link
                                 v-can="'cases.create'"
-                                :to="`/cases/wizard?client_id=${client.id}`"
+                                :to="`/cases/wizard?client_id=${client.id}&client_name=${encodeURIComponent(client.full_name ?? client.first_name + ' ' + client.last_name)}`"
                                 class="btn btn-primary btn-sm gap-2"
                             >
                                 <icon-plus class="w-4 h-4" />
@@ -441,8 +444,9 @@
 
                                 <form @submit.prevent="saveCompanion" class="space-y-4">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <!-- First Name -->
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.first_name') }} *</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.first_name') }} *</label>
                                             <input
                                                 v-model="companionForm.first_name"
                                                 type="text"
@@ -452,8 +456,9 @@
                                             />
                                             <p v-if="companionErrors.first_name" class="text-danger text-xs mt-1">{{ companionErrors.first_name[0] }}</p>
                                         </div>
+                                        <!-- Last Name -->
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.last_name') }} *</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.last_name') }} *</label>
                                             <input
                                                 v-model="companionForm.last_name"
                                                 type="text"
@@ -466,8 +471,9 @@
                                     </div>
 
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <!-- Relationship -->
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.relationship') }} *</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.relationship') }} *</label>
                                             <select
                                                 v-model="companionForm.relationship"
                                                 class="form-select"
@@ -476,15 +482,27 @@
                                             >
                                                 <option value="">{{ $t('companions.select_relationship') }}</option>
                                                 <option value="spouse">{{ $t('companions.spouse') }}</option>
+                                                <option value="common-law partner">{{ $t('companions.common-law partner') }}</option>
                                                 <option value="child">{{ $t('companions.child') }}</option>
+                                                <option value="dependent child">{{ $t('companions.dependent child') }}</option>
                                                 <option value="parent">{{ $t('companions.parent') }}</option>
                                                 <option value="sibling">{{ $t('companions.sibling') }}</option>
+                                                <option value="half-sibling">{{ $t('companions.half-sibling') }}</option>
+                                                <option value="step-sibling">{{ $t('companions.step-sibling') }}</option>
+                                                <option value="grandchild">{{ $t('companions.grandchild') }}</option>
+                                                <option value="grandparent">{{ $t('companions.grandparent') }}</option>
+                                                <option value="aunt / uncle">{{ $t('companions.aunt / uncle') }}</option>
+                                                <option value="niece / nephew">{{ $t('companions.niece / nephew') }}</option>
+                                                <option value="cousin">{{ $t('companions.cousin') }}</option>
+                                                <option value="child-in-law">{{ $t('companions.child-in-law') }}</option>
+                                                <option value="parent-in-law">{{ $t('companions.parent-in-law') }}</option>
                                                 <option value="other">{{ $t('companions.other') }}</option>
                                             </select>
                                             <p v-if="companionErrors.relationship" class="text-danger text-xs mt-1">{{ companionErrors.relationship[0] }}</p>
                                         </div>
+                                        <!-- Relationship Other -->
                                         <div v-if="companionForm.relationship === 'other'">
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.specify_relationship') }} *</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.specify_relationship') }} *</label>
                                             <input
                                                 v-model="companionForm.relationship_other"
                                                 type="text"
@@ -497,7 +515,7 @@
 
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.date_of_birth') }}</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.date_of_birth') }}</label>
                                             <!-- <input
                                                 v-model="companionForm.date_of_birth"
                                                 type="date"
@@ -512,7 +530,7 @@
                                             />
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.gender') }}</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.gender') }}</label>
                                             <select v-model="companionForm.gender" class="form-select">
                                                 <option value="">{{ $t('companions.select_gender') }}</option>
                                                 <option value="male">{{ $t('companions.male') }}</option>
@@ -524,31 +542,46 @@
 
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.nationality') }}</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.nationality') }}</label>
                                             <!-- <input
                                                 v-model="companionForm.nationality"
                                                 type="text"
                                                 class="form-input"
                                             /> -->
+                                            <!-- Nationality -->
                                             <CountrySelect
                                                 id="nationality"
                                                 v-model="companionForm.nationality"
                                                 :placeholder="$t('clients.select_nationality')"
+                                                class="dark:bg-gray-900 dark:text-white "
                                             />
                                         </div>
+                                        <!-- IUC -->
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.passport_number') }}</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">
+                                                {{ $t('companions.iuc') }}
+                                            </label>
                                             <input
-                                                v-model="companionForm.passport_number"
+                                                v-model="companionForm.iuc"
                                                 type="text"
                                                 class="form-input"
+                                                maxlength="20"
+                                                :placeholder="$t('companions.iuc_placeholder')"
                                             />
                                         </div>
                                     </div>
 
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.passport_country') }}</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.passport_number') }}</label>
+                                            <input
+                                                v-model="companionForm.passport_number"
+                                                type="text"
+                                                class="form-input"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.passport_country') }}</label>
                                             <!-- <input
                                                 v-model="companionForm.passport_country"
                                                 type="text"
@@ -561,7 +594,7 @@
                                             />
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium mb-1">{{ $t('companions.passport_expiry') }}</label>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.passport_expiry') }}</label>
                                             <!-- <input
                                                 v-model="companionForm.passport_expiry_date"
                                                 type="date"
@@ -577,7 +610,7 @@
                                     </div>
 
                                     <div>
-                                        <label class="block text-sm font-medium mb-1">{{ $t('companions.notes') }}</label>
+                                        <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.notes') }}</label>
                                         <textarea
                                             v-model="companionForm.notes"
                                             rows="2"
@@ -666,6 +699,7 @@ const companionForm = ref<CreateCompanionData>({
     date_of_birth: '',
     gender: undefined,
     nationality: '',
+    iuc: '' as string | null,
     passport_number: '',
     passport_country: '',
     passport_expiry_date: '',
@@ -756,6 +790,7 @@ const resetCompanionForm = () => {
         date_of_birth: '',
         gender: undefined,
         nationality: '',
+        iuc: '' as string | null,
         passport_number: '',
         passport_country: '',
         passport_expiry_date: '',
@@ -776,6 +811,7 @@ const openCompanionModal = (companion?: Companion) => {
             date_of_birth: companion.date_of_birth || '',
             gender: companion.gender || undefined,
             nationality: companion.nationality || '',
+            iuc: companion.iuc || '',
             passport_number: companion.passport_number || '',
             passport_country: companion.passport_country || '',
             passport_expiry_date: companion.passport_expiry_date || '',

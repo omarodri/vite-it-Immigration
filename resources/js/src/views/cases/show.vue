@@ -109,7 +109,7 @@
                                 <!-- Stage -->
                                 <div v-if="currentCase.stage" class="flex items-center justify-between py-1">
                                     <span class="text-gray-500">{{ $t('cases.stage') }}</span>
-                                    <span :class="`badge badge-outline-${stageColor}`">{{ currentCase.stage_label }}</span>
+                                    <span :class="`badge badge-outline-${stageColor}`">{{ $t(CASE_STAGE_OPTIONS.find(o => o.value === currentCase.stage)?.label ?? currentCase.stage ?? '') }}</span>
                                 </div>
                                 <!-- IRCC Status -->
                                 <div v-if="currentCase.ircc_status" class="flex items-center justify-between py-1">
@@ -303,6 +303,16 @@
                         </div>
                     </div>
 
+                    <!-- Invoices / Account Statement Tab -->
+                    <div v-else-if="activeTab === 'invoices'">
+                        <InvoiceTable
+                            :invoices="currentCase.invoices ?? []"
+                            :financial-summary="currentCase.financial_summary ?? null"
+                            :case-id="currentCase.id"
+                            @saved="() => caseStore.fetchCase(currentCase!.id)"
+                        />
+                    </div>
+
                     <!-- Documents Tab (Placeholder) -->
                     <div v-else-if="activeTab === 'documents'" class="text-center py-10 text-gray-500">
                         <icon-folder class="w-16 h-16 mx-auto text-gray-300 mb-4" />
@@ -333,6 +343,7 @@ import type { CaseStatus, CasePriority } from '@/types/case';
 import { CASE_STAGE_OPTIONS, IRCC_STATUS_OPTIONS, FINAL_RESULT_OPTIONS, SERVICE_TYPE_OPTIONS } from '@/types/case';
 import DateManager from '@/components/DateManager.vue';
 import LifecycleChecklist from '@/components/LifecycleChecklist.vue';
+import InvoiceTable from '@/views/cases/components/InvoiceTable.vue';
 
 // Icons
 import IconFolder from '@/components/icon/icon-folder.vue';
@@ -352,12 +363,16 @@ const isLoading = ref(true);
 const activeTab = ref('info');
 const showAssignModal = ref(false);
 
-const tabs = [
-    { id: 'info', label: 'cases.tab_information' },
-    { id: 'lifecycle', label: 'cases.tab_lifecycle' },
-    { id: 'timeline', label: 'cases.tab_timeline' },
-    { id: 'documents', label: 'cases.tab_documents' },
-];
+const tabs = computed(() => {
+    const baseTabs = [
+        { id: 'info', label: 'cases.tab_information' },
+        { id: 'lifecycle', label: 'cases.tab_lifecycle' },
+        { id: 'timeline', label: 'cases.tab_timeline' },
+        { id: 'invoices', label: 'cases.tab_invoices' },
+        { id: 'documents', label: 'cases.tab_documents' },
+    ];
+    return baseTabs;
+});
 
 const currentCase = computed(() => caseStore.currentCase);
 

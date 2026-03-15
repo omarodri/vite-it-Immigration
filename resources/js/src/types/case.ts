@@ -3,6 +3,8 @@
  * Interfaces for immigration case-related data structures
  */
 
+import type { CaseInvoice, FinancialSummary } from './invoice';
+
 // =============================================
 // Base Types (Enums)
 // =============================================
@@ -170,6 +172,10 @@ export interface ImmigrationCase {
         date_of_birth?: string;
         gender?: string;
     }>;
+
+    // Invoices / Account Statement
+    invoices?: CaseInvoice[];
+    financial_summary?: FinancialSummary;
 }
 
 // =============================================
@@ -320,14 +326,14 @@ export const CASE_TYPE_CATEGORY_OPTIONS: Array<{ value: CaseTypeCategory; label:
 ];
 
 export const CASE_STAGE_OPTIONS: Array<{ value: CaseStage; label: string; color: string }> = [
-    { value: 'initial_consultation',      label: 'Consulta Inicial',                   color: 'secondary' },
-    { value: 'document_collection',       label: 'Recolección de Documentos',          color: 'info' },
-    { value: 'application_preparation',   label: 'Preparación de Solicitud',           color: 'info' },
-    { value: 'submitted',                 label: 'Enviada',                            color: 'primary' },
-    { value: 'under_review',              label: 'En Revisión IRCC',                   color: 'warning' },
-    { value: 'additional_info_requested', label: 'Información Adicional Solicitada',   color: 'danger' },
-    { value: 'decision_pending',          label: 'Decisión Pendiente',                 color: 'warning' },
-    { value: 'closed',                    label: 'Cerrada',                            color: 'dark' },
+    { value: 'initial_consultation',      label: 'cases.stage_initial_consultation',      color: 'secondary' },
+    { value: 'document_collection',       label: 'cases.stage_document_collection',       color: 'info' },
+    { value: 'application_preparation',   label: 'cases.stage_application_preparation',   color: 'info' },
+    { value: 'submitted',                 label: 'cases.stage_submitted',                 color: 'primary' },
+    { value: 'under_review',              label: 'cases.stage_under_review',              color: 'warning' },
+    { value: 'additional_info_requested', label: 'cases.stage_additional_info_requested', color: 'danger' },
+    { value: 'decision_pending',          label: 'cases.stage_decision_pending',          color: 'warning' },
+    { value: 'closed',                    label: 'cases.stage_closed',                    color: 'dark' },
 ];
 
 export const IRCC_STATUS_OPTIONS: Array<{ value: IrccStatus; label: string; color: string }> = [

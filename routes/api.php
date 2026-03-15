@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CaseController;
+use App\Http\Controllers\Api\CaseInvoiceController;
 use App\Http\Controllers\Api\CaseTaskController;
 use App\Http\Controllers\Api\CaseTypeController;
 use App\Http\Controllers\Api\ClientController;
@@ -97,6 +98,9 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     // Case Tasks routes
     Route::put('/cases/{case}/tasks', [CaseTaskController::class, 'bulkUpdate']);
     Route::patch('/cases/{case}/tasks/{task}/toggle', [CaseTaskController::class, 'toggle']);
+
+    // Case Invoices routes
+    Route::put('/cases/{case}/invoices', [CaseInvoiceController::class, 'bulkUpdate']);
 
     // Role management routes
     Route::get('/roles', [RoleController::class, 'index']);
