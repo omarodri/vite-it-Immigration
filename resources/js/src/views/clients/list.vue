@@ -339,8 +339,9 @@
                                         <icon-pencil class="w-4 h-4" />
                                     </router-link>
                                 </tippy>
-                                <tippy v-if="data.value.status === 'prospect'" v-can="'clients.update'" content="Convert to Active">
+                                <tippy v-can="'clients.update'" content="Convert to Active">
                                     <button
+                                        v-show="data.value.status === 'prospect'"
                                         type="button"
                                         class="btn btn-sm btn-outline-success p-1.5"
                                         :aria-label="`Convert ${data.value.first_name} to active`"
@@ -415,7 +416,7 @@
                                     <icon-pencil class="w-4 h-4" />
                                 </router-link>
                                 <button
-                                    v-if="client.status === 'prospect'"
+                                    v-show="client.status === 'prospect'"
                                     v-can="'clients.update'"
                                     type="button"
                                     class="btn btn-sm btn-outline-success p-1.5"
@@ -730,10 +731,10 @@ const confirmConvert = async (client: Client) => {
         try {
             await clientStore.convertProspect(client.id);
             success(t('clients.converted_successfully'));
-            // Bump key to force full datatable remount (avoids vnode patch
-            // errors when conditional slot elements change between renders)
-            tableKey.value++;
-            await Promise.all([fetchClients(), clientStore.fetchStatistics()]);
+            // Store updates the client in-place (status → active), so the
+            // datatable reacts to a data change, not a structural DOM removal.
+            // Re-fetch only stats; client list is already up-to-date.
+            await clientStore.fetchStatistics();
         } catch (err: any) {
             error(err.response?.data?.message || t('clients.convert_failed'));
         }

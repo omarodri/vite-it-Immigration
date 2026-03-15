@@ -94,6 +94,12 @@ class RolePermissionSeeder extends Seeder
 
             // Reports
             ['name' => 'reports.view', 'display_name' => 'View Reports'],
+
+            // Scrum Board
+            ['name' => 'scrum.view', 'display_name' => 'View Scrum Board'],
+            ['name' => 'scrum.create', 'display_name' => 'Create Scrum Tasks/Columns'],
+            ['name' => 'scrum.edit', 'display_name' => 'Edit Scrum Tasks/Columns'],
+            ['name' => 'scrum.delete', 'display_name' => 'Delete Scrum Tasks/Columns'],
         ];
 
         foreach ($permissions as $permission) {
@@ -125,6 +131,7 @@ class RolePermissionSeeder extends Seeder
                     'documents.view', 'documents.create', 'documents.update', 'documents.delete',
                     'events.view', 'events.create', 'events.update', 'events.delete',
                     'reports.view',
+                    'scrum.view', 'scrum.create', 'scrum.edit', 'scrum.delete',
                 ],
             ],
             'consultor' => [
@@ -139,6 +146,7 @@ class RolePermissionSeeder extends Seeder
                     'documents.view', 'documents.create', 'documents.update',
                     'events.view', 'events.create', 'events.update',
                     'reports.view',
+                    'scrum.view', 'scrum.create', 'scrum.edit',
                 ],
             ],
             'apoyo' => [
@@ -152,6 +160,7 @@ class RolePermissionSeeder extends Seeder
                     'follow-ups.view', 'follow-ups.create', 'follow-ups.update',
                     'documents.view', 'documents.create', 'documents.update',
                     'events.view', 'events.create', 'events.update',
+                    'scrum.view', 'scrum.create', 'scrum.edit',
                 ],
             ],
             'contador' => [

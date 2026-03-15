@@ -15,6 +15,9 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\TenantOAuthController;
 use App\Http\Controllers\Api\TwoFactorController;
+use App\Http\Controllers\Api\ScrumBoardController;
+use App\Http\Controllers\Api\ScrumColumnController;
+use App\Http\Controllers\Api\ScrumTaskController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -125,6 +128,24 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     Route::get('/tenant', [TenantController::class, 'show']);
     Route::put('/tenant/settings', [TenantController::class, 'updateSettings']);
     Route::put('/tenant/branding', [TenantController::class, 'updateBranding']);
+
+    // Scrum Board routes
+    Route::prefix('scrum')->group(function () {
+        Route::get('/board', [ScrumBoardController::class, 'index']);
+        Route::get('/assignees', [ScrumBoardController::class, 'assignees']);
+
+        Route::post('/columns', [ScrumColumnController::class, 'store']);
+        Route::patch('/columns/reorder', [ScrumColumnController::class, 'reorder']);
+        Route::patch('/columns/{scrumColumn}', [ScrumColumnController::class, 'update']);
+        Route::delete('/columns/{scrumColumn}', [ScrumColumnController::class, 'destroy']);
+
+        Route::post('/tasks', [ScrumTaskController::class, 'store']);
+        Route::get('/tasks/{scrumTask}', [ScrumTaskController::class, 'show']);
+        Route::put('/tasks/{scrumTask}', [ScrumTaskController::class, 'update']);
+        Route::delete('/tasks/{scrumTask}', [ScrumTaskController::class, 'destroy']);
+        Route::patch('/tasks/{scrumTask}/move', [ScrumTaskController::class, 'move']);
+        Route::patch('/tasks/{scrumTask}/toggle', [ScrumTaskController::class, 'toggle']);
+    });
 
     // Tenant OAuth credentials routes
     Route::get('/tenant/oauth/status', [TenantOAuthController::class, 'status']);

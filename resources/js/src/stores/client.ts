@@ -239,13 +239,16 @@ export const useClientStore = defineStore('client', {
 
             try {
                 const response = await clientService.convertProspect(id);
-                // Update currentClient if it's the same (show.vue)
+                // Update in-place so the datatable gets a normal reactive
+                // data change (status field only) instead of a structural DOM
+                // change triggered by v-if removal.
+                const idx = this.clients.findIndex((c) => c.id === id);
+                if (idx !== -1) {
+                    this.clients[idx] = { ...this.clients[idx], ...response.client };
+                }
                 if (this.currentClient?.id === id) {
                     this.currentClient = response.client;
                 }
-                // Don't mutate this.clients in-place — the list view will
-                // re-fetch to avoid vue3-datatable vnode patch errors when
-                // conditional slot elements (e.g. convert button) are removed.
                 return response;
             } catch (error: any) {
                 this.error = error.response?.data?.message || 'Failed to convert prospect';
