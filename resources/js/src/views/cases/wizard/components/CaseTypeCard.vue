@@ -33,7 +33,7 @@
 
         <!-- Code -->
         <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-            {{ $t(`case_types.${caseType.code}`) }}
+            {{ caseType.code }}
         </p>
 
         <!-- Description -->

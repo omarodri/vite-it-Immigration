@@ -50,9 +50,10 @@ interface CaseRepositoryInterface
     public function countByPriority(string $priority): int;
 
     /**
-     * Get the next sequence number for a case type in a given year.
+     * Get the next sequence number for a case type, year (2-digit) and last-name slug.
+     * Scope: (year2, type_code, last_name_slug) — e.g. pattern '26-RT-RODR-%'
      */
-    public function getNextSequence(CaseType $caseType, int $year): int;
+    public function getNextSequence(CaseType $caseType, string $year2, string $lastNameSlug): int;
 
     /**
      * Check if a case number already exists.

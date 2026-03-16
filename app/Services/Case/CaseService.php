@@ -2,7 +2,9 @@
 
 namespace App\Services\Case;
 
+use App\Helpers\CaseCodeHelper;
 use App\Models\CaseType;
+use App\Models\Client;
 use App\Models\ImmigrationCase;
 use App\Models\User;
 use App\Repositories\Contracts\CaseRepositoryInterface;
@@ -57,11 +59,12 @@ class CaseService
                 : $this->getDefaultImportantDates();
             unset($data['important_dates']);
 
-            // Get case type
+            // Get case type and client (both required to build the new case number)
             $caseType = $this->caseTypeRepository->findById($data['case_type_id']);
+            $client   = Client::findOrFail($data['client_id']);
 
-            // Generate case number
-            $data['case_number'] = $this->generateCaseNumber($caseType);
+            // Generate case number with new format: YY-TYPE-LAST4-SEQUENCE
+            $data['case_number'] = $this->generateCaseNumber($caseType, $client);
 
             // Set default values if not provided
             $data['status'] = $data['status'] ?? ImmigrationCase::STATUS_ACTIVE;
@@ -311,20 +314,34 @@ class CaseService
 
     /**
      * Generate a unique case number.
-     * Format: {YEAR}-{TYPE_CODE}-{SEQUENCE}
-     * Example: 2026-ASYLUM-00042
+     * Format: {YY}-{TYPE_CODE}-{LAST4}-{SEQUENCE4}
+     * Example: 26-RT-RODR-0060
+     *
+     * The consecutive is scoped to (year2 + type_code + last_name_slug) so two
+     * clients with the same 4-letter slug share the same counter, which is correct.
+     * A retry loop with up to 5 attempts handles race conditions; after that an
+     * exception is raised so the transaction rolls back cleanly.
      */
-    private function generateCaseNumber(CaseType $caseType): string
+    private function generateCaseNumber(CaseType $caseType, Client $client): string
     {
-        $year = date('Y');
-        $sequence = $this->caseRepository->getNextSequence($caseType, $year);
+        $year2        = date('y');
+        $lastNameSlug = CaseCodeHelper::normalizeLastName($client->last_name);
+        $sequence     = $this->caseRepository->getNextSequence($caseType, $year2, $lastNameSlug);
 
-        $caseNumber = sprintf('%s-%s-%05d', $year, $caseType->code, $sequence);
+        $caseNumber = sprintf('%s-%s-%s-%04d', $year2, $caseType->code, $lastNameSlug, $sequence);
 
-        // Ensure uniqueness (in case of race condition)
-        while ($this->caseRepository->existsByCaseNumber($caseNumber)) {
+        // Safety net: retry up to 5 times on race-condition collisions
+        $attempts = 0;
+        while ($this->caseRepository->existsByCaseNumber($caseNumber) && $attempts < 5) {
             $sequence++;
-            $caseNumber = sprintf('%s-%s-%05d', $year, $caseType->code, $sequence);
+            $attempts++;
+            $caseNumber = sprintf('%s-%s-%s-%04d', $year2, $caseType->code, $lastNameSlug, $sequence);
+        }
+
+        if ($this->caseRepository->existsByCaseNumber($caseNumber)) {
+            throw new \RuntimeException(
+                "No se pudo generar un código único para el expediente después de {$attempts} intentos."
+            );
         }
 
         return $caseNumber;

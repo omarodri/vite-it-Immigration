@@ -41,6 +41,22 @@
                 </div>
             </section>
 
+            <!-- Case Number Preview -->
+            <div class="flex items-center gap-3 px-4 py-3 bg-primary/5 border border-primary/20 rounded-lg">
+                <div class="shrink-0 w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('wizard.step6.case_number_preview_label') }}</p>
+                    <p class="font-mono font-semibold text-primary tracking-wider">{{ caseNumberPreview }}</p>
+                </div>
+                <p class="ltr:ml-auto rtl:mr-auto text-xs text-gray-400 dark:text-gray-500 shrink-0">
+                    {{ $t('wizard.step6.case_number_preview_note') }}
+                </p>
+            </div>
+
             <!-- Client Section -->
             <section class="panel" aria-labelledby="client-heading">
                 <div class="flex justify-between items-center mb-4">
@@ -249,6 +265,21 @@ const staffMembers = ref<StaffMember[]>([]);
 const assignedStaff = computed(() => {
     if (!wizard.state.caseDetails.assigned_to) return null;
     return staffMembers.value.find((s) => s.id === wizard.state.caseDetails.assigned_to) || null;
+});
+
+/**
+ * Visual placeholder for the case number.
+ * Builds: YY-TYPE-LAST4-???? using available wizard data.
+ * The real consecutive is assigned server-side on save.
+ */
+const caseNumberPreview = computed(() => {
+    const year2    = new Date().getFullYear().toString().slice(-2);
+    const typeCode = selectedCaseType.value?.code ?? '???';
+    const lastName = selectedClient.value?.last_name ?? '';
+    const slug     = lastName
+        ? lastName.toUpperCase().replace(/[^A-Z]/g, '').padEnd(4, 'X').slice(0, 4)
+        : '????';
+    return `${year2}-${typeCode}-${slug}-????`;
 });
 
 // Load all data on mount (first time)

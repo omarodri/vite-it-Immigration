@@ -166,14 +166,16 @@ class CaseRepository implements CaseRepositoryInterface
     }
 
     /**
-     * Get the next sequence number for a case type in a given year.
+     * Get the next sequence number for a case type, year (2-digit) and last-name slug.
+     * Scope: (year2, type_code, last_name_slug) — e.g. pattern '26-RT-RODR-%'
+     *
+     * Database-agnostic: uses PHP-side MAX extraction to support MySQL and SQLite.
+     * Considers soft-deleted cases to avoid sequence gaps on restore.
      */
-    public function getNextSequence(CaseType $caseType, int $year): int
+    public function getNextSequence(CaseType $caseType, string $year2, string $lastNameSlug): int
     {
-        $pattern = "{$year}-{$caseType->code}-%";
+        $pattern = "{$year2}-{$caseType->code}-{$lastNameSlug}-%";
 
-        // Get all matching case numbers and find max sequence in PHP
-        // This approach is database-agnostic (works with MySQL and SQLite)
         $caseNumbers = ImmigrationCase::withTrashed()
             ->where('case_number', 'like', $pattern)
             ->pluck('case_number');
@@ -182,7 +184,7 @@ class CaseRepository implements CaseRepositoryInterface
             return 1;
         }
 
-        // Extract sequence numbers and find the maximum
+        // Extract the last numeric segment (sequence) and return max + 1
         $maxSequence = $caseNumbers->map(function ($caseNumber) {
             $parts = explode('-', $caseNumber);
 

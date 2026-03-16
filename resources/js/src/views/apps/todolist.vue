@@ -1,6 +1,7 @@
 <template>
     <div>
         <div class="flex gap-5 relative sm:h-[calc(100vh_-_150px)] h-full">
+            <!-- Sidebar -->
             <div
                 class="panel p-4 flex-none w-[240px] max-w-full absolute xl:relative z-10 space-y-4 xl:h-auto h-full xl:block ltr:xl:rounded-r-md ltr:rounded-r-none rtl:xl:rounded-l-md rtl:rounded-l-none hidden"
                 :class="{ '!block': isShowTaskMenu }"
@@ -11,7 +12,7 @@
                             <div class="shrink-0">
                                 <icon-clipboard-text />
                             </div>
-                            <h3 class="text-lg font-semibold ltr:ml-3 rtl:mr-3">Todo list</h3>
+                            <h3 class="text-lg font-semibold ltr:ml-3 rtl:mr-3">{{ $t('todo_list') }}</h3>
                         </div>
                     </div>
                     <div class="h-px w-full border-b border-[#e0e6ed] dark:border-[#1b2e4b] mb-5"></div>
@@ -31,10 +32,10 @@
                             >
                                 <div class="flex items-center">
                                     <icon-list-check class="w-4.5 h-4.5 shrink-0" />
-                                    <div class="ltr:ml-3 rtl:mr-3">Inbox</div>
+                                    <div class="ltr:ml-3 rtl:mr-3">{{ $t('todo_inbox') }}</div>
                                 </div>
                                 <div class="bg-primary-light dark:bg-[#060818] rounded-md py-0.5 px-2 font-semibold whitespace-nowrap">
-                                    {{ allTasks && allTasks.filter((d) => d.status != 'trash').length }}
+                                    {{ inboxCount }}
                                 </div>
                             </button>
                             <button
@@ -45,10 +46,10 @@
                             >
                                 <div class="flex items-center">
                                     <icon-thumb-up class="w-5 h-5 shrink-0" />
-                                    <div class="ltr:ml-3 rtl:mr-3">Done</div>
+                                    <div class="ltr:ml-3 rtl:mr-3">{{ $t('todo_done') }}</div>
                                 </div>
                                 <div class="bg-primary-light dark:bg-[#060818] rounded-md py-0.5 px-2 font-semibold whitespace-nowrap">
-                                    {{ allTasks && allTasks.filter((d) => d.status === 'complete').length }}
+                                    {{ doneCount }}
                                 </div>
                             </button>
                             <button
@@ -59,11 +60,10 @@
                             >
                                 <div class="flex items-center">
                                     <icon-star class="shrink-0" />
-
-                                    <div class="ltr:ml-3 rtl:mr-3">Important</div>
+                                    <div class="ltr:ml-3 rtl:mr-3">{{ $t('todo_important') }}</div>
                                 </div>
                                 <div class="bg-primary-light dark:bg-[#060818] rounded-md py-0.5 px-2 font-semibold whitespace-nowrap">
-                                    {{ allTasks && allTasks.filter((d) => d.status === 'important').length }}
+                                    {{ importantCount }}
                                 </div>
                             </button>
                             <button
@@ -74,68 +74,66 @@
                             >
                                 <div class="flex items-center">
                                     <icon-trash-lines class="shrink-0" />
-
-                                    <div class="ltr:ml-3 rtl:mr-3">Trash</div>
+                                    <div class="ltr:ml-3 rtl:mr-3">{{ $t('todo_trash') }}</div>
                                 </div>
                             </button>
                             <div class="h-px w-full border-b border-[#e0e6ed] dark:border-[#1b2e4b]"></div>
-                            <div class="text-white-dark px-1 py-3">Tags</div>
+                            <div class="text-white-dark px-1 py-3">{{ $t('todo_tags') }}</div>
                             <button
                                 type="button"
-                                class="w-full flex items-center h-10 p-1 hover:bg-white-dark/10 rounded-md dark:hover:bg-[#181F32] font-medium text-success ltr:hover:pl-3 rtl:hover:pr-3 duration-300"
-                                :class="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'team' }"
-                                @click="tabChanged('team')"
+                                class="w-full flex items-center h-10 p-1 hover:bg-white-dark/10 rounded-md dark:hover:bg-[#181F32] font-medium text-secondary ltr:hover:pl-3 rtl:hover:pr-3 duration-300"
+                                :class="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'archivar' }"
+                                @click="tabChanged('archivar')"
                             >
-                                <icon-square-rotated class="fill-success shrink-0" />
-                                <div class="ltr:ml-3 rtl:mr-3">Team</div>
-                            </button>
-
-                            <button
-                                type="button"
-                                class="w-full flex items-center h-10 p-1 hover:bg-white-dark/10 rounded-md dark:hover:bg-[#181F32] font-medium text-warning ltr:hover:pl-3 rtl:hover:pr-3 duration-300"
-                                :class="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'low' }"
-                                @click="tabChanged('low')"
-                            >
-                                <icon-square-rotated class="fill-warning shrink-0" />
-                                <div class="ltr:ml-3 rtl:mr-3">Low</div>
-                            </button>
-
-                            <button
-                                type="button"
-                                class="w-full flex items-center h-10 p-1 hover:bg-white-dark/10 rounded-md dark:hover:bg-[#181F32] font-medium text-primary ltr:hover:pl-3 rtl:hover:pr-3 duration-300"
-                                :class="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'medium' }"
-                                @click="tabChanged('medium')"
-                            >
-                                <icon-square-rotated class="fill-primary shrink-0" />
-                                <div class="ltr:ml-3 rtl:mr-3">Medium</div>
-                            </button>
-
-                            <button
-                                type="button"
-                                class="w-full flex items-center h-10 p-1 hover:bg-white-dark/10 rounded-md dark:hover:bg-[#181F32] font-medium text-danger ltr:hover:pl-3 rtl:hover:pr-3 duration-300"
-                                :class="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'high' }"
-                                @click="tabChanged('high')"
-                            >
-                                <icon-square-rotated class="fill-danger shrink-0" />
-                                <div class="ltr:ml-3 rtl:mr-3">High</div>
+                                <icon-square-rotated class="fill-secondary shrink-0" />
+                                <div class="ltr:ml-3 rtl:mr-3">{{ $t('todo_tag_archivar') }}</div>
                             </button>
 
                             <button
                                 type="button"
                                 class="w-full flex items-center h-10 p-1 hover:bg-white-dark/10 rounded-md dark:hover:bg-[#181F32] font-medium text-info ltr:hover:pl-3 rtl:hover:pr-3 duration-300"
-                                :class="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'update' }"
-                                @click="tabChanged('update')"
+                                :class="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'documentos' }"
+                                @click="tabChanged('documentos')"
                             >
                                 <icon-square-rotated class="fill-info shrink-0" />
-                                <div class="ltr:ml-3 rtl:mr-3">Update</div>
+                                <div class="ltr:ml-3 rtl:mr-3">{{ $t('todo_tag_documentos') }}</div>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="w-full flex items-center h-10 p-1 hover:bg-white-dark/10 rounded-md dark:hover:bg-[#181F32] font-medium text-warning ltr:hover:pl-3 rtl:hover:pr-3 duration-300"
+                                :class="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'seguimiento' }"
+                                @click="tabChanged('seguimiento')"
+                            >
+                                <icon-square-rotated class="fill-warning shrink-0" />
+                                <div class="ltr:ml-3 rtl:mr-3">{{ $t('todo_tag_seguimiento') }}</div>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="w-full flex items-center h-10 p-1 hover:bg-white-dark/10 rounded-md dark:hover:bg-[#181F32] font-medium text-primary ltr:hover:pl-3 rtl:hover:pr-3 duration-300"
+                                :class="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'ircc' }"
+                                @click="tabChanged('ircc')"
+                            >
+                                <icon-square-rotated class="fill-primary shrink-0" />
+                                <div class="ltr:ml-3 rtl:mr-3">{{ $t('todo_tag_ircc') }}</div>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="w-full flex items-center h-10 p-1 hover:bg-white-dark/10 rounded-md dark:hover:bg-[#181F32] font-medium text-success ltr:hover:pl-3 rtl:hover:pr-3 duration-300"
+                                :class="{ 'ltr:pl-3 rtl:pr-3 bg-gray-100 dark:bg-[#181F32]': selectedTab === 'contabilidad' }"
+                                @click="tabChanged('contabilidad')"
+                            >
+                                <icon-square-rotated class="fill-success shrink-0" />
+                                <div class="ltr:ml-3 rtl:mr-3">{{ $t('todo_tag_contabilidad') }}</div>
                             </button>
                         </div>
                     </perfect-scrollbar>
                     <div class="ltr:left-0 rtl:right-0 absolute bottom-0 p-4 w-full">
                         <button class="btn btn-primary w-full" type="button" @click="addEditTask()">
                             <icon-plus class="ltr:mr-2 rtl:ml-2 shrink-0" />
-
-                            Add New Task
+                            {{ $t('todo_add_task') }}
                         </button>
                     </div>
                 </div>
@@ -145,6 +143,7 @@
                 :class="{ '!block xl:!hidden': isShowTaskMenu }"
                 @click="isShowTaskMenu = !isShowTaskMenu"
             ></div>
+            <!-- Main Content -->
             <div class="panel p-0 flex-1 overflow-auto h-full">
                 <div class="flex flex-col h-full">
                     <div class="p-4 flex sm:flex-row flex-col w-full sm:items-center gap-4">
@@ -156,43 +155,62 @@
                                 <input
                                     type="text"
                                     class="form-input peer ltr:!pr-10 rtl:!pl-10"
-                                    placeholder="Search Task..."
+                                    :placeholder="$t('todo_search_placeholder')"
                                     v-model="searchTask"
-                                    @keyup="searchTasks()"
+                                    @keyup="onSearchKeyup"
                                 />
                                 <div class="absolute ltr:right-[11px] rtl:left-[11px] top-1/2 -translate-y-1/2 peer-focus:text-primary">
                                     <icon-search />
                                 </div>
                             </div>
                         </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <select v-model="filterAssigneeId" class="form-select text-sm py-1.5 w-auto" @change="refreshTodos()">
+                                <option :value="null">{{ $t('todo_filter_all_assignees') }}</option>
+                                <option v-for="a in todoStore.assignees" :key="a.id" :value="a.id">{{ a.name }}</option>
+                            </select>
+                            <select v-model="filterCaseId" class="form-select text-sm py-1.5 w-auto" @change="refreshTodos()">
+                                <option :value="null">{{ $t('todo_filter_all_cases') }}</option>
+                                <option v-for="c in todoStore.cases" :key="c.id" :value="c.id">#{{ c.case_number }}</option>
+                            </select>
+                        </div>
                         <div class="flex items-center justify-center sm:justify-end sm:flex-auto flex-1">
                             <p class="ltr:mr-3 rtl:ml-3">
-                                {{ pager.startIndex + 1 + '-' + (pager.endIndex + 1) + ' of ' + filteredTasks.length }}
+                                {{ pagerText }}
                             </p>
                             <button
                                 type="button"
-                                :disabled="pager.currentPage == 1"
+                                :disabled="todoStore.currentPage <= 1"
                                 class="bg-[#f4f4f4] rounded-md p-1 enabled:hover:bg-primary-light dark:bg-white-dark/20 enabled:dark:hover:bg-white-dark/30 ltr:mr-3 rtl:ml-3 disabled:opacity-60 disabled:cursor-not-allowed"
-                                @click="pager.currentPage--, searchTasks(false)"
+                                @click="prevPage()"
                             >
                                 <icon-caret-down class="w-5 h-5 rtl:-rotate-90 rotate-90" />
                             </button>
                             <button
                                 type="button"
-                                :disabled="pager.currentPage == pager.totalPages"
+                                :disabled="todoStore.currentPage >= totalPages"
                                 class="bg-[#f4f4f4] rounded-md p-1 enabled:hover:bg-primary-light dark:bg-white-dark/20 enabled:dark:hover:bg-white-dark/30 disabled:opacity-60 disabled:cursor-not-allowed"
-                                @click="pager.currentPage++, searchTasks(false)"
+                                @click="nextPage()"
                             >
                                 <icon-caret-down class="w-5 h-5 rtl:rotate-90 -rotate-90" />
                             </button>
                         </div>
                     </div>
                     <div class="h-px w-full border-b border-[#e0e6ed] dark:border-[#1b2e4b]"></div>
-                    <template v-if="pagedTasks.length">
+
+                    <!-- Loading -->
+                    <template v-if="todoStore.isLoading">
+                        <div class="flex justify-center items-center sm:min-h-[300px] min-h-[400px] font-semibold text-lg h-full">
+                            <span class="animate-spin border-4 border-primary border-l-transparent rounded-full w-10 h-10 inline-block align-middle"></span>
+                        </div>
+                    </template>
+
+                    <!-- Tasks Table -->
+                    <template v-else-if="todoStore.todos.length">
                         <div class="table-responsive grow overflow-y-auto sm:min-h-[300px] min-h-[400px]">
                             <table class="table-hover">
                                 <tbody>
-                                    <template v-for="task in pagedTasks" :key="task.id">
+                                    <template v-for="task in todoStore.todos" :key="task.id">
                                         <tr class="group cursor-pointer" :class="{ 'bg-white-light/30 dark:bg-[#1a2941]': task.status === 'complete' }">
                                             <td class="w-1">
                                                 <input
@@ -206,18 +224,23 @@
                                             </td>
                                             <td>
                                                 <div @click="viewTask(task)">
-                                                    <div
-                                                        class="group-hover:text-primary font-semibold text-base whitespace-nowrap"
-                                                        :class="{ 'line-through': task.status === 'complete' }"
-                                                    >
-                                                        {{ task.title }}
+                                                    <div class="flex items-center gap-1.5">
+                                                        <icon-star
+                                                            v-if="task.status === 'important'"
+                                                            class="w-4 h-4 shrink-0 text-warning fill-warning"
+                                                        />
+                                                        <div
+                                                            class="group-hover:text-primary font-semibold text-base whitespace-nowrap"
+                                                            :class="{ 'line-through': task.status === 'complete' }"
+                                                        >
+                                                            {{ task.title }}
+                                                        </div>
                                                     </div>
                                                     <div
                                                         class="text-white-dark overflow-hidden min-w-[300px] line-clamp-1"
                                                         :class="{ 'line-through': task.status === 'complete' }"
-                                                    >
-                                                        {{ task.descriptionText }}
-                                                    </div>
+                                                        v-html="stripHtml(task.description)"
+                                                    ></div>
                                                 </div>
                                             </td>
                                             <td class="w-1">
@@ -253,7 +276,7 @@
                                                                                 class="w-full text-danger ltr:text-left rtl:text-right"
                                                                                 @click="setPriority(task, 'high')"
                                                                             >
-                                                                                High
+                                                                                {{ $t('todo_priority_high') }}
                                                                             </button>
                                                                         </li>
                                                                         <li>
@@ -262,7 +285,7 @@
                                                                                 class="w-full text-primary ltr:text-left rtl:text-right"
                                                                                 @click="setPriority(task, 'medium')"
                                                                             >
-                                                                                Medium
+                                                                                {{ $t('todo_priority_medium') }}
                                                                             </button>
                                                                         </li>
                                                                         <li>
@@ -271,7 +294,7 @@
                                                                                 class="w-full text-warning ltr:text-left rtl:text-right"
                                                                                 @click="setPriority(task, 'low')"
                                                                             >
-                                                                                Low
+                                                                                {{ $t('todo_priority_low') }}
                                                                             </button>
                                                                         </li>
                                                                     </ul>
@@ -291,29 +314,39 @@
                                                                 <a
                                                                     href="javascript:;"
                                                                     class="badge rounded-full capitalize hover:top-0 hover:text-white"
-                                                                    :class="{
-                                                                        'badge-outline-success hover:bg-success': task.tag === 'team',
-                                                                        'badge-outline-info hover:bg-info': task.tag === 'update',
-                                                                        'text-white bg-success ': task.tag === 'team' && isTagMenu === task.id,
-                                                                        'text-white bg-info ': task.tag === 'update' && isTagMenu === task.id,
-                                                                    }"
+                                                                    :class="tagBadgeClass(task.tag, isTagMenu === task.id)"
                                                                 >
-                                                                    {{ task.tag }}
+                                                                    {{ task.tag ? $t('todo_tag_' + task.tag) : '' }}
                                                                 </a>
                                                                 <template #content="{ close }">
                                                                     <ul @click="close()" class="text-sm text-medium">
                                                                         <li>
-                                                                            <button type="button" class="w-full text-success" @click="setTag(task, 'team')">
-                                                                                Team
+                                                                            <button type="button" class="w-full text-secondary" @click="setTag(task, 'archivar')">
+                                                                                {{ $t('todo_tag_archivar') }}
                                                                             </button>
                                                                         </li>
                                                                         <li>
-                                                                            <button type="button" class="w-full text-info" @click="setTag(task, 'update')">
-                                                                                Update
+                                                                            <button type="button" class="w-full text-info" @click="setTag(task, 'documentos')">
+                                                                                {{ $t('todo_tag_documentos') }}
                                                                             </button>
                                                                         </li>
                                                                         <li>
-                                                                            <button type="button" class="w-full" @click="setTag(task, '')">None</button>
+                                                                            <button type="button" class="w-full text-warning" @click="setTag(task, 'seguimiento')">
+                                                                                {{ $t('todo_tag_seguimiento') }}
+                                                                            </button>
+                                                                        </li>
+                                                                        <li>
+                                                                            <button type="button" class="w-full text-primary" @click="setTag(task, 'ircc')">
+                                                                                {{ $t('todo_tag_ircc') }}
+                                                                            </button>
+                                                                        </li>
+                                                                        <li>
+                                                                            <button type="button" class="w-full text-success" @click="setTag(task, 'contabilidad')">
+                                                                                {{ $t('todo_tag_contabilidad') }}
+                                                                            </button>
+                                                                        </li>
+                                                                        <li>
+                                                                            <button type="button" class="w-full" @click="setTag(task, '')">{{ $t('todo_tag_none') }}</button>
                                                                         </li>
                                                                     </ul>
                                                                 </template>
@@ -324,26 +357,33 @@
                                             </td>
                                             <td class="w-1">
                                                 <p
-                                                    class="whitespace-nowrap text-white-dark font-medium"
-                                                    :class="{ 'line-through': task.status === 'complete' }"
+                                                    class="whitespace-nowrap font-medium"
+                                                    :class="[task.due_date ? dueDateClass(task) : 'text-white-dark', { 'line-through': task.status === 'complete' }]"
                                                 >
-                                                    {{ task.date }}
+                                                    {{ formatDate(task.due_date || task.created_at) }}
                                                 </p>
+                                            </td>
+                                            <td class="w-1">
+                                                <router-link
+                                                    v-if="task.case"
+                                                    :to="`/cases/${task.case.id}`"
+                                                    class="badge badge-outline-info text-xs whitespace-nowrap"
+                                                    @click.stop
+                                                >
+                                                    #{{ task.case.case_number }}
+                                                </router-link>
                                             </td>
                                             <td class="w-1">
                                                 <div class="flex items-center justify-between w-max">
                                                     <div class="ltr:mr-2.5 rtl:ml-2.5 flex-shrink-0">
-                                                        <div v-if="task.path">
-                                                            <img :src="`/assets/images/${task.path}`" class="h-8 w-8 rounded-full object-cover" alt="avatar" />
-                                                        </div>
                                                         <div
-                                                            v-if="!task.path && task.assignee"
+                                                            v-if="task.assigned_to"
                                                             class="grid place-content-center h-8 w-8 rounded-full bg-primary text-white text-sm font-semibold"
                                                         >
-                                                            {{ task.assignee.charAt(0) + '' + task.assignee.charAt(task.assignee.indexOf(' ') + 1) }}
+                                                            {{ getInitials(task.assigned_to.name) }}
                                                         </div>
                                                         <div
-                                                            v-if="!task.path && !task.assignee"
+                                                            v-else
                                                             class="border border-gray-300 dark:border-gray-800 rounded-full grid place-content-center h-8 w-8"
                                                         >
                                                             <icon-user class="w-4.5 h-4.5" />
@@ -364,21 +404,26 @@
                                                                         <li>
                                                                             <a href="javascript:;" @click="addEditTask(task)">
                                                                                 <icon-pencil-paper class="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
-
-                                                                                Edit
+                                                                                {{ $t('todo_edit') }}
+                                                                            </a>
+                                                                        </li>
+                                                                        <li>
+                                                                            <a href="javascript:;" @click="cloneTask(task)">
+                                                                                <icon-copy class="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
+                                                                                {{ $t('todo_clone') }}
                                                                             </a>
                                                                         </li>
                                                                         <li>
                                                                             <a href="javascript:;" @click="deleteTask(task, 'delete')">
                                                                                 <icon-trash-lines class="ltr:mr-2 rtl:ml-2 shrink-0" />
-                                                                                Delete
+                                                                                {{ $t('todo_delete') }}
                                                                             </a>
                                                                         </li>
                                                                         <li>
                                                                             <a href="javascript:;" @click="setImportant(task)">
                                                                                 <icon-star class="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
                                                                                 <span>
-                                                                                    {{ task.status === 'important' ? 'Not Important' : 'Important' }}
+                                                                                    {{ task.status === 'important' ? $t('todo_not_important') : $t('todo_important') }}
                                                                                 </span>
                                                                             </a>
                                                                         </li>
@@ -387,13 +432,13 @@
                                                                         <li>
                                                                             <a href="javascript:;" @click="deleteTask(task, 'deletePermanent')">
                                                                                 <icon-trash-lines class="ltr:mr-2 rtl:ml-2 shrink-0" />
-                                                                                Permanent Delete
+                                                                                {{ $t('todo_permanent_delete') }}
                                                                             </a>
                                                                         </li>
                                                                         <li>
                                                                             <a href="javascript:;" @click="deleteTask(task, 'restore')">
                                                                                 <icon-restore class="ltr:mr-2 rtl:ml-2 shrink-0" />
-                                                                                Restore Task
+                                                                                {{ $t('todo_restore') }}
                                                                             </a>
                                                                         </li>
                                                                     </template>
@@ -409,12 +454,13 @@
                             </table>
                         </div>
                     </template>
-                    <template v-if="!pagedTasks.length">
-                        <div class="flex justify-center items-center sm:min-h-[300px] min-h-[400px] font-semibold text-lg h-full">No data available</div>
+                    <template v-else>
+                        <div class="flex justify-center items-center sm:min-h-[300px] min-h-[400px] font-semibold text-lg h-full">{{ $t('todo_no_data') }}</div>
                     </template>
                 </div>
             </div>
 
+            <!-- Add/Edit Task Modal -->
             <TransitionRoot appear :show="addTaskModal" as="template">
                 <Dialog as="div" @close="addTaskModal = false" class="relative z-[51]">
                     <TransitionChild
@@ -449,46 +495,58 @@
                                         <icon-x />
                                     </button>
                                     <div class="text-lg font-medium bg-[#fbfbfb] dark:bg-[#121c2c] ltr:pl-5 rtl:pr-5 py-3 ltr:pr-[50px] rtl:pl-[50px]">
-                                        {{ params.id ? 'Edit Task' : 'Add Task' }}
+                                        {{ params.id ? $t('todo_edit_task') : $t('todo_add_task') }}
                                     </div>
                                     <div class="p-5">
                                         <form @submit.prevent="saveTask">
                                             <div class="mb-5">
-                                                <label for="title">Title</label>
-                                                <input id="title" type="text" placeholder="Enter Task Title" class="form-input" v-model="params.title" />
+                                                <label for="title">{{ $t('todo_title') }}</label>
+                                                <input id="title" type="text" :placeholder="$t('todo_title_placeholder')" class="form-input" v-model="params.title" />
                                             </div>
                                             <div class="mb-5">
-                                                <label for="assignee">Assignee</label>
-                                                <select id="assignee" class="form-select" v-model="params.assignee">
-                                                    <option value="">Select Assignee</option>
-                                                    <option value="John Smith">John Smith</option>
-                                                    <option value="Kia Vega">Kia Vega</option>
-                                                    <option value="Sandy Doe">Sandy Doe</option>
-                                                    <option value="Jane Foster">Jane Foster</option>
-                                                    <option value="Donna Frank">Donna Frank</option>
+                                                <label for="assignee">{{ $t('todo_assignee') }}</label>
+                                                <select id="assignee" class="form-select" v-model="params.assigned_to_id">
+                                                    <option :value="null">{{ $t('todo_assignee_placeholder') }}</option>
+                                                    <option v-for="a in todoStore.assignees" :key="a.id" :value="a.id">{{ a.name }}</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-5">
+                                                <label for="taskCase">{{ $t('todo_case') }}</label>
+                                                <select id="taskCase" class="form-select" v-model="params.case_id">
+                                                    <option :value="null">{{ $t('todo_case_placeholder') }}</option>
+                                                    <option v-for="c in todoStore.cases" :key="c.id" :value="c.id">
+                                                        #{{ c.case_number }} <template v-if="c.client_name">&mdash; {{ c.client_name }}</template>
+                                                    </option>
                                                 </select>
                                             </div>
                                             <div class="mb-5 flex justify-between gap-4">
                                                 <div class="flex-1">
-                                                    <label for="tag">Tag</label>
+                                                    <label for="tag">{{ $t('todo_tag_label') }}</label>
                                                     <select id="tag" class="form-select" v-model="params.tag">
-                                                        <option value="">Select Tag</option>
-                                                        <option value="team">Team</option>
-                                                        <option value="update">Update</option>
+                                                        <option value="">{{ $t('todo_tag_select') }}</option>
+                                                        <option value="archivar">{{ $t('todo_tag_archivar') }}</option>
+                                                        <option value="documentos">{{ $t('todo_tag_documentos') }}</option>
+                                                        <option value="seguimiento">{{ $t('todo_tag_seguimiento') }}</option>
+                                                        <option value="ircc">{{ $t('todo_tag_ircc') }}</option>
+                                                        <option value="contabilidad">{{ $t('todo_tag_contabilidad') }}</option>
                                                     </select>
                                                 </div>
                                                 <div class="flex-1">
-                                                    <label for="priority">Priority</label>
+                                                    <label for="priority">{{ $t('todo_priority_label') }}</label>
                                                     <select id="priority" class="form-select" v-model="params.priority">
-                                                        <option value="">Select Priority</option>
-                                                        <option value="low">Low</option>
-                                                        <option value="medium">Medium</option>
-                                                        <option value="high">High</option>
+                                                        <option value="">{{ $t('todo_priority_select') }}</option>
+                                                        <option value="low">{{ $t('todo_priority_low') }}</option>
+                                                        <option value="medium">{{ $t('todo_priority_medium') }}</option>
+                                                        <option value="high">{{ $t('todo_priority_high') }}</option>
                                                     </select>
                                                 </div>
                                             </div>
                                             <div class="mb-5">
-                                                <label>Description</label>
+                                                <label for="dueDate">{{ $t('todo_due_date') }}</label>
+                                                <input id="dueDate" type="date" class="form-input" v-model="params.due_date" />
+                                            </div>
+                                            <div class="mb-5">
+                                                <label>{{ $t('todo_description') }}</label>
                                                 <quillEditor
                                                     ref="editor"
                                                     v-model:value="params.description"
@@ -498,8 +556,11 @@
                                                 ></quillEditor>
                                             </div>
                                             <div class="ltr:text-right rtl:text-left flex justify-end items-center mt-8">
-                                                <button type="button" class="btn btn-outline-danger" @click="addTaskModal = false">Cancel</button>
-                                                <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4">{{ params.id ? 'Update' : 'Add' }}</button>
+                                                <button type="button" class="btn btn-outline-danger" @click="addTaskModal = false">{{ $t('todo_cancel') }}</button>
+                                                <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4" :disabled="isSaving">
+                                                    <span v-if="isSaving" class="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4 inline-block align-middle ltr:mr-2 rtl:ml-2"></span>
+                                                    {{ params.id ? $t('todo_update') : $t('add') }}
+                                                </button>
                                             </div>
                                         </form>
                                     </div>
@@ -510,6 +571,7 @@
                 </Dialog>
             </TransitionRoot>
 
+            <!-- View Task Modal -->
             <TransitionRoot appear :show="viewTaskModal" as="template">
                 <Dialog as="div" @close="viewTaskModal = false" class="relative z-[51]">
                     <TransitionChild
@@ -562,19 +624,33 @@
                                         <div
                                             v-show="selectedTask.tag"
                                             class="badge rounded-3xl capitalize"
-                                            :class="{
-                                                'badge-outline-success ': selectedTask.tag === 'team',
-                                                'badge-outline-info ': selectedTask.tag === 'update',
-                                            }"
+                                            :class="tagBadgeOutlineClass(selectedTask.tag)"
                                         >
-                                            {{ selectedTask.tag }}
+                                            {{ selectedTask.tag ? $t('todo_tag_' + selectedTask.tag) : '' }}
                                         </div>
                                     </div>
                                     <div class="p-5">
                                         <div class="text-base prose" v-html="selectedTask.description"></div>
 
+                                        <div v-if="selectedTask.assigned_to" class="mt-4 flex items-center gap-2 text-sm text-white-dark">
+                                            <span class="font-medium">{{ $t('todo_assignee') }}:</span>
+                                            {{ selectedTask.assigned_to.name }}
+                                        </div>
+
+                                        <div v-if="selectedTask.case" class="mt-2 flex items-center gap-2 text-sm text-white-dark">
+                                            <span class="font-medium">{{ $t('todo_case') }}:</span>
+                                            <router-link :to="`/cases/${selectedTask.case.id}`" class="text-info hover:underline">
+                                                #{{ selectedTask.case.case_number }}
+                                            </router-link>
+                                        </div>
+
+                                        <div v-if="selectedTask.due_date" class="mt-2 flex items-center gap-2 text-sm text-white-dark">
+                                            <span class="font-medium">{{ $t('todo_due_date') }}:</span>
+                                            {{ formatDate(selectedTask.due_date) }}
+                                        </div>
+
                                         <div class="flex justify-end items-center mt-8">
-                                            <button type="button" class="btn btn-outline-danger" @click="viewTaskModal = false">Close</button>
+                                            <button type="button" class="btn btn-outline-danger" @click="viewTaskModal = false">{{ $t('todo_close') }}</button>
                                         </div>
                                     </div>
                                 </DialogPanel>
@@ -587,14 +663,17 @@
     </div>
 </template>
 <script lang="ts" setup>
-    import { ref, onMounted } from 'vue';
+    import { ref, computed, onMounted } from 'vue';
+    import { useI18n } from 'vue-i18n';
     import { TransitionRoot, TransitionChild, Dialog, DialogPanel, DialogOverlay } from '@headlessui/vue';
     import { quillEditor } from 'vue3-quill';
     import 'vue3-quill/lib/vue3-quill.css';
     import Swal from 'sweetalert2';
 
     import { useAppStore } from '@/stores/index';
+    import { useTodoStore } from '@/stores/todo';
     import { useMeta } from '@/composables/use-meta';
+    import type { Todo, CreateTodoData, UpdateTodoData } from '@/types/todo';
 
     import IconClipboardText from '@/components/icon/icon-clipboard-text.vue';
     import IconListCheck from '@/components/icon/icon-list-check.vue';
@@ -609,423 +688,41 @@
     import IconUser from '@/components/icon/icon-user.vue';
     import IconHorizontalDots from '@/components/icon/icon-horizontal-dots.vue';
     import IconPencilPaper from '@/components/icon/icon-pencil-paper.vue';
+    import IconCopy from '@/components/icon/icon-copy.vue';
     import IconRestore from '@/components/icon/icon-restore.vue';
     import IconX from '@/components/icon/icon-x.vue';
 
     useMeta({ title: 'Todolist' });
+    const { t } = useI18n();
     const store = useAppStore();
+    const todoStore = useTodoStore();
 
-    const defaultParams = ref({
-        id: null,
+    const defaultParams = {
+        id: null as number | null,
         title: '',
         description: '',
-        descriptionText: '',
-        assignee: '',
-        path: '',
+        assigned_to_id: null as number | null,
+        case_id: null as number | null,
         tag: '',
         priority: 'low',
-    });
+        due_date: '',
+    };
 
     const selectedTab = ref('');
     const isShowTaskMenu = ref(false);
     const addTaskModal = ref(false);
     const viewTaskModal = ref(false);
+    const isSaving = ref(false);
 
-    const params = ref(JSON.parse(JSON.stringify(defaultParams.value)));
-    const allTasks = ref([
-        {
-            id: 1,
-            title: 'Meeting with Shaun Park at 4:50pm',
-            date: 'Aug, 07 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: 'team',
-            priority: 'medium',
-            assignee: 'John Smith',
-            path: '',
-            status: '',
-        },
-        {
-            id: 2,
-            title: 'Team meet at Starbucks',
-            date: 'Aug, 06 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: 'team',
-            priority: 'low',
-            assignee: 'John Smith',
-            path: 'profile-15.jpeg',
-            status: '',
-        },
-        {
-            id: 3,
-            title: 'Meet Lisa to discuss project details',
-            date: 'Aug, 05 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: 'update',
-            priority: 'medium',
-            assignee: 'John Smith',
-            path: 'profile-1.jpeg',
-            status: 'complete',
-        },
-        {
-            id: 4,
-            title: 'Download Complete',
-            date: 'Aug, 04 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: 'low',
-            assignee: 'John Smith',
-            path: 'profile-16.jpeg',
-            status: '',
-        },
-        {
-            id: 5,
-            title: 'Conference call with Marketing Manager',
-            date: 'Aug, 03 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: 'update',
-            priority: 'high',
-            assignee: 'John Smith',
-            path: 'profile-5.jpeg',
-            status: 'important',
-        },
-        {
-            id: 6,
-            title: 'New User Registered',
-            date: 'Aug, 02 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: 'medium',
-            assignee: '',
-            path: '',
-            status: 'important',
-        },
-        {
-            id: 7,
-            title: 'Fix issues in new project',
-            date: 'Aug, 01 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: 'team',
-            priority: 'medium',
-            assignee: 'John Smith',
-            path: 'profile-17.jpeg',
-            status: '',
-        },
-        {
-            id: 8,
-            title: 'Check All functionality',
-            date: 'Aug, 07 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: 'update',
-            priority: 'medium',
-            assignee: 'John Smith',
-            path: 'profile-18.jpeg',
-            status: 'important',
-        },
-        {
-            id: 9,
-            title: 'Check Repository',
-            date: 'Aug, 07 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: 'team',
-            priority: 'medium',
-            assignee: 'John Smith',
-            path: 'profile-20.jpeg',
-            status: 'complete',
-        },
-        {
-            id: 10,
-            title: 'Trashed Tasks',
-            date: 'Aug, 08 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: 'team',
-            priority: 'medium',
-            assignee: 'John Smith',
-            path: 'profile-15.jpeg',
-            status: 'trash',
-        },
-        {
-            id: 11,
-            title: 'Trashed Tasks 2',
-            date: 'Aug, 09 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: 'medium',
-            assignee: 'John Smith',
-            path: 'profile-2.jpeg',
-            status: 'trash',
-        },
-        {
-            id: 12,
-            title: 'Trashed Tasks 3',
-            date: 'Aug, 10 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: 'team',
-            priority: 'medium',
-            assignee: 'John Smith',
-            path: 'profile-24.jpeg',
-            status: 'trash',
-        },
-        {
-            id: 13,
-            title: 'Do something nice for someone I care about',
-            date: 'Sep, 10 2022',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-25.jpeg',
-            status: '',
-        },
-        {
-            id: 14,
-            title: 'Memorize the fifty states and their capitals',
-            date: 'Sep, 13 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-11.jpeg',
-            status: '',
-        },
-        {
-            id: 15,
-            title: 'Watch a classic movie',
-            date: 'Oct, 10 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-10.jpeg',
-            status: '',
-        },
-        {
-            id: 16,
-            title: 'Contribute code or a monetary donation to an open-source software project',
-            date: 'Nov, 10 2017',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-12.jpeg',
-            status: '',
-        },
-        {
-            id: 17,
-            title: 'Solve a Rubik`s cube',
-            date: 'Nov, 15 2017',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-25.jpeg',
-            status: '',
-        },
-        {
-            id: 18,
-            title: 'Bake pastries for me and neighbor',
-            date: 'Mar, 19 2018',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-27.jpeg',
-            status: '',
-        },
-        {
-            id: 19,
-            title: 'Go see a Broadway production',
-            date: 'Oct, 2 2018',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-26.jpeg',
-            status: '',
-        },
-        {
-            id: 20,
-            title: 'Write a thank you letter to an influential person in my life',
-            date: 'Nov, 20 2018',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-18.jpeg',
-            status: '',
-        },
-        {
-            id: 21,
-            title: 'Invite some friends over for a game night',
-            date: 'Jun 6 2019',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-13.jpeg',
-            status: '',
-        },
-        {
-            id: 22,
-            title: 'Have a football scrimmage with some friends',
-            date: 'Sep, 13 2019',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-24.jpeg',
-            status: '',
-        },
-        {
-            id: 23,
-            title: 'Text a friend I haven`t talked to in a long time',
-            date: 'Oct, 10 2019',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-20.jpeg',
-            status: '',
-        },
-        {
-            id: 24,
-            title: 'Organize pantry',
-            date: 'Feb, 24 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-10.jpeg',
-            status: '',
-        },
-        {
-            id: 25,
-            title: 'Buy a new house decoration',
-            date: 'Mar, 25 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-9.jpeg',
-            status: '',
-        },
-        {
-            id: 26,
-            title: 'Plan a vacation I`ve always wanted to take',
-            date: 'Mar, 30 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-4.jpeg',
-            status: '',
-        },
-        {
-            id: 27,
-            title: 'Clean out car',
-            date: 'Apr, 3 2020',
-            description:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            descriptionText:
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi pulvinar feugiat consequat. Duis lacus nibh, sagittis id varius vel, aliquet non augue. Vivamus sem ante, ultrices at ex a, rhoncus ullamcorper tellus. Nunc iaculis eu ligula ac consequat. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum mattis urna neque, eget posuere lorem tempus non. Suspendisse ac turpis dictum, convallis est ut, posuere sem. Etiam imperdiet aliquam risus, eu commodo urna vestibulum at. Suspendisse malesuada lorem eu sodales aliquam.',
-            tag: '',
-            priority: '',
-            assignee: 'John Smith',
-            path: 'profile-3.jpeg',
-            status: '',
-        },
-    ]);
-    const filteredTasks: any = ref([]);
-    const pagedTasks: any = ref([]);
+    const params = ref({ ...defaultParams });
     const searchTask = ref('');
-    const selectedTask: any = ref(defaultParams.value);
-    const isPriorityMenu: any = ref(null);
-    const isTagMenu: any = ref(null);
+    const selectedTask = ref<Partial<Todo>>({});
+    const isPriorityMenu = ref<number | null>(null);
+    const isTagMenu = ref<number | null>(null);
+    const filterAssigneeId = ref<number | null>(null);
+    const filterCaseId = ref<number | null>(null);
 
-    const pager = ref({
-        currentPage: 1,
-        totalPages: 0,
-        pageSize: 10,
-        startIndex: 0,
-        endIndex: 0,
-    });
+    let searchDebounce: ReturnType<typeof setTimeout> | null = null;
 
     const editorOptions = ref({
         modules: {
@@ -1033,152 +730,270 @@
         },
         placeholder: '',
     });
-    const quillEditorObj: any = ref(null);
+    const quillEditorObj = ref<any>(null);
 
-    onMounted(() => {
-        searchTasks();
+    // Computed
+    const totalPages = computed(() => Math.max(1, Math.ceil(todoStore.total / todoStore.perPage)));
+
+    const pagerText = computed(() => {
+        if (todoStore.total === 0) return '0 of 0';
+        const start = (todoStore.currentPage - 1) * todoStore.perPage + 1;
+        const end = Math.min(start + todoStore.todos.length - 1, todoStore.total);
+        return `${start}-${end} of ${todoStore.total}`;
     });
 
+    const inboxCount = computed(() => todoStore.todos.filter((d) => d.status !== 'trash').length);
+    const doneCount = computed(() => todoStore.todos.filter((d) => d.status === 'complete').length);
+    const importantCount = computed(() => todoStore.todos.filter((d) => d.status === 'important').length);
+
+    // Lifecycle
+    onMounted(async () => {
+        await Promise.all([
+            todoStore.fetchTodos(),
+            todoStore.fetchAssignees(),
+            todoStore.fetchCases(),
+        ]);
+    });
+
+    // Methods
     const quillEditorReady = (quill: any) => {
         quillEditorObj.value = quill;
     };
 
-    const searchTasks = (isResetPage = true) => {
-        if (isResetPage) {
-            pager.value.currentPage = 1;
-        }
-        let res;
+    function buildFilterParams(): Record<string, any> {
+        const p: Record<string, any> = {};
+
         if (selectedTab.value === 'complete' || selectedTab.value === 'important' || selectedTab.value === 'trash') {
-            res = allTasks.value.filter((d) => d.status === selectedTab.value);
-        } else {
-            res = allTasks.value.filter((d) => d.status != 'trash');
+            p.status = selectedTab.value;
+        } else if (['archivar', 'documentos', 'seguimiento', 'ircc', 'contabilidad'].includes(selectedTab.value)) {
+            p.tag = selectedTab.value;
         }
+        // inbox (selectedTab === '') sends no status filter
 
-        if (selectedTab.value === 'team' || selectedTab.value === 'update') {
-            res = res.filter((d) => d.tag === selectedTab.value);
-        } else if (selectedTab.value === 'high' || selectedTab.value === 'medium' || selectedTab.value === 'low') {
-            res = res.filter((d) => d.priority === selectedTab.value);
-        }
-        filteredTasks.value = res.filter((d) => d.title?.toLowerCase().includes(searchTask.value));
-        getPager();
-    };
+        if (searchTask.value) p.search = searchTask.value;
+        if (filterAssigneeId.value) p.assigned_to_id = filterAssigneeId.value;
+        if (filterCaseId.value) p.case_id = filterCaseId.value;
 
-    const getPager = () => {
-        setTimeout(() => {
-            if (filteredTasks.value.length) {
-                pager.value.totalPages = pager.value.pageSize < 1 ? 1 : Math.ceil(filteredTasks.value.length / pager.value.pageSize);
-                if (pager.value.currentPage > pager.value.totalPages) {
-                    pager.value.currentPage = 1;
-                }
-                pager.value.startIndex = (pager.value.currentPage - 1) * pager.value.pageSize;
-                pager.value.endIndex = Math.min(pager.value.startIndex + pager.value.pageSize - 1, filteredTasks.value.length - 1);
-                pagedTasks.value = filteredTasks.value.slice(pager.value.startIndex, pager.value.endIndex + 1);
-            } else {
-                pagedTasks.value = [];
-                pager.value.startIndex = -1;
-                pager.value.endIndex = -1;
-            }
-        });
-    };
+        return p;
+    }
 
-    const setPriority = (task: any, name: string = '') => {
-        let item = filteredTasks.value.find((d) => d.id === task.id);
-        item.priority = name;
-        searchTasks(false);
-    };
+    async function refreshTodos() {
+        await todoStore.fetchTodos(buildFilterParams());
+    }
 
-    const setTag = (task: any, name: string = '') => {
-        let item = filteredTasks.value.find((d) => d.id === task.id);
-        item.tag = name;
-        searchTasks(false);
-    };
-
-    const tabChanged = (type: any = null) => {
+    async function tabChanged(type: string) {
         selectedTab.value = type;
-        searchTasks();
+        todoStore.currentPage = 1;
+        await refreshTodos();
         isShowTaskMenu.value = false;
-    };
+    }
 
-    const taskComplete = (task: any = null) => {
-        let item = filteredTasks.value.find((d) => d.id === task.id);
-        item.status = item.status === 'complete' ? '' : 'complete';
-        searchTasks(false);
-    };
+    function onSearchKeyup() {
+        if (searchDebounce) clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(async () => {
+            todoStore.currentPage = 1;
+            await refreshTodos();
+        }, 400);
+    }
 
-    const setImportant = (task: any = null) => {
-        let item = filteredTasks.value.find((d) => d.id === task.id);
-        item.status = item.status === 'important' ? '' : 'important';
-        searchTasks(false);
-    };
+    async function prevPage() {
+        if (todoStore.currentPage > 1) {
+            todoStore.currentPage--;
+            await refreshTodos();
+        }
+    }
 
-    const viewTask = (item: any = null) => {
+    async function nextPage() {
+        if (todoStore.currentPage < totalPages.value) {
+            todoStore.currentPage++;
+            await refreshTodos();
+        }
+    }
+
+    async function taskComplete(task: Todo) {
+        const newStatus = task.status === 'complete' ? 'pending' : 'complete';
+        await todoStore.updateStatus(task.id, newStatus);
+        await refreshTodos();
+    }
+
+    async function setImportant(task: Todo) {
+        const newStatus = task.status === 'important' ? 'pending' : 'important';
+        await todoStore.updateStatus(task.id, newStatus);
+        await refreshTodos();
+    }
+
+    async function setPriority(task: Todo, priority: string) {
+        await todoStore.updateTodo(task.id, { priority: priority as Todo['priority'] });
+        await refreshTodos();
+    }
+
+    async function setTag(task: Todo, tag: string) {
+        await todoStore.updateTodo(task.id, { tag });
+        await refreshTodos();
+    }
+
+    async function cloneTask(task: Todo) {
+        try {
+            await todoStore.createTodo({
+                title: task.title,
+                description: task.description ?? undefined,
+                assigned_to_id: task.assigned_to?.id ?? null,
+                case_id: task.case?.id ?? null,
+                tag: task.tag ?? undefined,
+                priority: task.priority ?? 'low',
+                due_date: task.due_date ?? undefined,
+                status: 'pending',
+            });
+            showMessage(t('todo_task_cloned'));
+            await refreshTodos();
+        } catch {
+            showMessage(t('todo_save_failed'), 'error');
+        }
+    }
+
+    async function deleteTask(task: Todo, type: string) {
+        if (type === 'delete') {
+            await todoStore.updateStatus(task.id, 'trash');
+        } else if (type === 'deletePermanent') {
+            await todoStore.deleteTodo(task.id);
+        } else if (type === 'restore') {
+            await todoStore.updateStatus(task.id, 'pending');
+        }
+        await refreshTodos();
+    }
+
+    function viewTask(item: Todo) {
         selectedTask.value = item;
         setTimeout(() => {
             viewTaskModal.value = true;
         });
-    };
+    }
 
-    const addEditTask = (task: any = null) => {
+    function addEditTask(task?: Todo) {
         isShowTaskMenu.value = false;
-
-        params.value = JSON.parse(JSON.stringify(defaultParams.value));
+        params.value = { ...defaultParams };
 
         if (task) {
-            params.value = JSON.parse(JSON.stringify(task));
+            params.value = {
+                id: task.id,
+                title: task.title,
+                description: task.description || '',
+                assigned_to_id: task.assigned_to?.id ?? null,
+                case_id: task.case?.id ?? null,
+                tag: task.tag || '',
+                priority: task.priority || 'low',
+                due_date: task.due_date || '',
+            };
         }
 
         addTaskModal.value = true;
-    };
+    }
 
-    const deleteTask = (task: any, type: string = '') => {
-        if (type === 'delete') {
-            task.status = 'trash';
-        }
-        if (type === 'deletePermanent') {
-            allTasks.value = allTasks.value.filter((d: any) => d.id != task.id);
-        } else if (type === 'restore') {
-            task.status = '';
-        }
-        searchTasks(false);
-    };
-
-    const saveTask = () => {
+    async function saveTask() {
         if (!params.value.title) {
-            showMessage('Title is required.', 'error');
-            return false;
+            showMessage(t('todo_title_required'), 'error');
+            return;
         }
 
-        if (params.value.id) {
-            //update task
-            pagedTasks.value = pagedTasks.value.map((d: any) => {
-                if (d.id === params.value.id) {
-                    d = params.value;
-                    d.descriptionText = quillEditorObj.value.getText();
-                }
-                return d;
-            });
-        } else {
-            //add task
-            const maxid = allTasks.value.length ? allTasks.value.reduce((max, obj) => (obj.id > max ? obj.id : max), allTasks.value[0].id) : 0;
+        isSaving.value = true;
+        try {
+            const data: CreateTodoData | UpdateTodoData = {
+                title: params.value.title,
+                description: params.value.description,
+                assigned_to_id: params.value.assigned_to_id || null,
+                case_id: params.value.case_id || null,
+                tag: params.value.tag || undefined,
+                priority: (params.value.priority as Todo['priority']) || 'low',
+                due_date: params.value.due_date || undefined,
+            };
 
-            const today = new Date();
-            const dd = String(today.getDate()).padStart(2, '0');
-            const mm = String(today.getMonth());
-            const yyyy = today.getFullYear();
-            const monthNames: any = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-            let task = params.value;
-            task.id = maxid + 1;
-            task.descriptionText = quillEditorObj.value.getText();
-            task.date = monthNames[mm] + ', ' + dd + ' ' + yyyy;
-
-            allTasks.value.splice(0, 0, task);
-            searchTasks();
+            if (params.value.id) {
+                await todoStore.updateTodo(params.value.id, data);
+                showMessage(t('todo_task_updated'));
+            } else {
+                await todoStore.createTodo({ ...data, status: 'pending' } as CreateTodoData);
+                showMessage(t('todo_task_created'));
+            }
+            addTaskModal.value = false;
+            await refreshTodos();
+        } catch {
+            showMessage(t('todo_save_failed'), 'error');
+        } finally {
+            isSaving.value = false;
         }
+    }
 
-        showMessage('Task has been saved successfully.');
-        addTaskModal.value = false;
+    function getInitials(name: string): string {
+        if (!name) return '';
+        const parts = name.split(' ');
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[1][0]).toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
+    }
+
+    function stripHtml(html?: string | null): string {
+        if (!html) return '';
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || '';
+    }
+
+    function formatDate(dateStr?: string | null): string {
+        if (!dateStr) return '';
+        try {
+            const d = new Date(dateStr);
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${months[d.getMonth()]}, ${String(d.getDate()).padStart(2, '0')} ${d.getFullYear()}`;
+        } catch {
+            return dateStr;
+        }
+    }
+
+    function dueDateClass(task: Todo): string {
+        if (!task.due_date || task.status === 'complete' || task.status === 'trash') return 'text-white-dark';
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const due = new Date(task.due_date);
+        const diffDays = Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) return 'text-danger';
+        if (diffDays <= 7) return 'text-warning';
+        return 'text-success';
+    }
+
+    const TAG_BADGE_OPEN: Record<string, string> = {
+        archivar: 'text-white bg-secondary',
+        documentos: 'text-white bg-info',
+        seguimiento: 'text-white bg-warning',
+        ircc: 'text-white bg-primary',
+        contabilidad: 'text-white bg-success',
     };
+
+    const TAG_BADGE_CLOSED: Record<string, string> = {
+        archivar: 'badge-outline-secondary hover:bg-secondary',
+        documentos: 'badge-outline-info hover:bg-info',
+        seguimiento: 'badge-outline-warning hover:bg-warning',
+        ircc: 'badge-outline-primary hover:bg-primary',
+        contabilidad: 'badge-outline-success hover:bg-success',
+    };
+
+    const TAG_BADGE_OUTLINE: Record<string, string> = {
+        archivar: 'badge-outline-secondary',
+        documentos: 'badge-outline-info',
+        seguimiento: 'badge-outline-warning',
+        ircc: 'badge-outline-primary',
+        contabilidad: 'badge-outline-success',
+    };
+
+    function tagBadgeClass(tag: string | undefined | null, isOpen: boolean): string {
+        if (!tag) return 'badge-outline-info hover:bg-info';
+        return isOpen ? (TAG_BADGE_OPEN[tag] ?? 'text-white bg-info') : (TAG_BADGE_CLOSED[tag] ?? 'badge-outline-info hover:bg-info');
+    }
+
+    function tagBadgeOutlineClass(tag: string | undefined | null): string {
+        if (!tag) return 'badge-outline-info';
+        return TAG_BADGE_OUTLINE[tag] ?? 'badge-outline-info';
+    }
 
     const showMessage = (msg = '', type = 'success') => {
         const toast: any = Swal.mixin({
