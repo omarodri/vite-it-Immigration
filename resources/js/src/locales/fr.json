@@ -697,6 +697,7 @@
     "cases.lifecycle_save_tasks": "Enregistrer les taches",
     "cases.lifecycle_auto_progress": "Le progres est calcule automatiquement a partir de la liste de controle",
 
+    "cases.tab_todos": "T\u00e2ches",
     "cases.tab_invoices": "Relev\u00e9 de Compte",
     "cases.invoice_number": "N\u00b0 Facture",
     "cases.invoice_date": "Date",
@@ -781,6 +782,7 @@
     "todo_due_date": "Date limite",
     "todo_filter_all_assignees": "Tous les assignes",
     "todo_filter_all_cases": "Tous les dossiers",
+    "todo_filter_all_tags": "Toutes les \u00e9tiquettes",
     "todo_case_placeholder": "Selectionner un dossier...",
     "todo_assignee_placeholder": "Selectionner un assigne...",
     "todo_saved": "Tache enregistree avec succes",

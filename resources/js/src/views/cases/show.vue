@@ -313,6 +313,14 @@
                         />
                     </div>
 
+                    <!-- Todos Tab -->
+                    <div v-else-if="activeTab === 'todos'">
+                        <CaseTodoTab
+                            :case-id="currentCase.id"
+                            :case-number="currentCase.case_number"
+                        />
+                    </div>
+
                     <!-- Documents Tab (Placeholder) -->
                     <div v-else-if="activeTab === 'documents'" class="text-center py-10 text-gray-500">
                         <icon-folder class="w-16 h-16 mx-auto text-gray-300 mb-4" />
@@ -344,6 +352,7 @@ import { CASE_STAGE_OPTIONS, IRCC_STATUS_OPTIONS, FINAL_RESULT_OPTIONS, SERVICE_
 import DateManager from '@/components/DateManager.vue';
 import LifecycleChecklist from '@/components/LifecycleChecklist.vue';
 import InvoiceTable from '@/views/cases/components/InvoiceTable.vue';
+import CaseTodoTab from '@/views/cases/components/CaseTodoTab.vue';
 
 // Icons
 import IconFolder from '@/components/icon/icon-folder.vue';
@@ -363,16 +372,14 @@ const isLoading = ref(true);
 const activeTab = ref('info');
 const showAssignModal = ref(false);
 
-const tabs = computed(() => {
-    const baseTabs = [
-        { id: 'info', label: 'cases.tab_information' },
-        { id: 'lifecycle', label: 'cases.tab_lifecycle' },
-        { id: 'timeline', label: 'cases.tab_timeline' },
-        { id: 'invoices', label: 'cases.tab_invoices' },
-        { id: 'documents', label: 'cases.tab_documents' },
-    ];
-    return baseTabs;
-});
+const tabs = computed(() => [
+    { id: 'info', label: 'cases.tab_information' },
+    { id: 'lifecycle', label: 'cases.tab_lifecycle' },
+    { id: 'timeline', label: 'cases.tab_timeline' },
+    { id: 'invoices', label: 'cases.tab_invoices' },
+    { id: 'todos', label: 'cases.tab_todos' },
+    { id: 'documents', label: 'cases.tab_documents' },
+]);
 
 const currentCase = computed(() => caseStore.currentCase);
 

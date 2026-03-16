@@ -2,7 +2,7 @@ export interface Todo {
     id: number;
     title: string;
     description?: string | null;
-    tag?: 'team' | 'update' | null;
+    tag?: 'archivar' | 'documentos' | 'seguimiento' | 'ircc' | 'contabilidad' | null;
     priority: 'low' | 'medium' | 'high';
     status: 'pending' | 'complete' | 'important' | 'trash';
     due_date?: string | null;
