@@ -22,17 +22,20 @@ return new class extends Migration
             $table->unsignedTinyInteger('progress')->default(0)->comment('0-100 percentage');
             $table->string('language')->default('es');
 
+            // Operational tracking
+            $table->string('stage', 50)->nullable()->default(null);
+            $table->string('ircc_status', 50)->nullable()->default(null);
+            $table->string('final_result', 20)->nullable()->default(null);
+            $table->string('ircc_code', 50)->nullable()->default(null);
+
             // Description
             $table->text('description')->nullable();
 
-            // Key Dates
-            $table->datetime('hearing_date')->nullable()->comment('Fecha de audiencia');
-            $table->datetime('fda_deadline')->nullable()->comment('Plazo para deposito FDA');
-            $table->datetime('brown_sheet_date')->nullable()->comment('Fecha hoja marron');
-            $table->datetime('evidence_deadline')->nullable()->comment('Plazo envio doc de pruebas');
-
-            // Archive Info
+            // Financial / Admin
             $table->string('archive_box_number')->nullable()->comment('Nro caja de archivo');
+            $table->string('contract_number', 50)->nullable()->default(null);
+            $table->string('service_type', 20)->default('fee_based');
+            $table->decimal('fees', 10, 2)->nullable()->default(null);
 
             // Closure
             $table->datetime('closed_at')->nullable();
@@ -46,7 +49,9 @@ return new class extends Migration
             $table->index(['tenant_id', 'client_id']);
             $table->index(['tenant_id', 'assigned_to']);
             $table->index(['tenant_id', 'priority']);
-            $table->index(['tenant_id', 'hearing_date']);
+            $table->index(['tenant_id', 'stage']);
+            $table->index(['tenant_id', 'ircc_status']);
+            $table->index(['tenant_id', 'service_type']);
         });
     }
 

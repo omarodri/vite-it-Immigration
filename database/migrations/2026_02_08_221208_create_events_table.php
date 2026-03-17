@@ -12,11 +12,16 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('assigned_to_id')
+                  ->nullable()
+                  ->constrained('users')
+                  ->nullOnDelete();
             $table->foreignId('client_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('case_id')->nullable()->constrained()->nullOnDelete();
 
             $table->string('title');
             $table->text('description')->nullable();
+            $table->string('client_name_snapshot')->nullable();
             $table->dateTime('start_date');
             $table->dateTime('end_date');
             $table->boolean('all_day')->default(false);

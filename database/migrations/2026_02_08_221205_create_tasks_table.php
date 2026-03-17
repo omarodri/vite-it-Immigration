@@ -25,7 +25,7 @@ return new class extends Migration
             $table->decimal('estimated_hours', 5, 2)->nullable();
             $table->decimal('actual_hours', 5, 2)->nullable();
 
-            // Document attachment (foreign key added in later migration)
+            // Document attachment (foreign key added in 2026_02_08_221211 after documents table exists)
             $table->unsignedBigInteger('document_id')->nullable();
 
             $table->timestamps();

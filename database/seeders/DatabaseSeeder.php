@@ -34,28 +34,28 @@ class DatabaseSeeder extends Seeder
         );
         $admin->assignRole('admin');
 
-        // Create editor user if not exists
+        // Create consultor user if not exists
         $editor = User::firstOrCreate(
-            ['email' => 'editor@vite-it.com'],
+            ['email' => 'consultor@vite-it.com'],
             [
-                'name' => 'Editor User',
-                'email' => 'editor@vite-it.com',
+                'name' => 'Consultor User',
+                'email' => 'consultor@vite-it.com',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
         );
-        $editor->assignRole('editor');
+        $editor->assignRole('consultor');
 
-        // Create regular user if not exists
+        // Create apoyo user if not exists
         $user = User::firstOrCreate(
-            ['email' => 'user@vite-it.com'],
+            ['email' => 'apoyo@vite-it.com'],
             [
-                'name' => 'Regular User',
-                'email' => 'user@vite-it.com',
+                'name' => 'Apoyo User',
+                'email' => 'apoyo@vite-it.com',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
         );
-        $user->assignRole('user');
+        $user->assignRole('apoyo');
     }
 }

@@ -41,11 +41,21 @@ class Companion extends Model
      * Relationship types with Spanish labels.
      */
     public const RELATIONSHIP_TYPES = [
-        'spouse' => 'Cónyuge',
-        'child' => 'Hijo/a',
-        'parent' => 'Padre/Madre',
-        'sibling' => 'Hermano/a',
-        'other' => 'Otro',
+        'spouse'             => 'Cónyuge',
+        'common-law partner' => 'Pareja de hecho',
+        'dependent child'    => 'Hijo/a dependiente',
+        'grandchild'         => 'Nieto/a',
+        'parent'             => 'Padre/Madre',
+        'grandparent'        => 'Abuelo/a',
+        'sibling'            => 'Hermano/a',
+        'half-sibling'       => 'Medio hermano/a',
+        'step-sibling'       => 'Hermanastro/a',
+        'aunt / uncle'       => 'Tío/a',
+        'niece / nephew'     => 'Sobrino/a',
+        'cousin'             => 'Primo/a',
+        'child-in-law'       => 'Yerno/Nuera',
+        'parent-in-law'      => 'Suegro/a',
+        'other'              => 'Otro',
     ];
 
     /**

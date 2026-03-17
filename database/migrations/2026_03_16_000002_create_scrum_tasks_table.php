@@ -20,6 +20,7 @@ return new class extends Migration
             $table->foreignId('assigned_to_id')->nullable()->constrained('users')->nullOnDelete();
             $table->unsignedBigInteger('case_id')->nullable();
             $table->unsignedInteger('order_index')->default(0);
+            $table->boolean('is_completed')->default(false);
             $table->timestamps();
 
             $table->foreign('case_id')->references('id')->on('cases')->nullOnDelete();

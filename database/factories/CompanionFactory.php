@@ -23,7 +23,7 @@ class CompanionFactory extends Factory
     {
         $gender = fake()->randomElement(['male', 'female', 'other']);
         $firstName = $gender === 'male' ? fake()->firstNameMale() : fake()->firstNameFemale();
-        $relationship = fake()->randomElement(['spouse', 'child', 'parent', 'sibling', 'other']);
+        $relationship = fake()->randomElement(array_keys(Companion::RELATIONSHIP_TYPES));
 
         return [
             'tenant_id' => Tenant::factory(),

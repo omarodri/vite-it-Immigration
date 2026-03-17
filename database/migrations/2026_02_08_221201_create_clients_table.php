@@ -72,8 +72,9 @@ return new class extends Migration
             // Indexes
             $table->index(['tenant_id', 'status']);
             $table->index(['tenant_id', 'last_name', 'first_name']);
-            $table->index(['tenant_id', 'email']);
             $table->index(['tenant_id', 'passport_number']);
+            $table->unique(['tenant_id', 'email'], 'clients_tenant_email_unique');
+            $table->unique(['tenant_id', 'phone'], 'clients_tenant_phone_unique');
         });
     }
 

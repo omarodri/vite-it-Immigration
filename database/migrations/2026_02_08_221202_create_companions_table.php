@@ -15,11 +15,16 @@ return new class extends Migration
 
             $table->string('first_name');
             $table->string('last_name');
-            $table->enum('relationship', ['spouse', 'child', 'parent', 'sibling', 'other'])->default('other');
+            $table->string('relationship', 50)->default('other');
+            $table->string('relationship_other')->nullable();
             $table->date('date_of_birth')->nullable();
+            $table->enum('gender', ['male', 'female', 'other'])->nullable();
             $table->string('passport_number')->nullable();
+            $table->string('passport_country')->nullable();
+            $table->date('passport_expiry_date')->nullable();
             $table->string('nationality')->nullable();
             $table->text('notes')->nullable();
+            $table->string('iuc')->nullable()->comment('Unique Companion Identifier');
 
             $table->timestamps();
             $table->softDeletes();

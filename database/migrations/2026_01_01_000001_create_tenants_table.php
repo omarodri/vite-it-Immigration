@@ -20,19 +20,10 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
-
-        // Add tenant_id to users table
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('tenant_id')->nullable()->after('id')->constrained()->nullOnDelete();
-        });
     }
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('tenant_id');
-        });
-
         Schema::dropIfExists('tenants');
     }
 };
