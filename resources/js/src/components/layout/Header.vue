@@ -7,7 +7,7 @@
                         <img class="w-8 ltr:-ml-1 rtl:-mr-1 inline" src="/assets/images/logo.svg" alt="" />
                         <span
                             class="text-2xl ltr:ml-1.5 rtl:mr-1.5 font-semibold align-middle hidden md:inline dark:text-white-light transition-all duration-300"
-                            >VITE-IT</span
+                            ></span
                         >
                     </router-link>
 
@@ -38,8 +38,8 @@
                                 <icon-edit />
                             </router-link>
                         </li>
-                        <li>
-                            <router-link
+                        <li v-if="canViewUsers || canViewRoles">
+                            <router-link 
                                 to="/apps/chat"
                                 class="block p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60"
                             >
@@ -913,8 +913,12 @@
     import IconMenuPages from '@/components/icon/menu/icon-menu-pages.vue';
     import IconMenuMore from '@/components/icon/menu/icon-menu-more.vue';
 
-    const store = useAppStore();
+    // Check if user has permission to view apps sections
     const authStore = useAuthStore();
+    const canViewUsers = computed(() => authStore.hasPermission('users.view'));
+    const canViewRoles = computed(() => authStore.hasPermission('roles.view'));
+
+    const store = useAppStore();
     const route = useRoute();
     const router = useRouter();
     const search = ref(false);
@@ -1023,4 +1027,6 @@
     const removeMessage = (value: number) => {
         messages.value = messages.value.filter((d) => d.id !== value);
     };
+
+
 </script>

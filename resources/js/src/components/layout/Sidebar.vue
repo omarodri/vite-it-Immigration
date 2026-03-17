@@ -21,7 +21,6 @@
                     class="h-[calc(100vh-80px)] relative"
                 >
 
-
                     <ul class="relative font-semibold space-y-0.5 p-4 py-0">
 
                         <!-- Admin Section (visible only for users with permission) -->
@@ -65,7 +64,19 @@
                             </h2>
 
                             <li class="nav-item">
-                                <ul>
+                                <ul>    
+                                    <!-- inicio -->
+                                    <li class="nav-item">
+                                        <router-link to="/" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-dashboard class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('home') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                    <!-- clientes -->
                                     <li v-if="canViewClients" class="nav-item">
                                         <router-link to="/clients" class="group" @click="toggleMobileMenu">
                                             <div class="flex items-center">
@@ -76,6 +87,7 @@
                                             </div>
                                         </router-link>
                                     </li>
+                                    <!-- expedientes -->
                                     <li v-if="canViewCases" class="nav-item">
                                         <router-link to="/cases" class="group" @click="toggleMobileMenu">
                                             <div class="flex items-center">
@@ -86,172 +98,206 @@
                                             </div>
                                         </router-link>
                                     </li>
+                                    <!-- calendario -->
+                                    <li class="nav-item">
+                                        <router-link to="/apps/calendar" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-calendar class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('calendar') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                    <!-- tareas pendientes -->
+                                    <li  class="nav-item">
+                                        <router-link to="/apps/todolist" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-todo class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('todo_list') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                    <!-- tablero de actividades -->
+                                    <li class="nav-item">
+                                        <router-link to="/apps/scrumboard" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-scrumboard class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('scrumboard') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
                                 </ul>
                             </li>
                         </template>
 
-                        <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
+                        <!-- Apps Section (visible for users with calendar, todos, scrumboard permissions) -->
+                        <template v-if="canViewUsers || canViewRoles">
+                            <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
                             <icon-minus class="w-4 h-5 flex-none hidden" />
-                            <span>{{ $t('apps') }}</span>
-                        </h2>
+                                <span>{{ $t('apps') }}</span>
+                            </h2>
+                            <!-- Dashboard -->
+                            <li class="menu nav-item">
+                                <button
+                                    type="button"
+                                    class="nav-link group w-full"
+                                    :class="{ active: activeDropdown === 'dashboard' }"
+                                    :aria-expanded="activeDropdown === 'dashboard'"
+                                    @click="activeDropdown === 'dashboard' ? (activeDropdown = null) : (activeDropdown = 'dashboard')"
+                                >
+                                    <div class="flex items-center">
+                                        <icon-menu-dashboard class="group-hover:!text-primary shrink-0" />
+                                        <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                            {{ $t('dashboard') }}
+                                        </span>
+                                    </div>
+                                    <div :class="{ 'rtl:rotate-90 -rotate-90': activeDropdown !== 'dashboard' }">
+                                        <icon-caret-down />
+                                    </div>
+                                </button>
+                                <vue-collapsible :isOpen="activeDropdown === 'dashboard'">
+                                    <ul class="sub-menu text-gray-500">
+                                        <li>
+                                            <router-link to="/" @click="toggleMobileMenu">{{ $t('sales') }}</router-link>
+                                        </li>
+                                        <li>
+                                            <router-link to="/analytics" @click="toggleMobileMenu">{{ $t('analytics') }}</router-link>
+                                        </li>
+                                        <li>
+                                            <router-link to="/finance" @click="toggleMobileMenu">{{ $t('finance') }}</router-link>
+                                        </li>
+                                        <li>
+                                            <router-link to="/crypto" @click="toggleMobileMenu">{{ $t('crypto') }}</router-link>
+                                        </li>
+                                    </ul>
+                                </vue-collapsible>
+                            </li>
 
-                        <!-- Dashboard -->
-                        <li class="menu nav-item">
-                            <button
-                                type="button"
-                                class="nav-link group w-full"
-                                :class="{ active: activeDropdown === 'dashboard' }"
-                                :aria-expanded="activeDropdown === 'dashboard'"
-                                @click="activeDropdown === 'dashboard' ? (activeDropdown = null) : (activeDropdown = 'dashboard')"
-                            >
-                                <div class="flex items-center">
-                                    <icon-menu-dashboard class="group-hover:!text-primary shrink-0" />
-                                    <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
-                                        {{ $t('dashboard') }}
-                                    </span>
-                                </div>
-                                <div :class="{ 'rtl:rotate-90 -rotate-90': activeDropdown !== 'dashboard' }">
-                                    <icon-caret-down />
-                                </div>
-                            </button>
-                            <vue-collapsible :isOpen="activeDropdown === 'dashboard'">
-                                <ul class="sub-menu text-gray-500">
-                                    <li>
-                                        <router-link to="/" @click="toggleMobileMenu">{{ $t('sales') }}</router-link>
+                            <!-- Apps -->
+                            <li class="nav-item">
+                                <ul>
+                                    <li class="nav-item">
+                                        <router-link to="/apps/chat" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-chat class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
+                                                    $t('chat')
+                                                }}</span>
+                                            </div>
+                                        </router-link>
                                     </li>
-                                    <li>
-                                        <router-link to="/analytics" @click="toggleMobileMenu">{{ $t('analytics') }}</router-link>
+                                    <li class="nav-item">
+                                        <router-link to="/apps/mailbox" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-mailbox class="group-hover:!text-primary shrink-0" />
+
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
+                                                    $t('mailbox')
+                                                }}</span>
+                                            </div>
+                                        </router-link>
                                     </li>
-                                    <li>
-                                        <router-link to="/finance" @click="toggleMobileMenu">{{ $t('finance') }}</router-link>
+                                    <li class="nav-item">
+                                        <router-link to="/apps/todolist" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-todo class="group-hover:!text-primary shrink-0" />
+
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
+                                                    $t('todo_list')
+                                                }}</span>
+                                            </div>
+                                        </router-link>
                                     </li>
-                                    <li>
-                                        <router-link to="/crypto" @click="toggleMobileMenu">{{ $t('crypto') }}</router-link>
+                                    <li class="nav-item">
+                                        <router-link to="/apps/notes" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-notes class="group-hover:!text-primary shrink-0" />
+
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
+                                                    $t('notes')
+                                                }}</span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                    <li class="nav-item">
+                                        <router-link to="/apps/scrumboard" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-scrumboard class="group-hover:!text-primary shrink-0" />
+
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
+                                                    $t('scrumboard')
+                                                }}</span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                    <li class="nav-item">
+                                        <router-link to="/apps/contacts" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-contacts class="group-hover:!text-primary shrink-0" />
+
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
+                                                    $t('contacts')
+                                                }}</span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+
+                                    <li class="menu nav-item">
+                                        <button
+                                            type="button"
+                                            class="nav-link group w-full"
+                                            :class="{ active: activeDropdown === 'invoice' }"
+                                            :aria-expanded="activeDropdown === 'invoice'"
+                                            @click="activeDropdown === 'invoice' ? (activeDropdown = null) : (activeDropdown = 'invoice')"
+                                        >
+                                            <div class="flex items-center">
+                                                <icon-menu-invoice class="group-hover:!text-primary shrink-0" />
+
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
+                                                    $t('invoice')
+                                                }}</span>
+                                            </div>
+                                            <div :class="{ 'rtl:rotate-90 -rotate-90': activeDropdown !== 'invoice' }">
+                                                <icon-caret-down />
+                                            </div>
+                                        </button>
+                                        <vue-collapsible :isOpen="activeDropdown === 'invoice'">
+                                            <ul class="sub-menu text-gray-500">
+                                                <li>
+                                                    <router-link to="/apps/invoice/list" @click="toggleMobileMenu">{{ $t('list') }}</router-link>
+                                                </li>
+                                                <li>
+                                                    <router-link to="/apps/invoice/preview" @click="toggleMobileMenu">{{ $t('preview') }}</router-link>
+                                                </li>
+                                                <li>
+                                                    <router-link to="/apps/invoice/add" @click="toggleMobileMenu">{{ $t('add') }}</router-link>
+                                                </li>
+                                                <li>
+                                                    <router-link to="/apps/invoice/edit" @click="toggleMobileMenu">{{ $t('edit') }}</router-link>
+                                                </li>
+                                            </ul>
+                                        </vue-collapsible>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <router-link to="/apps/calendar" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-calendar class="group-hover:!text-primary shrink-0" />
+
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
+                                                    $t('calendar')
+                                                }}</span>
+                                            </div>
+                                        </router-link>
                                     </li>
                                 </ul>
-                            </vue-collapsible>
-                        </li>
-
-                        <!-- Apps -->
-                        <li class="nav-item">
-                            <ul>
-                                <li class="nav-item">
-                                    <router-link to="/apps/chat" class="group" @click="toggleMobileMenu">
-                                        <div class="flex items-center">
-                                            <icon-menu-chat class="group-hover:!text-primary shrink-0" />
-
-                                            <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
-                                                $t('chat')
-                                            }}</span>
-                                        </div>
-                                    </router-link>
-                                </li>
-                                <li class="nav-item">
-                                    <router-link to="/apps/mailbox" class="group" @click="toggleMobileMenu">
-                                        <div class="flex items-center">
-                                            <icon-menu-mailbox class="group-hover:!text-primary shrink-0" />
-
-                                            <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
-                                                $t('mailbox')
-                                            }}</span>
-                                        </div>
-                                    </router-link>
-                                </li>
-                                <li class="nav-item">
-                                    <router-link to="/apps/todolist" class="group" @click="toggleMobileMenu">
-                                        <div class="flex items-center">
-                                            <icon-menu-todo class="group-hover:!text-primary shrink-0" />
-
-                                            <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
-                                                $t('todo_list')
-                                            }}</span>
-                                        </div>
-                                    </router-link>
-                                </li>
-                                <li class="nav-item">
-                                    <router-link to="/apps/notes" class="group" @click="toggleMobileMenu">
-                                        <div class="flex items-center">
-                                            <icon-menu-notes class="group-hover:!text-primary shrink-0" />
-
-                                            <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
-                                                $t('notes')
-                                            }}</span>
-                                        </div>
-                                    </router-link>
-                                </li>
-                                <li class="nav-item">
-                                    <router-link to="/apps/scrumboard" class="group" @click="toggleMobileMenu">
-                                        <div class="flex items-center">
-                                            <icon-menu-scrumboard class="group-hover:!text-primary shrink-0" />
-
-                                            <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
-                                                $t('scrumboard')
-                                            }}</span>
-                                        </div>
-                                    </router-link>
-                                </li>
-                                <li class="nav-item">
-                                    <router-link to="/apps/contacts" class="group" @click="toggleMobileMenu">
-                                        <div class="flex items-center">
-                                            <icon-menu-contacts class="group-hover:!text-primary shrink-0" />
-
-                                            <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
-                                                $t('contacts')
-                                            }}</span>
-                                        </div>
-                                    </router-link>
-                                </li>
-
-                                <li class="menu nav-item">
-                                    <button
-                                        type="button"
-                                        class="nav-link group w-full"
-                                        :class="{ active: activeDropdown === 'invoice' }"
-                                        :aria-expanded="activeDropdown === 'invoice'"
-                                        @click="activeDropdown === 'invoice' ? (activeDropdown = null) : (activeDropdown = 'invoice')"
-                                    >
-                                        <div class="flex items-center">
-                                            <icon-menu-invoice class="group-hover:!text-primary shrink-0" />
-
-                                            <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
-                                                $t('invoice')
-                                            }}</span>
-                                        </div>
-                                        <div :class="{ 'rtl:rotate-90 -rotate-90': activeDropdown !== 'invoice' }">
-                                            <icon-caret-down />
-                                        </div>
-                                    </button>
-                                    <vue-collapsible :isOpen="activeDropdown === 'invoice'">
-                                        <ul class="sub-menu text-gray-500">
-                                            <li>
-                                                <router-link to="/apps/invoice/list" @click="toggleMobileMenu">{{ $t('list') }}</router-link>
-                                            </li>
-                                            <li>
-                                                <router-link to="/apps/invoice/preview" @click="toggleMobileMenu">{{ $t('preview') }}</router-link>
-                                            </li>
-                                            <li>
-                                                <router-link to="/apps/invoice/add" @click="toggleMobileMenu">{{ $t('add') }}</router-link>
-                                            </li>
-                                            <li>
-                                                <router-link to="/apps/invoice/edit" @click="toggleMobileMenu">{{ $t('edit') }}</router-link>
-                                            </li>
-                                        </ul>
-                                    </vue-collapsible>
-                                </li>
-
-                                <li class="nav-item">
-                                    <router-link to="/apps/calendar" class="group" @click="toggleMobileMenu">
-                                        <div class="flex items-center">
-                                            <icon-menu-calendar class="group-hover:!text-primary shrink-0" />
-
-                                            <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">{{
-                                                $t('calendar')
-                                            }}</span>
-                                        </div>
-                                    </router-link>
-                                </li>
-                            </ul>
-                        </li>
+                            </li>
+                        </template>
 
                         <!-- User Interface -->
                         <template v-if="canViewUsers || canViewRoles">
@@ -824,6 +870,9 @@
     const authStore = useAuthStore();
     const activeDropdown: any = ref('');
     const subActive: any = ref('');
+    const canViewEvents = computed(() => authStore.hasPermission('calendar.view'));
+    const canViewTodos = computed(() => authStore.hasPermission('todolist.view'));
+    const canViewScrumboard = computed(() => authStore.hasPermission('scrumboard.view'));
 
     // Check if user has permission to view admin sections
     const canViewUsers = computed(() => authStore.hasPermission('users.view'));

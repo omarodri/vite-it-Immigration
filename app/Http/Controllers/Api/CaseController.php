@@ -13,6 +13,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class CaseController extends Controller
 {
@@ -73,6 +74,18 @@ class CaseController extends Controller
     public function show(ImmigrationCase $case): CaseResource
     {
         $this->authorize('view', $case);
+
+        // Track case view for dashboard "recent cases" widget
+        DB::table('user_case_history')->upsert(
+            [
+                'user_id'   => auth()->id(),
+                'case_id'   => $case->id,
+                'tenant_id' => auth()->user()->tenant_id,
+                'viewed_at' => now(),
+            ],
+            uniqueBy: ['user_id', 'case_id'],
+            update: ['viewed_at']
+        );
 
         return new CaseResource($this->caseService->getCase($case));
     }

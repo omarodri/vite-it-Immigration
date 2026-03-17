@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CaseController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\CaseInvoiceController;
 use App\Http\Controllers\Api\CaseTaskController;
 use App\Http\Controllers\Api\CaseTypeController;
@@ -59,6 +60,9 @@ Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 've
 
 // Protected routes (authentication required) with API rate limiting and tenant scope
 Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+
     // Auth routes
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);

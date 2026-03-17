@@ -80,10 +80,10 @@
             </div>
         </template>
 
-        <!-- Tasks table -->
+        <!-- Tasks table — no table-responsive wrapper to avoid overflow clipping the row dropdown -->
         <template v-else-if="todoStore.todos.length">
-            <div class="table-responsive">
-                <table class="table-hover">
+            <div>
+                <table class="table-hover w-full">
                     <tbody>
                         <template v-for="task in todoStore.todos" :key="task.id">
                             <tr class="group cursor-pointer" :class="{ 'bg-white-light/30 dark:bg-[#1a2941]': task.status === 'complete' }">
