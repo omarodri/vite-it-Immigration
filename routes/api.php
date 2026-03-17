@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\ScrumBoardController;
 use App\Http\Controllers\Api\ScrumColumnController;
 use App\Http\Controllers\Api\ScrumTaskController;
+use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\TodoController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -105,6 +106,12 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
 
     // Case Invoices routes
     Route::put('/cases/{case}/invoices', [CaseInvoiceController::class, 'bulkUpdate']);
+
+    // Event Calendar routes
+    Route::get('/events/assignees', [EventController::class, 'assignees']);
+    Route::patch('/events/{event}/reschedule', [EventController::class, 'reschedule']);
+    Route::post('/events/{event}/clone', [EventController::class, 'clone']);
+    Route::apiResource('events', EventController::class);
 
     // Todo List routes
     Route::delete('/todos/bulk', [TodoController::class, 'bulkDestroy']);

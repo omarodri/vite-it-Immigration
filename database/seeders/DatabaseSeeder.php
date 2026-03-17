@@ -19,6 +19,9 @@ class DatabaseSeeder extends Seeder
         // Seed tenants
         $this->call(TenantSeeder::class);
 
+        // Seed global case types
+        $this->call(CaseTypeSeeder::class);
+
         // Create admin user if not exists
         $admin = User::firstOrCreate(
             ['email' => 'admin@vite-it.com'],

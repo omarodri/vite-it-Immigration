@@ -26,21 +26,18 @@ class CaseType extends Model
     /**
      * Category constants.
      */
-    public const CATEGORY_TEMPORARY = 'temporary_residence';
-
-    public const CATEGORY_PERMANENT = 'permanent_residence';
-
-    public const CATEGORY_HUMANITARIAN = 'humanitarian';
-
+    public const CATEGORY_TEMPORARY  = 'temporary_residence';
+    public const CATEGORY_PERMANENT  = 'permanent_residence';
+    public const CATEGORY_REFUGEE    = 'refugee';
     public const CATEGORY_CITIZENSHIP = 'citizenship';
 
     /**
      * Category labels in Spanish.
      */
     public const CATEGORY_LABELS = [
-        self::CATEGORY_TEMPORARY => 'Residencia Temporal',
-        self::CATEGORY_PERMANENT => 'Residencia Permanente',
-        self::CATEGORY_HUMANITARIAN => 'Humanitario',
+        self::CATEGORY_TEMPORARY  => 'Residencia Temporal',
+        self::CATEGORY_PERMANENT  => 'Residencia Permanente',
+        self::CATEGORY_REFUGEE    => 'Refugiado / Asilo',
         self::CATEGORY_CITIZENSHIP => 'Ciudadanía',
     ];
 

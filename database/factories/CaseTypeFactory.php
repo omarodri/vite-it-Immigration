@@ -23,7 +23,7 @@ class CaseTypeFactory extends Factory
         $category = fake()->randomElement([
             CaseType::CATEGORY_TEMPORARY,
             CaseType::CATEGORY_PERMANENT,
-            CaseType::CATEGORY_HUMANITARIAN,
+            CaseType::CATEGORY_REFUGEE,
             CaseType::CATEGORY_CITIZENSHIP,
         ]);
 
@@ -68,12 +68,12 @@ class CaseTypeFactory extends Factory
     }
 
     /**
-     * Indicate that the case type is humanitarian.
+     * Indicate that the case type is for refugee/asylum.
      */
-    public function humanitarian(): static
+    public function refugee(): static
     {
         return $this->state(fn (array $attributes) => [
-            'category' => CaseType::CATEGORY_HUMANITARIAN,
+            'category' => CaseType::CATEGORY_REFUGEE,
         ]);
     }
 

@@ -321,6 +321,15 @@
                         />
                     </div>
 
+                    <!-- Events Tab -->
+                    <div v-else-if="activeTab === 'events'">
+                        <CaseEventTab
+                            :case-id="currentCase.id"
+                            :case-number="currentCase.case_number"
+                            :client-name="currentCase.client?.full_name ?? ''"
+                        />
+                    </div>
+
                     <!-- Documents Tab (Placeholder) -->
                     <div v-else-if="activeTab === 'documents'" class="text-center py-10 text-gray-500">
                         <icon-folder class="w-16 h-16 mx-auto text-gray-300 mb-4" />
@@ -353,6 +362,7 @@ import DateManager from '@/components/DateManager.vue';
 import LifecycleChecklist from '@/components/LifecycleChecklist.vue';
 import InvoiceTable from '@/views/cases/components/InvoiceTable.vue';
 import CaseTodoTab from '@/views/cases/components/CaseTodoTab.vue';
+import CaseEventTab from '@/views/cases/components/CaseEventTab.vue';
 
 // Icons
 import IconFolder from '@/components/icon/icon-folder.vue';
@@ -378,6 +388,7 @@ const tabs = computed(() => [
     { id: 'timeline', label: 'cases.tab_timeline' },
     { id: 'invoices', label: 'cases.tab_invoices' },
     { id: 'todos', label: 'cases.tab_todos' },
+    { id: 'events', label: 'cases.tab_events' },
     { id: 'documents', label: 'cases.tab_documents' },
 ]);
 
