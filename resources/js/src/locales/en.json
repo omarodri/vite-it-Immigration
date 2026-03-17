@@ -888,7 +888,7 @@
     "case_types.STUDENT": "Student",
     "case_types.WORK": "Worker",
     "case_types.TOURIST": "Tourist",
-    "case_types.Solicitud de Permiso de PSST":"PST Permit",
+    "case_types.Solicitud de Permiso PST":"PST Permit",
     "case_types.Student Visa":"Student Visa",
     "case_types.Tourist Visa":"Tourist Visa",
     "case_types.Visitor Record":"Visitor Record",
