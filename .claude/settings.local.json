@@ -41,7 +41,10 @@
       "Bash(do echo \"$f\")",
       "Bash(php:*)",
       "Bash(grep:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(ls:*)",
+      "Bash(node:*)",
+      "Bash(python3:*)"
     ]
   }
 }

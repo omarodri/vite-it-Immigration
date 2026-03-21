@@ -85,6 +85,7 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'documents.create', 'display_name' => 'Create Documents'],
             ['name' => 'documents.update', 'display_name' => 'Update Documents'],
             ['name' => 'documents.delete', 'display_name' => 'Delete Documents'],
+            ['name' => 'documents.download', 'display_name' => 'Download Documents'],
 
             // Events
             ['name' => 'events.view', 'display_name' => 'View Events'],
@@ -134,7 +135,7 @@ class RolePermissionSeeder extends Seeder
                     'cases.view', 'cases.create', 'cases.update', 'cases.delete', 'cases.assign', 'cases.view-fees', 'cases.manage-invoices',
                     'tasks.view', 'tasks.create', 'tasks.update', 'tasks.delete',
                     'follow-ups.view', 'follow-ups.create', 'follow-ups.update', 'follow-ups.delete',
-                    'documents.view', 'documents.create', 'documents.update', 'documents.delete',
+                    'documents.view', 'documents.create', 'documents.update', 'documents.delete', 'documents.download',
                     'events.view', 'events.create', 'events.update', 'events.delete',
                     'reports.view',
                     'scrum.view', 'scrum.create', 'scrum.edit', 'scrum.delete',
@@ -150,7 +151,7 @@ class RolePermissionSeeder extends Seeder
                     'cases.view', 'cases.create', 'cases.update', 'cases.assign', 'cases.view-fees', 'cases.manage-invoices',
                     'tasks.view', 'tasks.create', 'tasks.update',
                     'follow-ups.view', 'follow-ups.create', 'follow-ups.update',
-                    'documents.view', 'documents.create', 'documents.update',
+                    'documents.view', 'documents.create', 'documents.update', 'documents.delete', 'documents.download',
                     'events.view', 'events.create', 'events.update',
                     'reports.view',
                     'scrum.view', 'scrum.create', 'scrum.edit',
@@ -166,7 +167,7 @@ class RolePermissionSeeder extends Seeder
                     'cases.view', 'cases.update',
                     'tasks.view', 'tasks.create', 'tasks.update',
                     'follow-ups.view', 'follow-ups.create', 'follow-ups.update',
-                    'documents.view', 'documents.create', 'documents.update',
+                    'documents.view', 'documents.create', 'documents.download',
                     'events.view', 'events.create', 'events.update',
                     'scrum.view', 'scrum.create', 'scrum.edit',
                     'todos.view', 'todos.create', 'todos.edit', 'todos.delete',
@@ -179,6 +180,7 @@ class RolePermissionSeeder extends Seeder
                     'clients.view',
                     'companions.view',
                     'cases.view', 'cases.view-fees', 'cases.manage-invoices',
+                    'documents.view', 'documents.download',
                     'reports.view',
                 ],
             ],
@@ -186,6 +188,7 @@ class RolePermissionSeeder extends Seeder
                 'display_name' => 'Client Portal User',
                 'permissions' => [
                     'profile.view', 'profile.update',
+                    'documents.view', 'documents.download',
                 ],
             ],
         ];

@@ -9,11 +9,14 @@ use App\Http\Controllers\Api\CaseTaskController;
 use App\Http\Controllers\Api\CaseTypeController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\CompanionController;
+use App\Http\Controllers\Api\DocumentController;
+use App\Http\Controllers\Api\DocumentFolderController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\TenantController;
+use App\Http\Controllers\Api\OAuthFlowController;
 use App\Http\Controllers\Api\TenantOAuthController;
 use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\ScrumBoardController;
@@ -111,6 +114,31 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     // Case Invoices routes
     Route::put('/cases/{case}/invoices', [CaseInvoiceController::class, 'bulkUpdate']);
 
+    // Case Document Folders routes
+    Route::get('/cases/{case}/folders', [DocumentFolderController::class, 'index']);
+    Route::post('/cases/{case}/folders', [DocumentFolderController::class, 'store']);
+    Route::patch('/cases/{case}/folders/{folder}', [DocumentFolderController::class, 'update']);
+    Route::delete('/cases/{case}/folders/{folder}', [DocumentFolderController::class, 'destroy']);
+
+    // Case Documents routes
+    Route::get('/cases/{case}/documents', [DocumentController::class, 'index']);
+    Route::get('/cases/{case}/documents/{document}', [DocumentController::class, 'show']);
+    Route::patch('/cases/{case}/documents/{document}', [DocumentController::class, 'update']);
+    Route::delete('/cases/{case}/documents/{document}', [DocumentController::class, 'destroy']);
+    Route::post('/cases/{case}/documents/{document}/move', [DocumentController::class, 'move']);
+    Route::get('/cases/{case}/documents/{document}/preview', [DocumentController::class, 'preview']);
+
+    // Document upload routes (stricter rate limit: 20/min)
+    Route::middleware('throttle:uploads')->group(function () {
+        Route::post('/cases/{case}/documents', [DocumentController::class, 'store']);
+        Route::post('/cases/{case}/documents/{document}/replace', [DocumentController::class, 'replace']);
+    });
+
+    // Document download routes (rate limit: 60/min)
+    Route::middleware('throttle:downloads')->group(function () {
+        Route::get('/cases/{case}/documents/{document}/download', [DocumentController::class, 'download']);
+    });
+
     // Event Calendar routes
     Route::get('/events/assignees', [EventController::class, 'assignees']);
     Route::patch('/events/{event}/reschedule', [EventController::class, 'reschedule']);
@@ -170,7 +198,18 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     Route::put('/tenant/oauth/google', [TenantOAuthController::class, 'updateGoogle']);
     Route::delete('/tenant/oauth/microsoft', [TenantOAuthController::class, 'removeMicrosoft']);
     Route::delete('/tenant/oauth/google', [TenantOAuthController::class, 'removeGoogle']);
+
+    // User-level OAuth flow routes
+    Route::get('/oauth/{provider}/redirect', [OAuthFlowController::class, 'redirect'])
+        ->where('provider', 'microsoft|google');
+    Route::get('/oauth/status', [OAuthFlowController::class, 'status']);
+    Route::delete('/oauth/{provider}/disconnect', [OAuthFlowController::class, 'disconnect'])
+        ->where('provider', 'microsoft|google');
 });
+
+// OAuth callback route (no auth required - called by OAuth provider redirect)
+Route::get('/oauth/{provider}/callback', [OAuthFlowController::class, 'callback'])
+    ->where('provider', 'microsoft|google');
 
 // Public tenant branding route (no auth required)
 Route::get('/tenant/{slug}/branding', [TenantController::class, 'branding']);

@@ -37,4 +37,14 @@ return [
         'decay_minutes' => env('RATE_LIMIT_EMAIL_VERIFICATION_DECAY', 1),
     ],
 
+    'uploads' => [
+        'max_attempts' => env('RATE_LIMIT_UPLOADS_MAX', 20),
+        'decay_minutes' => env('RATE_LIMIT_UPLOADS_DECAY', 1),
+    ],
+
+    'downloads' => [
+        'max_attempts' => env('RATE_LIMIT_DOWNLOADS_MAX', 60),
+        'decay_minutes' => env('RATE_LIMIT_DOWNLOADS_DECAY', 1),
+    ],
+
 ];

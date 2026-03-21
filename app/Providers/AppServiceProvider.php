@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\ImmigrationCase;
+use App\Observers\CaseObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -22,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        ImmigrationCase::observe(CaseObserver::class);
+
         $this->configureRateLimiting();
     }
 
@@ -87,6 +91,30 @@ class AppServiceProvider extends ServiceProvider
             )->by($request->user()?->id ?: $request->ip())->response(function () {
                 return response()->json([
                     'message' => 'Too many verification email requests. Please wait.',
+                    'error' => 'rate_limit_exceeded',
+                ], 429);
+            });
+        });
+
+        RateLimiter::for('uploads', function (Request $request) use ($config) {
+            return Limit::perMinutes(
+                $config['uploads']['decay_minutes'],
+                $config['uploads']['max_attempts']
+            )->by($request->user()?->id ?: $request->ip())->response(function () {
+                return response()->json([
+                    'message' => 'Too many upload requests. Please wait before uploading more files.',
+                    'error' => 'rate_limit_exceeded',
+                ], 429);
+            });
+        });
+
+        RateLimiter::for('downloads', function (Request $request) use ($config) {
+            return Limit::perMinutes(
+                $config['downloads']['decay_minutes'],
+                $config['downloads']['max_attempts']
+            )->by($request->user()?->id ?: $request->ip())->response(function () {
+                return response()->json([
+                    'message' => 'Too many download requests. Please wait before downloading more files.',
                     'error' => 'rate_limit_exceeded',
                 ], 429);
             });

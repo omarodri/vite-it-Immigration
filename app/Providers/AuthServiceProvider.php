@@ -4,11 +4,15 @@ namespace App\Providers;
 
 use App\Models\Client;
 use App\Models\Companion;
+use App\Models\Document;
+use App\Models\DocumentFolder;
 use App\Models\ImmigrationCase;
 use App\Models\User;
 use App\Policies\CasePolicy;
 use App\Policies\ClientPolicy;
 use App\Policies\CompanionPolicy;
+use App\Policies\DocumentFolderPolicy;
+use App\Policies\DocumentPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -28,6 +32,8 @@ class AuthServiceProvider extends ServiceProvider
         Client::class => ClientPolicy::class,
         Companion::class => CompanionPolicy::class,
         ImmigrationCase::class => CasePolicy::class,
+        Document::class => DocumentPolicy::class,
+        DocumentFolder::class => DocumentFolderPolicy::class,
     ];
 
     /**

@@ -11,6 +11,15 @@ class Tenant extends Model
 {
     use HasFactory;
 
+    /**
+     * Storage type constants.
+     */
+    public const STORAGE_LOCAL = 'local';
+
+    public const STORAGE_ONEDRIVE = 'onedrive';
+
+    public const STORAGE_GOOGLE_DRIVE = 'google_drive';
+
     protected $fillable = [
         'name',
         'slug',
@@ -19,12 +28,17 @@ class Tenant extends Model
         'ms_client_secret',
         'google_client_id',
         'google_client_secret',
+        'storage_type',
+        'storage_quota_mb',
+        'storage_used_bytes',
         'is_active',
     ];
 
     protected $casts = [
         'settings' => 'array',
         'is_active' => 'boolean',
+        'storage_quota_mb' => 'integer',
+        'storage_used_bytes' => 'integer',
     ];
 
     protected $hidden = [
@@ -121,6 +135,44 @@ class Tenant extends Model
     public function hasGoogleOAuth(): bool
     {
         return !empty($this->google_client_id) && !empty($this->attributes['google_client_secret']);
+    }
+
+    /**
+     * Get storage used in megabytes.
+     */
+    public function getStorageUsedMb(): float
+    {
+        return round((int) $this->storage_used_bytes / (1024 * 1024), 2);
+    }
+
+    /**
+     * Get storage usage as a percentage of the quota.
+     */
+    public function getStorageUsagePercent(): float
+    {
+        $quotaMb = (int) $this->storage_quota_mb;
+
+        if ($quotaMb <= 0) {
+            return 0.0;
+        }
+
+        return round(($this->getStorageUsedMb() / $quotaMb) * 100, 2);
+    }
+
+    /**
+     * Check if the tenant has exceeded their storage quota.
+     */
+    public function isStorageQuotaExceeded(): bool
+    {
+        return $this->getStorageUsagePercent() >= 100.0;
+    }
+
+    /**
+     * Check if the tenant is approaching their storage quota (80% threshold).
+     */
+    public function hasStorageWarning(): bool
+    {
+        return $this->getStorageUsagePercent() >= 80.0;
     }
 
     /**

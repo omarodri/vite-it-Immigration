@@ -8,15 +8,31 @@
         </p>
 
         <div class="space-y-6">
+            <!-- Case Number Preview -->
+            <div class="flex items-center gap-3 px-4 py-3 bg-primary/5 border border-primary/20 rounded-lg">
+                <div class="shrink-0 w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                    </svg>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('wizard.step6.case_number_preview_label') }}</p>
+                    <p class="font-mono font-semibold text-primary tracking-wider">{{ caseNumberPreview }}</p>
+                </div>
+                <p class="ltr:ml-auto rtl:mr-auto text-xs text-gray-400 dark:text-gray-500 shrink-0">
+                    {{ $t('wizard.step6.case_number_preview_note') }}
+                </p>
+            </div>
+
             <!-- Case Type Section -->
-            <section class="panel" aria-labelledby="case-type-heading">
+            <section class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="case-type-heading">
                 <div class="flex justify-between items-center mb-4">
                     <h4 id="case-type-heading" class="font-semibold text-gray-900 dark:text-white">
                         {{ $t('wizard.step6.case_type') }}
                     </h4>
                     <button
                         type="button"
-                        class="text-primary text-sm hover:underline"
+                        class="btn btn-primary mt-1"
                         :aria-label="`${$t('wizard.edit')} ${$t('wizard.step6.case_type')}`"
                         @click="wizard.goToStep(1)"
                     >
@@ -41,31 +57,15 @@
                 </div>
             </section>
 
-            <!-- Case Number Preview -->
-            <div class="flex items-center gap-3 px-4 py-3 bg-primary/5 border border-primary/20 rounded-lg">
-                <div class="shrink-0 w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                    </svg>
-                </div>
-                <div class="min-w-0">
-                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('wizard.step6.case_number_preview_label') }}</p>
-                    <p class="font-mono font-semibold text-primary tracking-wider">{{ caseNumberPreview }}</p>
-                </div>
-                <p class="ltr:ml-auto rtl:mr-auto text-xs text-gray-400 dark:text-gray-500 shrink-0">
-                    {{ $t('wizard.step6.case_number_preview_note') }}
-                </p>
-            </div>
-
             <!-- Client Section -->
-            <section class="panel" aria-labelledby="client-heading">
+            <section class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="client-heading">
                 <div class="flex justify-between items-center mb-4">
                     <h4 id="client-heading" class="font-semibold text-gray-900 dark:text-white">
                         {{ $t('wizard.step6.client') }}
                     </h4>
                     <button
                         type="button"
-                        class="text-primary text-sm hover:underline"
+                        class="btn btn-primary mt-1"
                         :aria-label="`${$t('wizard.edit')} ${$t('wizard.step6.client')}`"
                         @click="wizard.goToStep(2)"
                     >
@@ -74,8 +74,7 @@
                 </div>
                 <div v-if="selectedClient" class="flex items-center gap-4">
                     <div
-                        class="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold text-lg"
-                    >
+                        class="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold text-lg">
                         {{ getInitials(selectedClient.first_name, selectedClient.last_name) }}
                     </div>
                     <div>
@@ -90,14 +89,14 @@
             </section>
 
             <!-- Companions Section -->
-            <section class="panel" aria-labelledby="companions-heading">
+            <section class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="companions-heading">
                 <div class="flex justify-between items-center mb-4">
                     <h4 id="companions-heading" class="font-semibold text-gray-900 dark:text-white">
                         {{ $t('wizard.step6.companions') }}
                     </h4>
                     <button
                         type="button"
-                        class="text-primary text-sm hover:underline"
+                        class="btn btn-primary mt-1"
                         :aria-label="`${$t('wizard.edit')} ${$t('wizard.step6.companions')}`"
                         @click="wizard.goToStep(3)"
                     >
@@ -123,14 +122,14 @@
             </section>
 
             <!-- Details Section -->
-            <section class="panel" aria-labelledby="details-heading">
+            <section class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="details-heading">
                 <div class="flex justify-between items-center mb-4">
                     <h4 id="details-heading" class="font-semibold text-gray-900 dark:text-white">
                         {{ $t('wizard.step6.details') }}
                     </h4>
                     <button
                         type="button"
-                        class="text-primary text-sm hover:underline"
+                        class="btn btn-primary mt-1"
                         :aria-label="`${$t('wizard.edit')} ${$t('wizard.step6.details')}`"
                         @click="wizard.goToStep(4)"
                     >
@@ -197,14 +196,14 @@
             </section>
 
             <!-- Checklist / Lifecycle Section -->
-            <section v-if="wizard.state.selectedTasks?.length > 0" class="panel" aria-labelledby="checklist-heading">
+            <section v-if="wizard.state.selectedTasks?.length > 0" class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="checklist-heading">
                 <div class="flex justify-between items-center mb-4">
                     <h4 id="checklist-heading" class="font-semibold text-gray-900 dark:text-white">
                         {{ $t('wizard.step6.checklist') }}
                     </h4>
                     <button
                         type="button"
-                        class="text-primary text-sm hover:underline"
+                        class="btn btn-primary mt-1"
                         :aria-label="`${$t('wizard.edit')} ${$t('wizard.step6.checklist')}`"
                         @click="wizard.goToStep(5)"
                     >
@@ -351,10 +350,10 @@ function getInitials(firstName: string, lastName: string): string {
 
 function getCategoryClass(category: CaseTypeCategory): string {
     const classes: Record<CaseTypeCategory, string> = {
-        'category.temporary_residence': 'bg-info/20 text-info',
-        'category.permanent_residence': 'bg-success/20 text-success',
-        'category.refugee': 'bg-warning/20 text-warning',
-        'category.citizenship': 'bg-primary/20 text-primary',
+        'temporary_residence': 'bg-info/20 text-info',
+        'permanent_residence': 'bg-success/20 text-success',
+        'refugee': 'bg-warning/20 text-warning',
+        'citizenship': 'bg-primary/20 text-primary',
     };
     return classes[category] || 'bg-gray-200 text-gray-700';
 }

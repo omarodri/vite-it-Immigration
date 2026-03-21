@@ -53,5 +53,23 @@ class Handler extends ExceptionHandler
                 ],
             ], 422);
         });
+
+        $this->renderable(function (StorageQuotaExceededException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => [
+                    'file' => [$e->getMessage()],
+                ],
+            ], 413);
+        });
+
+        $this->renderable(function (CloudProviderUnavailableException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => [
+                    'storage' => [$e->getMessage()],
+                ],
+            ], 503);
+        });
     }
 }

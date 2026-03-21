@@ -244,6 +244,22 @@ class ImmigrationCase extends Model
     }
 
     /**
+     * Get the documents for this case.
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class, 'case_id');
+    }
+
+    /**
+     * Get the document folders for this case.
+     */
+    public function documentFolders(): HasMany
+    {
+        return $this->hasMany(DocumentFolder::class, 'case_id');
+    }
+
+    /**
      * Get the status label in Spanish.
      */
     public function getStatusLabelAttribute(): string

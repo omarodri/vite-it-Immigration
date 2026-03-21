@@ -23,31 +23,54 @@
         <div v-else-if="currentCase" class="space-y-5">
             <!-- Header Card -->
             <div class="panel">
+                <h2 class="text-2xl font-bold dark:text-white-light">{{ currentCase.case_number }}</h2>
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <h2 class="text-2xl font-bold dark:text-white-light">{{ currentCase.case_number }}</h2>
-                        <p v-if="currentCase.case_type" class="text-gray-500">{{ currentCase.case_type.name }}</p>
+                        <div class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg mt-4">
+                            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                <span class="text-lg font-semibold text-primary">
+                                    {{ getInitials(currentCase.client.first_name, currentCase.client.last_name) }}
+                                </span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-semibold">
+                                    <router-link :to="`/clients/${currentCase.client.id}`" 
+                                    class="text-primary font-semibold hover:underline text-xl">
+                                    {{ currentCase.client.full_name || `${currentCase.client.first_name} ${currentCase.client.last_name}` }}
+                                    </router-link>
+                                </div>
+                                <div class="text-sm text-gray-500">{{ currentCase.client.email }}</div>
+                                <!-- <div v-if="currentCase.client.phone" class="text-sm text-gray-500">{{ currentCase.client.phone }}</div> -->
+                            </div>
+                        </div>
+                        
+                        
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="badge text-base px-4 py-2" :class="getStatusBadgeClass(currentCase.status)">
+                        <p v-if="currentCase.case_type" class="text-gray-500">{{ currentCase.case_type.name }}</p>
+
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="badge rounded-full" :class="getStatusBadgeClass(currentCase.status)">
                             {{ $t(`cases.${currentCase.status}`) }}
                         </span>
-                        <span class="badge text-base px-4 py-2" :class="getPriorityBadgeClass(currentCase.priority)">
+                        <span class="badge rounded-full" :class="getPriorityBadgeClass(currentCase.priority)">
                             {{ $t(`cases.${currentCase.priority}`) }}
                         </span>
                     </div>
                 </div>
 
                 <div class="flex flex-wrap gap-2 mt-4">
-                    <router-link v-can="'cases.update'" :to="`/cases/${currentCase.id}/edit`" class="btn btn-primary gap-2">
+                    <router-link v-can="'cases.update'" :to="`/cases/${currentCase.id}/edit`" class="btn btn-primary gap-2 btn-sm">
                         <icon-pencil class="w-4 h-4" />
                         {{ $t('cases.edit') }}
                     </router-link>
-                    <button v-can="'cases.assign'" type="button" class="btn btn-warning gap-2" @click="showAssignModal = true">
+                    <button v-can="'cases.assign'" type="button" class="btn btn-warning gap-2 btn-sm" @click="openAssignDialog">
                         <icon-user-plus class="w-4 h-4" />
                         {{ $t('cases.assign') }}
                     </button>
-                    <button v-can="'cases.delete'" type="button" class="btn btn-danger gap-2" @click="confirmDelete">
+                    <button v-can="'cases.delete'" type="button" class="btn btn-danger gap-2 btn-sm" @click="confirmDelete">
                         <icon-trash-lines class="w-4 h-4" />
                         {{ $t('cases.delete') }}
                     </button>
@@ -330,11 +353,8 @@
                         />
                     </div>
 
-                    <!-- Documents Tab (Placeholder) -->
-                    <div v-else-if="activeTab === 'documents'" class="text-center py-10 text-gray-500">
-                        <icon-folder class="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                        <p>{{ $t('cases.documents_coming_soon') }}</p>
-                    </div>
+                    <!-- Documents Tab -->
+                    <CaseDocumentsTab v-else-if="activeTab === 'documents'" :case-id="currentCase.id" />
                 </div>
             </div>
         </div>
@@ -353,8 +373,10 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useMeta } from '@/composables/use-meta';
+import Swal from 'sweetalert2';
 import { useCaseStore } from '@/stores/case';
 import { useNotification } from '@/composables/useNotification';
+import userService from '@/services/userService';
 import { formatDate } from '@/utils/formatters';
 import type { CaseStatus, CasePriority } from '@/types/case';
 import { CASE_STAGE_OPTIONS, IRCC_STATUS_OPTIONS, FINAL_RESULT_OPTIONS, SERVICE_TYPE_OPTIONS } from '@/types/case';
@@ -363,6 +385,7 @@ import LifecycleChecklist from '@/components/LifecycleChecklist.vue';
 import InvoiceTable from '@/views/cases/components/InvoiceTable.vue';
 import CaseTodoTab from '@/views/cases/components/CaseTodoTab.vue';
 import CaseEventTab from '@/views/cases/components/CaseEventTab.vue';
+import CaseDocumentsTab from '@/views/cases/components/CaseDocumentsTab.vue';
 
 // Icons
 import IconFolder from '@/components/icon/icon-folder.vue';
@@ -380,7 +403,6 @@ const { confirm: confirmDialog, success, error } = useNotification();
 
 const isLoading = ref(true);
 const activeTab = ref('info');
-const showAssignModal = ref(false);
 
 const tabs = computed(() => [
     { id: 'info', label: 'cases.tab_information' },
@@ -432,6 +454,37 @@ const finalResultColor = computed(() => FINAL_RESULT_OPTIONS.find(o => o.value =
 
 const formatDateTime = (date: string): string => {
     return new Date(date).toLocaleString();
+};
+
+const openAssignDialog = async () => {
+    if (!currentCase.value) return;
+
+    try {
+        const staff = await userService.getStaff(currentCase.value.assigned_user?.id);
+        const options: Record<string, string> = {};
+        for (const member of staff) {
+            options[member.id.toString()] = member.name;
+        }
+
+        const { value: userId } = await Swal.fire({
+            title: t('cases.assign'),
+            input: 'select',
+            inputOptions: options,
+            inputValue: currentCase.value.assigned_user?.id?.toString() || '',
+            inputPlaceholder: t('cases.unassigned'),
+            showCancelButton: true,
+            confirmButtonText: t('cases.assign'),
+            cancelButtonText: t('cases.cancel'),
+        });
+
+        if (userId) {
+            await caseStore.assignCase(currentCase.value.id, parseInt(userId));
+            success(t('cases.assigned_successfully'));
+            await caseStore.fetchCase(currentCase.value.id);
+        }
+    } catch (err: any) {
+        error(err.response?.data?.message || t('cases.assign_failed'));
+    }
 };
 
 const confirmDelete = async () => {
