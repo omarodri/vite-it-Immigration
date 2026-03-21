@@ -23,7 +23,7 @@
                 getCategoryClass(caseType.category),
             ]"
         >
-            {{ $t(`case_types.${caseType.category}`) }}
+            {{ $t(`case_types.category.${caseType.category}`) }}
         </span>
 
         <!-- Case Type Name -->
@@ -63,11 +63,11 @@ defineProps<Props>();
 defineEmits<Emits>();
 
 function getCategoryClass(category: CaseTypeCategory): string {
-    const classes: Record<CaseTypeCategory, string> = {
-        'category.temporary_residence': 'bg-info/20 text-info',
-        'category.permanent_residence': 'bg-success/20 text-success',
-        'category.refugee': 'bg-warning/20 text-warning',
-        'category.citizenship': 'bg-danger/20 text-danger',
+    const classes: Record<string, string> = {
+        temporary_residence: 'bg-info/20 text-info',
+        permanent_residence: 'bg-success/20 text-success',
+        refugee: 'bg-warning/20 text-warning',
+        citizenship: 'bg-danger/20 text-danger',
     };
     return classes[category] || 'bg-gray-200 text-gray-700';
 }

@@ -372,7 +372,8 @@
                                         <span class="badge" :class="getCaseBadgeClass(caseItem.status)">
                                             {{ $t(`cases.${caseItem.status}`) }}
                                         </span>
-                                        <span v-if="caseItem.priority === 'urgent' || caseItem.priority === 'high'" class="badge" :class="caseItem.priority === 'urgent' ? 'badge-danger' : 'badge-warning'">
+                                        <span class="badge" :class="getUrgencyBadgeClass(caseItem.priority)">
+                                        <!-- v-if="caseItem.priority === 'urgent' || caseItem.priority === 'high'" class="badge" :class="caseItem.priority === 'urgent' ? 'badge-danger' : 'badge-warning'"> -->
                                             {{ $t(`cases.${caseItem.priority}`) }}
                                         </span>
                                     </div>
@@ -757,12 +758,31 @@ const getCaseBadgeClass = (status: string): string => {
     return classes[status] || 'badge-outline-primary';
 };
 
+const getUrgencyBadgeClass = (status: string): string => {
+    const classes: Record<string, string> = {
+        urgent: 'badge-outline-danger',
+        high: 'badge-outline-warning',
+        medium: 'badge-outline-info',
+        low: 'badge-outline-secondary',
+    };
+    return classes[status] || 'badge-outline-primary';
+};
+
 const formatRelationship = (relationship: string): string => {
     const labels: Record<string, string> = {
         spouse: 'Cónyuge',
         child: 'Hijo/a',
         parent: 'Padre/Madre',
         sibling: 'Hermano/a',
+        'common-law partner': 'Pareja de hecho',
+        'dependent child': 'Hijo/a dependiente',
+        grandchild: 'Nieto/a',
+        grandparent: 'Abuelo/a',
+        'aunt / uncle': 'Tía/Tío',
+        'niece / nephew': 'Sobrino/a',
+        cousin: 'Primo/a',
+        'child-in-law': 'Hijo/a de hermano/a',
+        'parent-in-law': 'Padre/Madre de hermano/a',
         other: 'Otro',
     };
     return labels[relationship] || relationship;
