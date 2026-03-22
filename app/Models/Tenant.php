@@ -55,6 +55,14 @@ class Tenant extends Model
     }
 
     /**
+     * Get the invitation codes for this tenant.
+     */
+    public function invitationCodes(): HasMany
+    {
+        return $this->hasMany(InvitationCode::class);
+    }
+
+    /**
      * Get the clients for this tenant.
      */
     public function clients(): HasMany

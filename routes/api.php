@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\TenantController;
+use App\Http\Controllers\Api\Admin\TenantController as AdminTenantController;
 use App\Http\Controllers\Api\OAuthFlowController;
 use App\Http\Controllers\Api\TenantOAuthController;
 use App\Http\Controllers\Api\TwoFactorController;
@@ -119,9 +120,12 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     Route::post('/cases/{case}/folders', [DocumentFolderController::class, 'store']);
     Route::patch('/cases/{case}/folders/{folder}', [DocumentFolderController::class, 'update']);
     Route::delete('/cases/{case}/folders/{folder}', [DocumentFolderController::class, 'destroy']);
+    Route::post('/cases/{case}/folders/sync', [DocumentFolderController::class, 'sync']);
+    Route::get('/cases/{case}/folders/sync-status', [DocumentFolderController::class, 'syncStatus']);
 
     // Case Documents routes
     Route::get('/cases/{case}/documents', [DocumentController::class, 'index']);
+    Route::post('/cases/{case}/documents/sync-from-cloud', [DocumentController::class, 'syncFromCloud']);
     Route::get('/cases/{case}/documents/{document}', [DocumentController::class, 'show']);
     Route::patch('/cases/{case}/documents/{document}', [DocumentController::class, 'update']);
     Route::delete('/cases/{case}/documents/{document}', [DocumentController::class, 'destroy']);
@@ -173,6 +177,10 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     Route::get('/tenant', [TenantController::class, 'show']);
     Route::put('/tenant/settings', [TenantController::class, 'updateSettings']);
     Route::put('/tenant/branding', [TenantController::class, 'updateBranding']);
+    Route::post('/tenant/branding/logo', [TenantController::class, 'uploadLogo']);
+    Route::delete('/tenant/branding/logo', [TenantController::class, 'deleteLogo']);
+    Route::put('/tenant/storage-type', [TenantController::class, 'updateStorageType']);
+    Route::put('/tenant/theme', [TenantController::class, 'updateTheme']);
 
     // Scrum Board routes
     Route::prefix('scrum')->group(function () {
@@ -205,6 +213,17 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     Route::get('/oauth/status', [OAuthFlowController::class, 'status']);
     Route::delete('/oauth/{provider}/disconnect', [OAuthFlowController::class, 'disconnect'])
         ->where('provider', 'microsoft|google');
+});
+
+// Super-admin tenant management routes
+Route::prefix('admin/tenants')->middleware(['auth:sanctum', 'role:super-admin'])->group(function () {
+    Route::get('/', [AdminTenantController::class, 'index']);
+    Route::post('/', [AdminTenantController::class, 'store']);
+    Route::get('/stats', [AdminTenantController::class, 'stats']);
+    Route::get('/{id}', [AdminTenantController::class, 'show'])->where('id', '[0-9]+');
+    Route::put('/{id}', [AdminTenantController::class, 'update'])->where('id', '[0-9]+');
+    Route::delete('/{id}', [AdminTenantController::class, 'destroy'])->where('id', '[0-9]+');
+    Route::post('/{id}/activate', [AdminTenantController::class, 'activate'])->where('id', '[0-9]+');
 });
 
 // OAuth callback route (no auth required - called by OAuth provider redirect)

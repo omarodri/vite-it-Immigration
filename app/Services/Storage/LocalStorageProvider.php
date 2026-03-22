@@ -15,7 +15,7 @@ class LocalStorageProvider implements DocumentStorageInterface
      *
      * @return array{storage_path: string, size: int}
      */
-    public function upload(UploadedFile $file, string $destinationPath): array
+    public function upload(UploadedFile $file, string $destinationPath, array $metadata = []): array
     {
         $this->validatePath($destinationPath);
 
@@ -83,6 +83,76 @@ class LocalStorageProvider implements DocumentStorageInterface
     public function isAvailable(): bool
     {
         return true;
+    }
+
+    /**
+     * Create a folder in local storage.
+     *
+     * @return array{external_id: string, external_url: string}
+     */
+    public function createFolder(string $folderName, ?string $parentExternalId = null): array
+    {
+        $path = $parentExternalId
+            ? rtrim($parentExternalId, '/') . '/' . $folderName
+            : $folderName;
+
+        $this->validatePath($path);
+
+        Storage::disk('local')->makeDirectory($path);
+
+        return [
+            'external_id' => $path,
+            'external_url' => '',
+        ];
+    }
+
+    /**
+     * Delete a folder from local storage.
+     */
+    public function deleteFolder(string $externalId): bool
+    {
+        $this->validatePath($externalId);
+
+        if (Storage::disk('local')->exists($externalId)) {
+            return Storage::disk('local')->deleteDirectory($externalId);
+        }
+
+        return true;
+    }
+
+    /**
+     * List contents of a folder in local storage.
+     *
+     * @return array<int, array{name: string, type: string, external_id: string}>
+     */
+    public function listFolder(string $externalId): array
+    {
+        $this->validatePath($externalId);
+
+        $items = [];
+
+        $directories = Storage::disk('local')->directories($externalId);
+        foreach ($directories as $dir) {
+            $items[] = [
+                'name' => basename($dir),
+                'type' => 'folder',
+                'external_id' => $dir,
+            ];
+        }
+
+        $files = Storage::disk('local')->files($externalId);
+        foreach ($files as $file) {
+            $items[] = [
+                'name' => basename($file),
+                'type' => 'file',
+                'external_id' => $file,
+                'size' => (int) Storage::disk('local')->size($file),
+                'mime_type' => Storage::disk('local')->mimeType($file) ?: 'application/octet-stream',
+                'web_url' => '',
+            ];
+        }
+
+        return $items;
     }
 
     /**

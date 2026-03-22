@@ -20,6 +20,7 @@
             :folder="folder"
             :current-folder-id="currentFolderId"
             :depth="0"
+            :show-sync-status="showSyncStatus"
             @select-folder="(id: number) => $emit('select-folder', id)"
             @rename-folder="(f: DocumentFolder) => $emit('rename-folder', f)"
             @delete-folder="(f: DocumentFolder) => $emit('delete-folder', f)"
@@ -38,6 +39,7 @@ const { t } = useI18n();
 defineProps<{
     folders: DocumentFolder[];
     currentFolderId: number | null;
+    showSyncStatus?: boolean;
 }>();
 
 defineEmits<{

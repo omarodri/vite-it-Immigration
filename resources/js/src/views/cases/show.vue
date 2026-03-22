@@ -43,12 +43,67 @@
                                 <!-- <div v-if="currentCase.client.phone" class="text-sm text-gray-500">{{ currentCase.client.phone }}</div> -->
                             </div>
                         </div>
-                        
-                        
                     </div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <p v-if="currentCase.case_type" class="text-gray-500">{{ currentCase.case_type.name }}</p>
 
+                    <div class="flex flex-wrap items-center gap-2">
+                        <ul class="list-none space-y-2 text-sm w-full sm:w-auto">
+                            <li v-if="currentCase.case_type" class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-x-4 py-0"
+                            >
+                                <span class="text-gray-500 shrink-0 sm:w-30 dark:text-white-light">{{ $t('cases.case_type') }}:</span>
+                                <span class="text-gray-500 min-w-0 sm:flex-1">{{ currentCase.case_type.name }}</span>
+                            </li>
+                            <li
+                                v-if="currentCase.created_at" class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-x-4 py-0"
+                            >
+                                <span class="text-gray-500 shrink-0 sm:w-30 dark:text-white-light">{{ $t('cases.created_at') }}:</span>
+                                <span class="text-gray-500 min-w-0 sm:flex-1">{{ formatDateTime(currentCase.created_at) }}</span>
+                            </li>
+                            <li
+                                v-if="currentCase.updated_at" class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-x-4 py-0"
+                            >
+                                <span class="text-gray-500 shrink-0 sm:w-30 dark:text-white-light">{{ $t('cases.updated_at') }}:</span>
+                                <span class="text-gray-500 min-w-0 sm:flex-1">{{ formatDateTime(currentCase.updated_at) }}</span>
+                            </li>
+                            <li
+                                v-if="currentCase.assigned_user" class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-x-4 py-0"
+                            >
+                                <span class="text-gray-500 shrink-0 sm:w-30 dark:text-white-light">{{ $t('cases.assigned_to') }}:</span>
+                                <span class="text-gray-500 min-w-0 sm:flex-1">{{ currentCase.assigned_user?.name }}</span>
+                            </li>
+                            <!-- Language -->
+                            <li v-if="currentCase.language" class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-x-4 py-0">
+                                <span class="text-gray-500 shrink-0 sm:w-30 dark:text-white-light">{{ $t('cases.language') }}:</span>
+                                <span class="text-gray-500 min-w-0 sm:flex-1">{{ currentCase.language?.toUpperCase() || '-' }}</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <ul class="list-none space-y-0 text-sm w-full sm:w-auto">
+
+                            <!-- Stage -->
+                            <li v-if="currentCase.stage" class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-x-4 py-0">
+                                <span class="text-gray-500 shrink-0 sm:w-30 dark:text-white-light">{{ $t('cases.stage') }}:</span>
+                                <span :class="`badge badge-outline-${stageColor} shrink-0`">{{
+                                    $t(CASE_STAGE_OPTIONS.find(o => o.value === currentCase.stage)?.label ?? currentCase.stage ?? '')
+                                }}</span>
+                            </li>
+                            <!-- IRCC Status -->
+                            <li v-if="currentCase.ircc_status" class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-x-4 py-0">
+                                <span class="text-gray-500 shrink-0 sm:w-30 dark:text-white-light">{{ $t('cases.ircc_status') }}:</span>
+                                <span :class="`badge badge-outline-${irccColor} shrink-0`">{{ currentCase.ircc_status_label }}</span>
+                            </li>
+                            <!-- Final Result -->
+                            <li v-if="currentCase.final_result" class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-x-4 py-0">
+                                <span class="text-gray-500 shrink-0 sm:w-30 dark:text-white-light">{{ $t('cases.final_result') }}:</span>
+                                <span :class="`badge badge-outline-${finalResultColor} shrink-0`">{{ currentCase.final_result_label }}</span>
+                            </li>
+                            <!-- IRCC Code -->
+                            <li v-if="currentCase.ircc_code" class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-x-4 py-0">
+                                <span class="text-gray-500 shrink-0 sm:w-30 dark:text-white-light">{{ $t('cases.ircc_code') }}:</span>
+                                <span class="text-sm font-mono font-medium min-w-0 sm:flex-1 break-all">{{ currentCase.ircc_code }}</span>
+                            </li>
+                        </ul>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2">
@@ -61,19 +116,34 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap gap-2 mt-4">
-                    <router-link v-can="'cases.update'" :to="`/cases/${currentCase.id}/edit`" class="btn btn-primary gap-2 btn-sm">
-                        <icon-pencil class="w-4 h-4" />
-                        {{ $t('cases.edit') }}
-                    </router-link>
-                    <button v-can="'cases.assign'" type="button" class="btn btn-warning gap-2 btn-sm" @click="openAssignDialog">
-                        <icon-user-plus class="w-4 h-4" />
-                        {{ $t('cases.assign') }}
-                    </button>
-                    <button v-can="'cases.delete'" type="button" class="btn btn-danger gap-2 btn-sm" @click="confirmDelete">
-                        <icon-trash-lines class="w-4 h-4" />
-                        {{ $t('cases.delete') }}
-                    </button>
+                <div class="flex flex-row flex-nowrap items-center gap-4 mt-4 min-w-0">
+                    <div class="min-w-0 flex-[2] flex flex-col justify-center">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-500">{{ $t('cases.progress') }}</span>
+                            <span class="text-gray-500">{{ currentCase.progress }}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                            <div class="h-3 rounded-full transition-all" :class="getProgressBarClass(currentCase.progress)" :style="{ width: `${currentCase.progress}%` }"></div>
+                        </div>
+                    </div>
+                    <div class="flex-[1] flex flex-nowrap justify-end gap-2 items-center min-w-0">
+                        <router-link v-can="'cases.update'" :to="`/cases/${currentCase.id}/edit`" class="btn btn-primary gap-2 btn-sm">
+                            <icon-pencil class="w-4 h-4" />
+                            {{ $t('cases.edit') }}
+                        </router-link>
+                        <button v-can="'cases.assign'" type="button" class="btn btn-warning gap-2 btn-sm" @click="openAssignDialog">
+                            <icon-user-plus class="w-4 h-4" />
+                            {{ $t('cases.assign') }}
+                        </button>
+                        <button v-can="'cases.delete'" type="button" class="btn btn-danger gap-2 btn-sm" @click="confirmDelete">
+                            <icon-trash-lines class="w-4 h-4" />
+                            {{ $t('cases.delete') }}
+                        </button>
+                        <router-link v-can="'cases.assign'" :to="`/clients/${currentCase.client.id}`" class="btn btn-secondary gap-2 btn-sm">
+                            <icon-pencil class="w-4 h-4" />
+                            {{ $t('cases.client') }}
+                        </router-link>
+                    </div>
                 </div>
             </div>
 
@@ -103,7 +173,7 @@
                     <div v-if="activeTab === 'info'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- General Information -->
                         <div class="space-y-4">
-                            <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.general_info') }}</h3>
+                            <!-- <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.general_info') }}</h3>
                             <div class="space-y-3">
                                 <div class="flex justify-between">
                                     <span class="text-gray-500">{{ $t('cases.case_number') }}</span>
@@ -130,29 +200,29 @@
                                     <span>{{ currentCase.language?.toUpperCase() || '-' }}</span>
                                 </div>
                                 <!-- Stage -->
-                                <div v-if="currentCase.stage" class="flex items-center justify-between py-1">
+                                <!-- <div v-if="currentCase.stage" class="flex items-center justify-between py-1">
                                     <span class="text-gray-500">{{ $t('cases.stage') }}</span>
                                     <span :class="`badge badge-outline-${stageColor}`">{{ $t(CASE_STAGE_OPTIONS.find(o => o.value === currentCase.stage)?.label ?? currentCase.stage ?? '') }}</span>
-                                </div>
+                                </div> -->
                                 <!-- IRCC Status -->
-                                <div v-if="currentCase.ircc_status" class="flex items-center justify-between py-1">
+                                <!-- <div v-if="currentCase.ircc_status" class="flex items-center justify-between py-1">
                                     <span class="text-gray-500">{{ $t('cases.ircc_status') }}</span>
                                     <span :class="`badge badge-outline-${irccColor}`">{{ currentCase.ircc_status_label }}</span>
-                                </div>
+                                </div> -->
                                 <!-- Final Result -->
-                                <div v-if="currentCase.final_result" class="flex items-center justify-between py-1">
+                                <!-- <div v-if="currentCase.final_result" class="flex items-center justify-between py-1">
                                     <span class="text-gray-500">{{ $t('cases.final_result') }}</span>
                                     <span :class="`badge badge-outline-${finalResultColor}`">{{ currentCase.final_result_label }}</span>
-                                </div>
+                                </div> -->
                                 <!-- IRCC Code -->
-                                <div v-if="currentCase.ircc_code" class="flex items-center justify-between py-1">
+                                <!-- <div v-if="currentCase.ircc_code" class="flex items-center justify-between py-1">
                                     <span class="text-gray-500">{{ $t('cases.ircc_code') }}</span>
                                     <span class="text-sm font-mono font-medium">{{ currentCase.ircc_code }}</span>
                                 </div>
-                            </div>
+                            </div> -->
 
                             <!-- Progress -->
-                            <div class="pt-4">
+                            <!-- <div class="pt-4">
                                 <div class="flex justify-between text-sm mb-2">
                                     <span class="text-gray-500">{{ $t('cases.progress') }}</span>
                                     <span>{{ currentCase.progress }}%</span>
@@ -160,39 +230,9 @@
                                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                                     <div class="h-3 rounded-full transition-all" :class="getProgressBarClass(currentCase.progress)" :style="{ width: `${currentCase.progress}%` }"></div>
                                 </div>
-                            </div>
+                            </div> -->
 
-                            <!-- Description -->
-                            <div v-if="currentCase.description" class="pt-4">
-                                <h4 class="font-medium mb-2">{{ $t('cases.description') }}</h4>
-                                <p class="text-gray-600 dark:text-gray-400">{{ currentCase.description }}</p>
-                            </div>
-
-                            <!-- Financial Info -->
-                            <div v-if="currentCase.service_type" class="mt-4 pt-4 border-t border-[#e0e6ed] dark:border-[#1b2e4b]">
-                                <h6 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">{{ $t('cases.financial_info') }}</h6>
-                                <div class="space-y-1">
-                                    <div class="flex items-center justify-between py-1">
-                                        <span class="text-sm text-gray-500">{{ $t('cases.service_type') }}</span>
-                                        <span class="badge" :class="currentCase.service_type === 'pro_bono' ? 'badge-outline-success' : 'badge-outline-primary'">
-                                            {{ currentCase.service_type_label }}
-                                        </span>
-                                    </div>
-                                    <div v-if="currentCase.contract_number" class="flex items-center justify-between py-1">
-                                        <span class="text-sm text-gray-500">{{ $t('cases.contract_number') }}</span>
-                                        <span class="text-sm font-medium">{{ currentCase.contract_number }}</span>
-                                    </div>
-                                    <div v-if="currentCase.fees !== undefined && currentCase.fees !== null" class="flex items-center justify-between py-1">
-                                        <span class="text-sm text-gray-500">{{ $t('cases.fees') }}</span>
-                                        <span class="text-sm font-semibold text-success">${{ Number(currentCase.fees).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Client & Dates -->
-                        <div class="space-y-6">
-                            <!-- Client Information -->
+                            <!-- Client Info -->
                             <div v-if="currentCase.client" class="space-y-4">
                                 <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.client_info') }}</h3>
                                 <div class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
@@ -256,6 +296,15 @@
                                 </div>
                             </div>
 
+                            <!-- Description -->
+                            <div v-if="currentCase.description" class="pt-4">
+                                <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.description') }}</h3>
+                                <p class="text-gray-600 dark:text-gray-400">{{ currentCase.description }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Client & Dates -->
+                        <div class="space-y-6">
                             <!-- Important Dates -->
                             <div class="space-y-4">
                                 <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.important_dates') }}</h3>
@@ -266,27 +315,48 @@
                             </div>
 
                             <!-- Assignment -->
-                            <div class="space-y-4">
+                            <!-- <div class="space-y-4">
                                 <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.assignment') }}</h3>
                                 <div class="flex justify-between">
                                     <span class="text-gray-500">{{ $t('cases.assigned_to') }}</span>
                                     <span v-if="currentCase.assigned_user">{{ currentCase.assigned_user.name }}</span>
                                     <span v-else class="text-gray-400 italic">{{ $t('cases.unassigned') }}</span>
                                 </div>
+                            </div> -->
+                           
+                            <!-- Financial Info -->
+                            <div v-if="currentCase.service_type" class="mt-4 pt-4 border-t border-[#e0e6ed] dark:border-[#1b2e4b]">
+                                <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.financial_info') }}</h3>
+                                <div class="space-y-1">
+                                    <div class="flex items-center justify-between py-1">
+                                        <span class="text-sm text-gray-500">{{ $t('cases.service_type') }}</span>
+                                        <span class="badge" :class="currentCase.service_type === 'pro_bono' ? 'badge-outline-success' : 'badge-outline-primary'">
+                                            {{ currentCase.service_type_label }}
+                                        </span>
+                                    </div>
+                                    <div v-if="currentCase.contract_number" class="flex items-center justify-between py-1">
+                                        <span class="text-sm text-gray-500">{{ $t('cases.contract_number') }}</span>
+                                        <span class="text-sm font-medium">{{ currentCase.contract_number }}</span>
+                                    </div>
+                                    <div v-if="currentCase.fees !== undefined && currentCase.fees !== null" class="flex items-center justify-between py-1">
+                                        <span class="text-sm text-gray-500">{{ $t('cases.fees') }}</span>
+                                        <span class="text-sm font-semibold text-success">${{ Number(currentCase.fees).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</span>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
 
-                            <!-- Metadata -->
-                            <div class="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                                <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.metadata') }}</h3>
-                                <div class="space-y-3 text-sm">
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-500">{{ $t('cases.created') }}</span>
-                                        <span>{{ formatDateTime(currentCase.created_at) }}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-500">{{ $t('cases.updated') }}</span>
-                                        <span>{{ formatDateTime(currentCase.updated_at) }}</span>
-                                    </div>
+                        <!-- Metadata -->
+                        <div class="space-y-4 w-full lg:w-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.metadata') }}</h3>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">{{ $t('cases.created') }}</span>
+                                    <span>{{ formatDateTime(currentCase.created_at) }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">{{ $t('cases.updated') }}</span>
+                                    <span>{{ formatDateTime(currentCase.updated_at) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -407,11 +477,11 @@ const activeTab = ref('info');
 const tabs = computed(() => [
     { id: 'info', label: 'cases.tab_information' },
     { id: 'lifecycle', label: 'cases.tab_lifecycle' },
-    { id: 'timeline', label: 'cases.tab_timeline' },
-    { id: 'invoices', label: 'cases.tab_invoices' },
-    { id: 'todos', label: 'cases.tab_todos' },
-    { id: 'events', label: 'cases.tab_events' },
     { id: 'documents', label: 'cases.tab_documents' },
+    { id: 'events', label: 'cases.tab_events' },
+    { id: 'todos', label: 'cases.tab_todos' },
+    { id: 'invoices', label: 'cases.tab_invoices' },
+    { id: 'timeline', label: 'cases.tab_timeline' },
 ]);
 
 const currentCase = computed(() => caseStore.currentCase);

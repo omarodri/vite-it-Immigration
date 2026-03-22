@@ -1,26 +1,28 @@
 import { $themeConfig } from '../theme.config';
 import { useAppStore } from '@/stores/index';
+import { useTenantStore } from '@/stores/tenant';
 
 export default {
     init() {
         const store = useAppStore();
+        const tenantStore = useTenantStore();
+        const tenantTheme = tenantStore.tenant?.theme;
 
-        // set default styles
+        // Priority: localStorage -> tenantTheme -> $themeConfig default
         let val: any = localStorage.getItem('theme'); // light, dark, system
-        val = val || $themeConfig.theme;
+        val = val || tenantTheme?.mode || $themeConfig.theme;
         store.toggleTheme(val);
 
         val = localStorage.getItem('menu'); // vertical, collapsible-vertical, horizontal
-        val = val || $themeConfig.menu;
+        val = val || tenantTheme?.menu || $themeConfig.menu;
         store.toggleMenu(val);
 
         val = localStorage.getItem('layout'); // full, boxed-layout
-        val = val || $themeConfig.layout;
+        val = val || tenantTheme?.layout || $themeConfig.layout;
         store.toggleLayout(val);
 
         val = localStorage.getItem('i18n_locale'); // en, da, de, el, es, fr, hu, it, ja, pl, pt, ru, sv, tr, zh
-
-        val = val || $themeConfig.locale;
+        val = val || tenantStore.tenant?.preferences?.language || $themeConfig.locale;
 
         const list = store.languageList;
         const item = list.find((item: any) => item.code === val);
@@ -29,19 +31,23 @@ export default {
         }
 
         val = localStorage.getItem('rtlClass'); // rtl, ltr
-        val = val || $themeConfig.rtlClass;
+        val = val || tenantTheme?.rtl_class || $themeConfig.rtlClass;
         store.toggleRTL(val);
 
-        val = localStorage.getItem('animation'); // animate__fadeIn, animate__fadeInDown, animate__fadeInUp, animate__fadeInLeft, animate__fadeInRight, animate__slideInDown, animate__slideInLeft, animate__slideInRight, animate__zoomIn
-        val = val || $themeConfig.animation;
+        val = localStorage.getItem('animation'); // animate__fadeIn, animate__fadeInDown, etc.
+        val = val || tenantTheme?.animation || $themeConfig.animation;
         store.toggleAnimation(val);
 
         val = localStorage.getItem('navbar'); // navbar-sticky, navbar-floating, navbar-static
-        val = val || $themeConfig.navbar;
+        val = val || tenantTheme?.navbar || $themeConfig.navbar;
         store.toggleNavbar(val);
 
         val = localStorage.getItem('semidark');
-        val = val === 'true' ? true : $themeConfig.semidark;
+        if (val !== null) {
+            val = val === 'true';
+        } else {
+            val = tenantTheme?.semidark ?? $themeConfig.semidark;
+        }
         store.toggleSemidark(val);
     },
 

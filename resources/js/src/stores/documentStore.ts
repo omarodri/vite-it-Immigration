@@ -2,6 +2,8 @@ import { defineStore } from 'pinia';
 import documentService from '@/services/documentService';
 import type { DocumentFolder, Document } from '@/types/document';
 
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
+
 interface DocumentState {
     folders: DocumentFolder[];
     currentFolderId: number | null;
@@ -9,6 +11,7 @@ interface DocumentState {
     isLoading: boolean;
     viewMode: 'grid' | 'list';
     selectedDocuments: number[];
+    syncStatus: SyncStatus;
 }
 
 export const useDocumentStore = defineStore('document', {
@@ -19,6 +22,7 @@ export const useDocumentStore = defineStore('document', {
         isLoading: false,
         viewMode: 'grid',
         selectedDocuments: [],
+        syncStatus: 'idle',
     }),
 
     getters: {
@@ -37,6 +41,14 @@ export const useDocumentStore = defineStore('document', {
 
         folderTree(state): DocumentFolder[] {
             return buildTree(state.folders);
+        },
+
+        hasPendingSyncFolders(state): boolean {
+            return hasSyncStatus(state.folders, 'pending');
+        },
+
+        hasFailedSyncFolders(state): boolean {
+            return hasSyncStatus(state.folders, 'failed');
         },
     },
 
@@ -84,6 +96,31 @@ export const useDocumentStore = defineStore('document', {
             this.selectedDocuments = [];
         },
 
+        async syncFolders(caseId: number) {
+            this.syncStatus = 'syncing';
+            try {
+                await documentService.syncFolders(caseId);
+                this.syncStatus = 'synced';
+                // Refresh folders to get updated sync_status
+                await this.fetchFolders(caseId);
+            } catch {
+                this.syncStatus = 'error';
+            }
+        },
+
+        async fetchSyncStatus(caseId: number) {
+            try {
+                const result = await documentService.getSyncStatus(caseId);
+                this.syncStatus = result.sync_status as SyncStatus;
+                // Update folder data with latest sync info
+                if (result.folders) {
+                    this.folders = result.folders;
+                }
+            } catch {
+                // Silently fail — sync status is non-critical
+            }
+        },
+
         reset() {
             this.folders = [];
             this.currentFolderId = null;
@@ -91,9 +128,23 @@ export const useDocumentStore = defineStore('document', {
             this.isLoading = false;
             this.viewMode = 'grid';
             this.selectedDocuments = [];
+            this.syncStatus = 'idle';
         },
     },
 });
+
+/**
+ * Recursively check if any folder in the tree has a given sync_status
+ */
+function hasSyncStatus(folders: DocumentFolder[], status: string): boolean {
+    for (const folder of folders) {
+        if (folder.sync_status === status) return true;
+        if (folder.children && folder.children.length > 0) {
+            if (hasSyncStatus(folder.children, status)) return true;
+        }
+    }
+    return false;
+}
 
 /**
  * Recursively find a folder by ID in a tree structure

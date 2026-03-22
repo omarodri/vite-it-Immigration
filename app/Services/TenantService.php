@@ -44,7 +44,7 @@ class TenantService
     {
         $settings = $tenant->settings ?? [];
 
-        if (isset($data['logo_url'])) {
+        if (array_key_exists('logo_url', $data)) {
             $settings['logo_url'] = $data['logo_url'];
         }
 
@@ -56,6 +56,19 @@ class TenantService
             $settings['secondary_color'] = $data['secondary_color'];
         }
 
+        $tenant->settings = $settings;
+        $tenant->save();
+
+        return $tenant->fresh();
+    }
+
+    /**
+     * Update tenant theme settings.
+     */
+    public function updateThemeSettings(Tenant $tenant, array $themeData): Tenant
+    {
+        $settings = $tenant->settings ?? [];
+        $settings['theme'] = array_merge($settings['theme'] ?? [], $themeData);
         $tenant->settings = $settings;
         $tenant->save();
 

@@ -118,6 +118,12 @@ export const useAuthStore = defineStore('auth', {
 
                 this.user = response.user ?? null;
                 this.isAuthenticated = true;
+
+                // Fetch tenant data after successful login
+                const { useTenantStore } = await import('@/stores/tenant');
+                const tenantStore = useTenantStore();
+                await tenantStore.fetchTenant();
+
                 return response;
             } catch (error: any) {
                 this.error = error.response?.data?.message || 'Login failed';
@@ -150,6 +156,11 @@ export const useAuthStore = defineStore('auth', {
                 this.user = null;
                 this.isAuthenticated = false;
                 this.twoFactorRequired = false;
+
+                // Clear tenant data on logout
+                const { useTenantStore } = await import('@/stores/tenant');
+                const tenantStore = useTenantStore();
+                tenantStore.clearTenant();
             } catch (error: any) {
                 console.error('Logout error:', error);
             } finally {
@@ -163,6 +174,13 @@ export const useAuthStore = defineStore('auth', {
                 const user = await authService.getUser();
                 this.user = user;
                 this.isAuthenticated = true;
+
+                // Fetch tenant data if not already loaded
+                const { useTenantStore } = await import('@/stores/tenant');
+                const tenantStore = useTenantStore();
+                if (!tenantStore.isLoaded) {
+                    await tenantStore.fetchTenant();
+                }
             } catch (error) {
                 this.user = null;
                 this.isAuthenticated = false;
@@ -290,6 +308,11 @@ export const useAuthStore = defineStore('auth', {
                     this.user = response.user;
                     this.isAuthenticated = true;
                     this.twoFactorRequired = false;
+
+                    // Fetch tenant data after successful 2FA verification
+                    const { useTenantStore } = await import('@/stores/tenant');
+                    const tenantStore = useTenantStore();
+                    await tenantStore.fetchTenant();
                 }
                 return response;
             } catch (error: any) {

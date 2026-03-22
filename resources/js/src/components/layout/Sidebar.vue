@@ -24,7 +24,7 @@
                     <ul class="relative font-semibold space-y-0.5 p-4 py-0">
 
                         <!-- Admin Section (visible only for users with permission) -->
-                        <template v-if="canViewUsers || canViewRoles">
+                        <template v-if="canViewUsers || canViewRoles || canUpdateSettings">
                             <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
                                 <icon-minus class="w-4 h-5 flex-none hidden" />
                                 <span>{{ $t('sidebar.admin') }}</span>
@@ -48,6 +48,36 @@
                                                 <icon-lock-dots class="group-hover:!text-primary shrink-0" />
                                                 <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
                                                     {{ $t('sidebar.roles') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                    <li v-if="canUpdateSettings" class="nav-item">
+                                        <router-link to="/admin/tenant/settings" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-settings class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('sidebar.company') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                    <li v-if="canUpdateSettings" class="nav-item">
+                                        <router-link to="/admin/tenant/branding" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-settings class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('sidebar.branding') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                    <li v-if="canUpdateSettings" class="nav-item">
+                                        <router-link to="/admin/tenant/oauth" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-settings class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('sidebar.integrations') }}
                                                 </span>
                                             </div>
                                         </router-link>
@@ -864,6 +894,7 @@
     import IconMenuDocumentation from '@/components/icon/menu/icon-menu-documentation.vue';
     import IconUsers from '@/components/icon/icon-users.vue';
     import IconLockDots from '@/components/icon/icon-lock-dots.vue';
+    import IconSettings from '@/components/icon/icon-settings.vue';
     import TenantLogo from '@/components/layout/TenantLogo.vue';
 
     const store = useAppStore();
@@ -877,6 +908,7 @@
     // Check if user has permission to view admin sections
     const canViewUsers = computed(() => authStore.hasPermission('users.view'));
     const canViewRoles = computed(() => authStore.hasPermission('roles.view'));
+    const canUpdateSettings = computed(() => authStore.hasPermission('settings.update'));
 
     // Check if user has permission to view CRM sections
     const canViewClients = computed(() => authStore.hasPermission('clients.view'));

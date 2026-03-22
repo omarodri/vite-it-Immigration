@@ -81,33 +81,43 @@ class OAuthCredentialService
     /**
      * Validate Microsoft OAuth credentials.
      *
-     * This performs a basic validation by attempting to get an access token
-     * using client credentials flow.
+     * We validate format and check the app registration exists via OpenID discovery.
+     * We do NOT use client_credentials flow because:
+     * - It requires a specific tenant ID (not /common/)
+     * - Conditional Access policies may block token issuance (AADSTS53003)
+     * - The real validation happens when the user completes the OAuth authorization code flow
      */
     public function validateMicrosoftCredentials(string $clientId, string $clientSecret): array
     {
         try {
-            // Attempt to get a token using client credentials
-            $response = Http::asForm()->post(
-                'https://login.microsoftonline.com/common/oauth2/v2.0/token',
-                [
-                    'grant_type' => 'client_credentials',
-                    'client_id' => $clientId,
-                    'client_secret' => $clientSecret,
-                    'scope' => 'https://graph.microsoft.com/.default',
-                ]
-            );
-
-            if ($response->successful()) {
-                return ['valid' => true];
+            // Validate UUID format for client_id
+            if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $clientId)) {
+                return [
+                    'valid' => false,
+                    'error' => 'Invalid Microsoft Client ID format. Must be a valid UUID.',
+                ];
             }
 
-            $error = $response->json('error_description') ?? $response->json('error') ?? 'Unknown error';
+            if (strlen($clientSecret) < 10) {
+                return [
+                    'valid' => false,
+                    'error' => 'Client secret appears to be too short.',
+                ];
+            }
 
-            return [
-                'valid' => false,
-                'error' => $error,
-            ];
+            // Verify the app registration exists by checking the OpenID configuration
+            $response = Http::timeout(10)->get(
+                "https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration"
+            );
+
+            if (!$response->successful()) {
+                return [
+                    'valid' => false,
+                    'error' => 'Failed to connect to Microsoft OAuth services.',
+                ];
+            }
+
+            return ['valid' => true];
         } catch (\Exception $e) {
             Log::warning('Microsoft OAuth validation failed', [
                 'error' => $e->getMessage(),

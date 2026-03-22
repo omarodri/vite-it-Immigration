@@ -48,6 +48,7 @@ class StoreCaseRequest extends FormRequest
             'companion_ids.*' => ['integer', 'exists:companions,id'],
             'case_tasks' => ['sometimes', 'array', 'max:50'],
             'case_tasks.*.label' => ['required_with:case_tasks', 'string', 'max:150'],
+            'case_tasks.*.is_completed' => ['sometimes', 'boolean'],
             'case_tasks.*.is_custom' => ['sometimes', 'boolean'],
             'case_tasks.*.sort_order' => ['sometimes', 'integer', 'min:0', 'max:255'],
             'service_type' => ['sometimes', Rule::in([

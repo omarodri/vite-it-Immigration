@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\OauthToken;
+use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -41,12 +42,81 @@ class OAuthTokenService
     }
 
     /**
+     * Get a valid access token for the tenant and provider.
+     * This is used for shared cloud storage (OneDrive/Google Drive).
+     */
+    public function getValidTenantToken(int $tenantId, string $provider): ?string
+    {
+        $token = OauthToken::where('tenant_id', $tenantId)
+            ->where('provider', $provider)
+            ->first();
+
+        if (!$token) {
+            return null;
+        }
+
+        if ($token->isExpiringSoon()) {
+            $token = $this->refreshToken($token);
+            if (!$token) {
+                return null;
+            }
+        }
+
+        return $token->access_token;
+    }
+
+    /**
+     * Store or update OAuth tokens at tenant level.
+     * The user_id records WHO connected it (for audit), but the token is shared.
+     */
+    public function storeTenantToken(int $tenantId, int $connectedByUserId, string $provider, array $tokenData): OauthToken
+    {
+        return OauthToken::updateOrCreate(
+            [
+                'tenant_id' => $tenantId,
+                'provider' => $provider,
+            ],
+            [
+                'user_id' => $connectedByUserId,
+                'access_token' => $tokenData['access_token'],
+                'refresh_token' => $tokenData['refresh_token'] ?? null,
+                'expires_at' => now()->addSeconds((int) ($tokenData['expires_in'] ?? 3600)),
+                'scopes' => $tokenData['scopes'] ?? null,
+            ]
+        );
+    }
+
+    /**
+     * Revoke tenant-level OAuth token for a provider.
+     */
+    public function revokeTenantToken(int $tenantId, string $provider): bool
+    {
+        $deleted = OauthToken::where('tenant_id', $tenantId)
+            ->where('provider', $provider)
+            ->delete();
+
+        return $deleted > 0;
+    }
+
+    /**
+     * Check if a tenant has a valid token for a provider.
+     */
+    public function hasTenantToken(int $tenantId, string $provider): bool
+    {
+        $token = OauthToken::where('tenant_id', $tenantId)
+            ->where('provider', $provider)
+            ->first();
+
+        return $token !== null && !$token->isExpired();
+    }
+
+    /**
      * Refresh an OAuth token using the provider's token endpoint.
      * Uses a cache lock to prevent race conditions.
      */
     public function refreshToken(OauthToken $token): ?OauthToken
     {
-        $lockKey = "oauth_refresh_{$token->user_id}_{$token->provider}";
+        $lockKey = "oauth_refresh_{$token->tenant_id}_{$token->provider}";
 
         $lock = Cache::lock($lockKey, 10);
 
@@ -65,7 +135,7 @@ class OAuthTokenService
                 return null;
             }
 
-            $tenant = $token->user->tenant;
+            $tenant = Tenant::find($token->tenant_id);
             $credentials = $this->getCredentialsForProvider($token->provider, $tenant);
 
             if (!$credentials) {

@@ -45,9 +45,10 @@
                     </span>
                 </div>
                 <!-- Assignee -->
-                <span v-if="task.assigned_to" class="truncate max-w-[80px] text-gray-400">
-                    {{ task.assigned_to.name.split(' ')[0] }}
-                </span>
+                <div v-if="task.assigned_to" class="flex items-center gap-1">
+                    <UserAvatar :name="task.assigned_to.name" :avatar-url="task.assigned_to.avatar_url" size="xs" />
+                    <span class="truncate max-w-[60px] text-gray-400">{{ task.assigned_to.name.split(' ')[0] }}</span>
+                </div>
             </div>
             <div class="flex items-center justify-between text-xs pt-1">
                 <div class="flex items-center gap-3">
@@ -70,6 +71,7 @@ import IconTag from '@/components/icon/icon-tag.vue';
 import IconCopy from '@/components/icon/icon-copy.vue';
 import IconCircleCheck from '@/components/icon/icon-circle-check.vue';
 import type { ScrumTask } from '@/types/scrum';
+import UserAvatar from '@/components/UserAvatar.vue';
 
 const props = defineProps<{ task: ScrumTask }>();
 defineEmits<{ edit: [task: ScrumTask]; delete: [task: ScrumTask]; clone: [task: ScrumTask]; toggle: [task: ScrumTask] }>();

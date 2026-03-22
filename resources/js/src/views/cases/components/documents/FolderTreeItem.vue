@@ -30,6 +30,22 @@
                 <icon-folder-plus v-if="currentFolderId === folder.id" class="w-4 h-4 shrink-0 text-primary" />
                 <icon-folder v-else class="w-4 h-4 shrink-0" />
                 <span class="truncate">{{ folder.name }}</span>
+                <!-- Sync status icon (cloud storage only) -->
+                <icon-circle-check
+                    v-if="showSyncStatus && folder.sync_status === 'synced'"
+                    class="w-3.5 h-3.5 shrink-0 text-success"
+                    :title="$t('documents.sync_success')"
+                />
+                <icon-clock
+                    v-else-if="showSyncStatus && folder.sync_status === 'pending'"
+                    class="w-3.5 h-3.5 shrink-0 text-warning"
+                    :title="$t('documents.sync_pending', { provider: '' })"
+                />
+                <icon-x-circle
+                    v-else-if="showSyncStatus && folder.sync_status === 'failed'"
+                    class="w-3.5 h-3.5 shrink-0 text-danger"
+                    :title="$t('documents.sync_failed')"
+                />
                 <span
                     v-if="folder.documents_count > 0"
                     class="ml-auto text-xs text-gray-400 shrink-0"
@@ -83,6 +99,7 @@
                 :folder="child"
                 :current-folder-id="currentFolderId"
                 :depth="depth + 1"
+                :show-sync-status="showSyncStatus"
                 @select-folder="(id: number) => $emit('select-folder', id)"
                 @rename-folder="(f: DocumentFolder) => $emit('rename-folder', f)"
                 @delete-folder="(f: DocumentFolder) => $emit('delete-folder', f)"
@@ -102,6 +119,9 @@ import IconCaretDown from '@/components/icon/icon-caret-down.vue';
 import IconHorizontalDots from '@/components/icon/icon-horizontal-dots.vue';
 import IconPencil from '@/components/icon/icon-pencil.vue';
 import IconTrashLines from '@/components/icon/icon-trash-lines.vue';
+import IconCircleCheck from '@/components/icon/icon-circle-check.vue';
+import IconClock from '@/components/icon/icon-clock.vue';
+import IconXCircle from '@/components/icon/icon-x-circle.vue';
 
 const { t } = useI18n();
 
@@ -109,6 +129,7 @@ const props = defineProps<{
     folder: DocumentFolder;
     currentFolderId: number | null;
     depth: number;
+    showSyncStatus?: boolean;
 }>();
 
 defineEmits<{

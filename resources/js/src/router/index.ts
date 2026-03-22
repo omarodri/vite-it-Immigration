@@ -537,6 +537,18 @@ const routes: RouteRecordRaw[] = [
 
     // Tenant Settings
     {
+        path: '/admin/tenant/settings',
+        name: 'admin-tenant-settings',
+        component: () => import('../views/admin/tenant/TenantSettings.vue'),
+        meta: { permission: 'settings.update' },
+    },
+    {
+        path: '/admin/tenant/branding',
+        name: 'admin-tenant-branding',
+        component: () => import('../views/admin/tenant/TenantBranding.vue'),
+        meta: { permission: 'settings.update' },
+    },
+    {
         path: '/admin/tenant/oauth',
         name: 'admin-tenant-oauth',
         component: () => import('../views/admin/tenant/OAuthSettings.vue'),

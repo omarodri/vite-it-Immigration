@@ -48,7 +48,7 @@
         </div>
 
         <!-- BEGIN APP SETTING LAUNCHER -->
-        <Setting />
+        <Setting v-if="tenantStore.showCustomizer" />
         <!-- END APP SETTING LAUNCHER -->
 
         <div class="main-container text-black dark:text-white-dark min-h-screen" :class="[store.navbar]">
@@ -83,7 +83,9 @@
     import appSetting from '@/app-setting';
 
     import { useAppStore } from '@/stores/index';
+    import { useTenantStore } from '@/stores/tenant';
     const store = useAppStore();
+    const tenantStore = useTenantStore();
     const showTopButton = ref(false);
     onMounted(() => {
         window.onscroll = () => {

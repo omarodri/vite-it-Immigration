@@ -8,6 +8,7 @@ use App\Http\Requests\Document\UpdateDocumentRequest;
 use App\Http\Resources\DocumentResource;
 use App\Models\Document;
 use App\Models\ImmigrationCase;
+use App\Services\Document\CloudDocumentSyncService;
 use App\Services\Document\DocumentAuditService;
 use App\Services\Document\DocumentService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -22,6 +23,7 @@ class DocumentController extends Controller
     public function __construct(
         private readonly DocumentService $documentService,
         private readonly DocumentAuditService $auditService,
+        private readonly CloudDocumentSyncService $cloudDocumentSyncService,
     ) {}
 
     /**
@@ -60,11 +62,23 @@ class DocumentController extends Controller
 
         $this->validateCaseTenant($case);
 
-        $document = $this->documentService->uploadDocument(
-            $case,
-            $request->file('file'),
-            $request->only(['folder_id', 'category'])
-        );
+        try {
+            $document = $this->documentService->uploadDocument(
+                $case,
+                $request->file('file'),
+                $request->only(['folder_id', 'category'])
+            );
+        } catch (\App\Exceptions\StorageQuotaExceededException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => ['file' => [$e->getMessage()]],
+            ], 413);
+        } catch (\RuntimeException $e) {
+            // Cloud provider errors (no OAuth token, connection failed, etc.)
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
 
         return (new DocumentResource($document))
             ->additional(['message' => 'Document uploaded successfully.'])
@@ -97,7 +111,11 @@ class DocumentController extends Controller
 
         $this->auditService->logAccess($document, 'downloaded');
 
-        return $this->documentService->downloadDocument($document);
+        try {
+            return $this->documentService->downloadDocument($document);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
     }
 
     /**
@@ -111,7 +129,11 @@ class DocumentController extends Controller
 
         $this->auditService->logAccess($document, 'previewed');
 
-        return $this->documentService->previewDocument($document);
+        try {
+            return $this->documentService->previewDocument($document);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
     }
 
     /**
@@ -147,7 +169,16 @@ class DocumentController extends Controller
             ],
         ]);
 
-        $document = $this->documentService->replaceDocument($document, $request->file('file'));
+        try {
+            $document = $this->documentService->replaceDocument($document, $request->file('file'));
+        } catch (\App\Exceptions\StorageQuotaExceededException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => ['file' => [$e->getMessage()]],
+            ], 413);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return (new DocumentResource($document))
             ->additional(['message' => 'Document replaced successfully.']);
@@ -184,6 +215,44 @@ class DocumentController extends Controller
         $this->documentService->deleteDocument($document);
 
         return response()->json(['message' => 'Document deleted successfully.']);
+    }
+
+    /**
+     * Pull folders and documents from cloud storage that were created outside the app.
+     */
+    public function syncFromCloud(ImmigrationCase $case): JsonResponse
+    {
+        $this->authorize('viewAny', [Document::class, $case]);
+
+        $this->validateCaseTenant($case);
+
+        $result = $this->cloudDocumentSyncService->syncFromCloud($case);
+
+        $parts = [];
+        if ($result['folders_added'] > 0) {
+            $parts[] = "{$result['folders_added']} folder(s) added";
+        }
+        if ($result['documents_added'] > 0) {
+            $parts[] = "{$result['documents_added']} document(s) added";
+        }
+        if ($result['folders_removed'] > 0) {
+            $parts[] = "{$result['folders_removed']} folder(s) removed";
+        }
+        if ($result['documents_removed'] > 0) {
+            $parts[] = "{$result['documents_removed']} document(s) removed";
+        }
+
+        $message = !empty($parts)
+            ? 'Synced: ' . implode(', ', $parts) . '.'
+            : 'Everything is up to date.';
+
+        return response()->json([
+            'message' => $message,
+            'folders_added' => $result['folders_added'],
+            'folders_removed' => $result['folders_removed'],
+            'documents_added' => $result['documents_added'],
+            'documents_removed' => $result['documents_removed'],
+        ]);
     }
 
     /**

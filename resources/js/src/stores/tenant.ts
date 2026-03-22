@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
+import api from '@/services/api';
 
 interface TenantBranding {
     logo_url: string | null;
@@ -26,6 +26,17 @@ interface TenantIntegrations {
     google_configured: boolean;
 }
 
+interface TenantTheme {
+    mode: string;
+    menu: string;
+    layout: string;
+    rtl_class: string;
+    animation: string;
+    navbar: string;
+    semidark: boolean;
+    show_customizer: boolean;
+}
+
 interface Tenant {
     id: number;
     name: string;
@@ -35,6 +46,7 @@ interface Tenant {
     company: TenantCompany;
     preferences: TenantPreferences;
     integrations: TenantIntegrations;
+    theme: TenantTheme | null;
     created_at: string;
     updated_at: string;
 }
@@ -75,9 +87,19 @@ export const useTenantStore = defineStore('tenant', {
             language: 'es',
         },
 
+        theme: (state): TenantTheme | null => state.tenant?.theme ?? null,
+
+        showCustomizer: (state): boolean => state.tenant?.theme?.show_customizer !== false,
+
         hasMicrosoftIntegration: (state): boolean => state.tenant?.integrations?.microsoft_configured ?? false,
 
         hasGoogleIntegration: (state): boolean => state.tenant?.integrations?.google_configured ?? false,
+
+        storageType: (state): string => (state.tenant as any)?.storage_type ?? 'local',
+
+        isCloudStorage(): boolean {
+            return this.storageType !== 'local';
+        },
     },
 
     actions: {
@@ -86,7 +108,7 @@ export const useTenantStore = defineStore('tenant', {
             this.error = null;
 
             try {
-                const response = await axios.get('/api/tenant');
+                const response = await api.get('/tenant');
                 this.tenant = response.data.data;
                 this.applyBranding();
             } catch (error: any) {
@@ -102,7 +124,7 @@ export const useTenantStore = defineStore('tenant', {
             this.error = null;
 
             try {
-                const response = await axios.put('/api/tenant/settings', settings);
+                const response = await api.put('/tenant/settings', settings);
                 this.tenant = response.data.data;
                 return { success: true };
             } catch (error: any) {
@@ -118,7 +140,7 @@ export const useTenantStore = defineStore('tenant', {
             this.error = null;
 
             try {
-                const response = await axios.put('/api/tenant/branding', branding);
+                const response = await api.put('/tenant/branding', branding);
                 this.tenant = response.data.data;
                 this.applyBranding();
                 return { success: true };
@@ -130,18 +152,76 @@ export const useTenantStore = defineStore('tenant', {
             }
         },
 
+        async uploadLogo(file: File) {
+            try {
+                const formData = new FormData();
+                formData.append('logo', file);
+                const response = await api.post('/tenant/branding/logo', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+                this.tenant = response.data.data;
+                return { success: true };
+            } catch (error: any) {
+                return { success: false, error: error.response?.data?.message ?? 'Failed to upload logo' };
+            }
+        },
+
+        async deleteLogo() {
+            try {
+                const response = await api.delete('/tenant/branding/logo');
+                this.tenant = response.data.data;
+                return { success: true };
+            } catch (error: any) {
+                return { success: false, error: error.response?.data?.message ?? 'Failed to delete logo' };
+            }
+        },
+
+        async updateTheme(themeData: Record<string, any>) {
+            try {
+                const response = await api.put('/tenant/theme', themeData);
+                this.tenant = response.data.data;
+                return { success: true };
+            } catch (error: any) {
+                return { success: false, error: error.response?.data?.message ?? 'Failed to update theme' };
+            }
+        },
+
+        async updateStorageType(storageType: string) {
+            try {
+                const response = await api.put('/tenant/storage-type', { storage_type: storageType });
+                this.tenant = response.data.data;
+                return { success: true };
+            } catch (error: any) {
+                return { success: false, error: error.response?.data?.message ?? 'Failed to update storage type' };
+            }
+        },
+
         applyBranding() {
             if (!this.tenant) return;
 
             const root = document.documentElement;
             const branding = this.tenant.branding;
 
-            // Apply custom CSS variables for theming
+            // Convert hex color to space-separated RGB channels for Tailwind compatibility
+            // e.g., "#4361ee" -> "67 97 238"
+            const hexToRgbChannels = (hex: string): string | null => {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                if (!result) return null;
+                return `${parseInt(result[1], 16)} ${parseInt(result[2], 16)} ${parseInt(result[3], 16)}`;
+            };
+
+            // Apply custom CSS variables for theming (RGB channels for Tailwind opacity support)
             if (branding.primary_color) {
-                root.style.setProperty('--tenant-primary', branding.primary_color);
+                const rgb = hexToRgbChannels(branding.primary_color);
+                if (rgb) {
+                    root.style.setProperty('--tenant-primary-rgb', rgb);
+                }
             }
             if (branding.secondary_color) {
-                root.style.setProperty('--tenant-secondary', branding.secondary_color);
+                const rgb = hexToRgbChannels(branding.secondary_color);
+                if (rgb) {
+                    root.style.setProperty('--tenant-secondary-rgb', rgb);
+                }
             }
         },
 
@@ -151,8 +231,8 @@ export const useTenantStore = defineStore('tenant', {
 
             // Reset CSS variables
             const root = document.documentElement;
-            root.style.removeProperty('--tenant-primary');
-            root.style.removeProperty('--tenant-secondary');
+            root.style.removeProperty('--tenant-primary-rgb');
+            root.style.removeProperty('--tenant-secondary-rgb');
         },
     },
 });

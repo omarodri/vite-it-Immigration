@@ -17,6 +17,25 @@
 
         <!-- Right: Actions -->
         <div class="flex items-center gap-2">
+            <!-- Cloud provider badge -->
+            <span
+                v-if="isCloudStorage"
+                class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-info/10 text-info"
+            >
+                <icon-cloud-download class="w-3.5 h-3.5" />
+                {{ providerLabel }}
+            </span>
+            <!-- Sync button -->
+            <button
+                v-if="isCloudStorage"
+                type="button"
+                class="btn btn-outline-secondary btn-sm gap-1"
+                :disabled="isSyncing"
+                @click="$emit('sync')"
+            >
+                <icon-refresh class="w-4 h-4" :class="{ 'animate-spin': isSyncing }" />
+                {{ $t('documents.sync_button') }}
+            </button>
             <button
                 type="button"
                 class="btn btn-primary btn-sm gap-1"
@@ -53,41 +72,46 @@
                     <icon-list-check class="w-4 h-4" />
                 </button>
             </div>
-            <button
+            <!-- <button
                 type="button"
                 class="btn btn-outline-secondary btn-sm p-1.5"
                 @click="$emit('refresh')"
             >
                 <icon-refresh class="w-4 h-4" />
-            </button>
-            <button
-                type="button"
-                class="btn btn-outline-secondary btn-sm p-1.5"
-                :title="$t('documents.cloud_settings')"
-                @click="$emit('settings')"
-            >
-                <icon-settings class="w-4 h-4" />
-            </button>
+            </button> -->
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { DocumentFolder } from '@/types/document';
+import { useTenantStore } from '@/stores/tenant';
 
 import IconPlus from '@/components/icon/icon-plus.vue';
 import IconFolderPlus from '@/components/icon/icon-folder-plus.vue';
 import IconLayoutGrid from '@/components/icon/icon-layout-grid.vue';
 import IconListCheck from '@/components/icon/icon-list-check.vue';
 import IconRefresh from '@/components/icon/icon-refresh.vue';
-import IconSettings from '@/components/icon/icon-settings.vue';
+import IconCloudDownload from '@/components/icon/icon-cloud-download.vue';
 
 const { t } = useI18n();
+const tenantStore = useTenantStore();
+
+const isCloudStorage = computed(() => tenantStore.isCloudStorage);
+
+const providerLabel = computed(() => {
+    const type = tenantStore.storageType;
+    if (type === 'onedrive') return t('documents.provider_onedrive');
+    if (type === 'google_drive') return t('documents.provider_google_drive');
+    return t('documents.provider_local');
+});
 
 defineProps<{
     currentFolder: DocumentFolder | null;
     viewMode: 'grid' | 'list';
+    isSyncing?: boolean;
 }>();
 
 defineEmits<{
@@ -96,6 +120,6 @@ defineEmits<{
     (e: 'toggle-view', mode: 'grid' | 'list'): void;
     (e: 'refresh'): void;
     (e: 'navigate-root'): void;
-    (e: 'settings'): void;
+    (e: 'sync'): void;
 }>();
 </script>

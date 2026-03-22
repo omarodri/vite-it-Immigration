@@ -76,12 +76,7 @@
                     <div class="mb-5">
                         <div class="flex flex-col justify-center items-center">
                             <!-- Avatar -->
-                            <div v-if="profileStore.avatarUrl" class="w-24 h-24 rounded-full overflow-hidden mb-5" role="img" :aria-label="`${profileStore.fullName}'s avatar`">
-                                <img :src="profileStore.avatarUrl" :alt="`${profileStore.fullName}'s profile photo`" class="w-full h-full object-cover" />
-                            </div>
-                            <div v-else class="w-24 h-24 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-white mb-5" role="img" :aria-label="`${profileStore.fullName}'s avatar`">
-                                <span class="text-3xl font-bold" aria-hidden="true">{{ profileStore.initials }}</span>
-                            </div>
+                            <UserAvatar :name="profileStore.fullName" :avatar-url="profileStore.avatarUrl" size="lg" class="mb-5" />
                             <p class="font-semibold text-primary text-xl">{{ profileStore.fullName }}</p>
                             <p class="text-gray-500 text-sm">{{ profileStore.email }}</p>
                         </div>
@@ -337,6 +332,7 @@ import IconInfoCircle from '@/components/icon/icon-info-circle.vue';
 import IconSettings from '@/components/icon/icon-settings.vue';
 import IconLockDots from '@/components/icon/icon-lock-dots.vue';
 import IconCircleCheck from '@/components/icon/icon-circle-check.vue';
+import UserAvatar from '@/components/UserAvatar.vue';
 
 useMeta({ title: 'My Profile' });
 

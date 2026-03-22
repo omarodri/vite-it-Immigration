@@ -40,6 +40,7 @@ class UserService
     {
         $staff = User::activeConsultors()
             ->where('tenant_id', Auth::user()->tenant_id)
+            ->with('profile:id,user_id,avatar_url')
             ->select('id', 'name', 'email')
             ->orderBy('name')
             ->get()
@@ -54,6 +55,7 @@ class UserService
             if (!$alreadyInList) {
                 $phantomUser = User::where('id', $includeUserId)
                     ->where('tenant_id', Auth::user()->tenant_id)
+                    ->with('profile:id,user_id,avatar_url')
                     ->select('id', 'name', 'email')
                     ->first();
 

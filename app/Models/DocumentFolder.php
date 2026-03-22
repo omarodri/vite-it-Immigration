@@ -20,11 +20,16 @@ class DocumentFolder extends Model
         'sort_order',
         'is_default',
         'category',
+        'external_id',
+        'external_url',
+        'sync_status',
+        'synced_at',
     ];
 
     protected $casts = [
         'sort_order' => 'integer',
         'is_default' => 'boolean',
+        'synced_at' => 'datetime',
     ];
 
     /**

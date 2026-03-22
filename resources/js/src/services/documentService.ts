@@ -6,6 +6,14 @@
 import api from './api';
 import type { DocumentFolder, Document } from '@/types/document';
 
+interface CloudSyncResult {
+    message: string;
+    folders_added: number;
+    folders_removed: number;
+    documents_added: number;
+    documents_removed: number;
+}
+
 const documentService = {
     // ===============================
     // FOLDERS
@@ -93,6 +101,16 @@ const documentService = {
     },
 
     /**
+     * Fetch document preview content as a Blob (for inline display in iframe/img)
+     */
+    async getPreviewBlob(caseId: number, documentId: number): Promise<Blob> {
+        const response = await api.get(`/cases/${caseId}/documents/${documentId}/preview`, {
+            responseType: 'blob',
+        });
+        return response.data;
+    },
+
+    /**
      * Get a single document
      */
     async getDocument(caseId: number, documentId: number): Promise<Document> {
@@ -160,6 +178,33 @@ const documentService = {
      */
     async deleteDocument(caseId: number, documentId: number): Promise<void> {
         await api.delete(`/cases/${caseId}/documents/${documentId}`);
+    },
+    // ===============================
+    // CLOUD SYNC
+    // ===============================
+
+    /**
+     * Trigger folder sync with cloud provider
+     */
+    async syncFolders(caseId: number): Promise<{ message: string }> {
+        const response = await api.post<{ message: string }>(`/cases/${caseId}/folders/sync`);
+        return response.data;
+    },
+
+    /**
+     * Pull folders and documents from cloud storage, prune deleted items
+     */
+    async syncFromCloud(caseId: number): Promise<CloudSyncResult> {
+        const response = await api.post<CloudSyncResult>(`/cases/${caseId}/documents/sync-from-cloud`);
+        return response.data;
+    },
+
+    /**
+     * Get sync status for all folders of a case
+     */
+    async getSyncStatus(caseId: number): Promise<{ sync_status: string; folders: DocumentFolder[] }> {
+        const response = await api.get<{ data: { sync_status: string; folders: DocumentFolder[] } }>(`/cases/${caseId}/folders/sync-status`);
+        return response.data.data;
     },
 };
 

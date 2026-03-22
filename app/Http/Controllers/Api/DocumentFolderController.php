@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\DocumentFolderResource;
+use App\Jobs\SyncCaseFolderStructure;
 use App\Models\DocumentFolder;
 use App\Models\ImmigrationCase;
+use App\Services\Document\CaseFolderSyncService;
 use App\Services\Document\FolderService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -17,7 +19,8 @@ class DocumentFolderController extends Controller
     use AuthorizesRequests;
 
     public function __construct(
-        private readonly FolderService $folderService
+        private readonly FolderService $folderService,
+        private readonly CaseFolderSyncService $caseFolderSyncService,
     ) {}
 
     /**
@@ -93,6 +96,41 @@ class DocumentFolderController extends Controller
         }
 
         return response()->json(['message' => 'Folder deleted successfully.']);
+    }
+
+    /**
+     * Dispatch a job to sync the folder structure of a case to the cloud provider.
+     *
+     * Returns 202 Accepted since the sync happens asynchronously.
+     */
+    public function sync(ImmigrationCase $case): JsonResponse
+    {
+        $this->authorize('viewAny', [DocumentFolder::class, $case]);
+
+        $this->validateCaseTenant($case);
+
+        $case->update(['folder_sync_status' => 'pending']);
+
+        SyncCaseFolderStructure::dispatch($case->id);
+
+        return response()->json([
+            'message' => 'Folder sync has been queued.',
+            'folder_sync_status' => 'pending',
+        ], 202);
+    }
+
+    /**
+     * Get the current sync status for a case and all its folders.
+     */
+    public function syncStatus(ImmigrationCase $case): JsonResponse
+    {
+        $this->authorize('viewAny', [DocumentFolder::class, $case]);
+
+        $this->validateCaseTenant($case);
+
+        $status = $this->caseFolderSyncService->getSyncStatus($case);
+
+        return response()->json(['data' => $status]);
     }
 
     /**

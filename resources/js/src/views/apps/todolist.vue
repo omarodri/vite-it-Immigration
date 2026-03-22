@@ -376,12 +376,7 @@
                                             <td class="w-1">
                                                 <div class="flex items-center justify-between w-max">
                                                     <div class="ltr:mr-2.5 rtl:ml-2.5 flex-shrink-0">
-                                                        <div
-                                                            v-if="task.assigned_to"
-                                                            class="grid place-content-center h-8 w-8 rounded-full bg-primary text-white text-sm font-semibold"
-                                                        >
-                                                            {{ getInitials(task.assigned_to.name) }}
-                                                        </div>
+                                                        <UserAvatar v-if="task.assigned_to" :name="task.assigned_to.name" :avatar-url="task.assigned_to.avatar_url" size="sm" />
                                                         <div
                                                             v-else
                                                             class="border border-gray-300 dark:border-gray-800 rounded-full grid place-content-center h-8 w-8"
@@ -691,6 +686,7 @@
     import IconCopy from '@/components/icon/icon-copy.vue';
     import IconRestore from '@/components/icon/icon-restore.vue';
     import IconX from '@/components/icon/icon-x.vue';
+    import UserAvatar from '@/components/UserAvatar.vue';
 
     useMeta({ title: 'Todolist' });
     const { t } = useI18n();

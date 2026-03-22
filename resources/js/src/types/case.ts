@@ -158,6 +158,7 @@ export interface ImmigrationCase {
         id: number;
         name: string;
         email: string;
+        avatar_url: string | null;
     };
     companions?: Array<{
         id: number;

@@ -8,7 +8,7 @@ export interface Todo {
     due_date?: string | null;
     created_at: string;
     updated_at?: string;
-    assigned_to?: { id: number; name: string } | null;
+    assigned_to?: { id: number; name: string; avatar_url: string | null } | null;
     case?: { id: number; case_number: string; client_name?: string } | null;
 }
 

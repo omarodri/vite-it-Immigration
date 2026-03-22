@@ -3,7 +3,7 @@
         <!-- Custom logo if available -->
         <img
             v-if="logoUrl"
-            class="w-8 ml-[5px] flex-none"
+            class="w-40 ml-[5px] flex-none"
             :src="logoUrl"
             :alt="companyName"
         />
@@ -14,18 +14,12 @@
             src="/assets/images/logo.svg"
             alt="VITE-IT"
         />
-        <div class="flex flex-col">
+        <div class="flex flex-col" v-if="!logoUrl">
             <span
                 class="text-2xl ltr:ml-1.5 rtl:mr-1.5 font-semibold align-middle lg:inline dark:text-white-light truncate max-w-[140px]"
                 :style="{ color: showBrandColor ? primaryColor : undefined }"
             >
                 {{ displayName }}
-            </span>
-            <span
-                v-if="showSubtitle"
-                class="text-xs ltr:ml-1.5 rtl:mr-1.5 align-middle lg:inline text-gray-500 dark:text-gray-400"
-            >
-                Immigration
             </span>
         </div>
     </router-link>

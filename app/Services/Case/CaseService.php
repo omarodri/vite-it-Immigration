@@ -3,12 +3,14 @@
 namespace App\Services\Case;
 
 use App\Helpers\CaseCodeHelper;
+use App\Jobs\SyncCaseFolderStructure;
 use App\Models\CaseType;
 use App\Models\Client;
 use App\Models\ImmigrationCase;
 use App\Models\User;
 use App\Repositories\Contracts\CaseRepositoryInterface;
 use App\Repositories\Contracts\CaseTypeRepositoryInterface;
+use App\Services\Document\FolderService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +22,8 @@ class CaseService
     public function __construct(
         private CaseRepositoryInterface $caseRepository,
         private CaseTypeRepositoryInterface $caseTypeRepository,
-        private CaseTaskService $caseTaskService
+        private CaseTaskService $caseTaskService,
+        private FolderService $folderService
     ) {}
 
     /**
@@ -36,7 +39,7 @@ class CaseService
      */
     public function getCase(ImmigrationCase $case): ImmigrationCase
     {
-        return $case->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates', 'tasks', 'invoices']);
+        return $case->load(['client', 'caseType', 'assignedTo.profile', 'companions', 'importantDates', 'tasks', 'invoices']);
     }
 
     /**
@@ -44,7 +47,7 @@ class CaseService
      */
     public function createCase(array $data): ImmigrationCase
     {
-        return DB::transaction(function () use ($data) {
+        $case = DB::transaction(function () use ($data) {
             // Extract companion_ids before creating the case
             $companionIds = $data['companion_ids'] ?? [];
             unset($data['companion_ids']);
@@ -91,6 +94,9 @@ class CaseService
                 $this->caseTaskService->syncTasks($case, $caseTasks);
             }
 
+            // Create default folder structure for the case
+            $this->folderService->createDefaultStructure($case);
+
             activity()
                 ->causedBy(Auth::user())
                 ->performedOn($case)
@@ -102,8 +108,19 @@ class CaseService
                 ])
                 ->log('Created case: ' . $case->case_number);
 
-            return $case->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates', 'tasks']);
+            return $case->load(['client', 'caseType', 'assignedTo.profile', 'companions', 'importantDates', 'tasks']);
         });
+
+        // Dispatch cloud folder sync after the transaction has committed.
+        // For local storage, folders are already created synchronously in createDefaultStructure().
+        $tenant = $case->tenant ?? \App\Models\Tenant::find($case->tenant_id);
+        $storageType = $tenant->storage_type ?? 'local';
+
+        if (in_array($storageType, ['onedrive', 'google_drive'], true)) {
+            SyncCaseFolderStructure::dispatch($case->id)->afterCommit();
+        }
+
+        return $case;
     }
 
     /**
@@ -159,7 +176,7 @@ class CaseService
                 ], fn ($v) => $v !== null))
                 ->log('Updated case: ' . $updatedCase->case_number);
 
-            return $updatedCase->load(['client', 'caseType', 'assignedTo', 'companions', 'importantDates', 'tasks']);
+            return $updatedCase->load(['client', 'caseType', 'assignedTo.profile', 'companions', 'importantDates', 'tasks']);
         });
     }
 

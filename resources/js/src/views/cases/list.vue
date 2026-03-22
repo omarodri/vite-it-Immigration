@@ -336,7 +336,10 @@
 
                         <!-- Assigned Column -->
                         <template #assigned_to="data">
-                            <span v-if="data.value.assigned_user">{{ data.value.assigned_user.name }}</span>
+                            <div v-if="data.value.assigned_user" class="flex items-center gap-2">
+                                <UserAvatar :name="data.value.assigned_user.name" :avatar-url="data.value.assigned_user.avatar_url" size="xs" />
+                                <span>{{ data.value.assigned_user.name }}</span>
+                            </div>
                             <span v-else class="text-gray-400 italic">{{ $t('cases.unassigned') }}</span>
                         </template>
 
@@ -516,6 +519,7 @@ import IconEye from '@/components/icon/icon-eye.vue';
 import IconPencil from '@/components/icon/icon-pencil.vue';
 import IconTrashLines from '@/components/icon/icon-trash-lines.vue';
 import IconX from '@/components/icon/icon-x.vue';
+import UserAvatar from '@/components/UserAvatar.vue';
 
 useMeta({ title: 'Case Management' });
 

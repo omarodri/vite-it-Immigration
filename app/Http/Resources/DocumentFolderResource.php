@@ -22,6 +22,10 @@ class DocumentFolderResource extends JsonResource
             'is_default' => $this->is_default,
             'category' => $this->category,
 
+            'external_id' => $this->external_id,
+            'sync_status' => $this->sync_status,
+            'synced_at' => $this->synced_at?->toISOString(),
+
             'children' => DocumentFolderResource::collection($this->whenLoaded('children')),
             'documents_count' => $this->whenCounted('documents'),
 

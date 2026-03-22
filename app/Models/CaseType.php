@@ -2,13 +2,35 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 
 class CaseType extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('tenant_or_global', function (Builder $builder) {
+            $user = Auth::user();
+            if ($user && !$user->hasRole('super-admin')) {
+                $builder->where(function ($q) use ($user) {
+                    $q->whereNull('tenant_id')
+                      ->orWhere('tenant_id', $user->tenant_id);
+                });
+            }
+        });
+
+        static::creating(function ($model) {
+            if (!$model->tenant_id && Auth::check()) {
+                $model->tenant_id = Auth::user()->tenant_id;
+            }
+        });
+    }
 
     protected $fillable = [
         'tenant_id',
@@ -40,6 +62,14 @@ class CaseType extends Model
         self::CATEGORY_REFUGEE    => 'Refugiado / Asilo',
         self::CATEGORY_CITIZENSHIP => 'Ciudadanía',
     ];
+
+    /**
+     * Get the tenant that owns this case type.
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
+    }
 
     /**
      * Get the cases for this case type.

@@ -20,7 +20,7 @@ class TodoController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Todo::with(['assignedTo', 'immigrationCase.client'])
+        $query = Todo::with(['assignedTo.profile', 'immigrationCase.client'])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when(! $request->filled('status'), fn ($q) => $q->where('status', '!=', 'trash'))
             ->when($request->filled('tag'), fn ($q) => $q->where('tag', $request->tag))
@@ -43,7 +43,7 @@ class TodoController extends Controller
             'tenant_id' => auth()->user()->tenant_id,
         ]));
 
-        $todo->load(['assignedTo', 'immigrationCase.client']);
+        $todo->load(['assignedTo.profile', 'immigrationCase.client']);
 
         return (new TodoResource($todo))
             ->response()
@@ -55,7 +55,7 @@ class TodoController extends Controller
      */
     public function show(Todo $todo): TodoResource
     {
-        $todo->load(['assignedTo', 'immigrationCase.client']);
+        $todo->load(['assignedTo.profile', 'immigrationCase.client']);
 
         return new TodoResource($todo);
     }
@@ -66,7 +66,7 @@ class TodoController extends Controller
     public function update(UpdateTodoRequest $request, Todo $todo): TodoResource
     {
         $todo->update($request->validated());
-        $todo->load(['assignedTo', 'immigrationCase.client']);
+        $todo->load(['assignedTo.profile', 'immigrationCase.client']);
 
         return new TodoResource($todo);
     }
@@ -87,7 +87,7 @@ class TodoController extends Controller
     public function updateStatus(UpdateTodoStatusRequest $request, Todo $todo): TodoResource
     {
         $todo->update(['status' => $request->status]);
-        $todo->load(['assignedTo', 'immigrationCase.client']);
+        $todo->load(['assignedTo.profile', 'immigrationCase.client']);
 
         return new TodoResource($todo);
     }

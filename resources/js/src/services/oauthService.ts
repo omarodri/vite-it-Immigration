@@ -11,8 +11,8 @@ const oauthService = {
      * Get OAuth connection status for all providers
      */
     async getStatus(): Promise<OAuthStatus> {
-        const response = await api.get<{ data: OAuthStatus }>('/oauth/status');
-        return response.data.data;
+        const response = await api.get<OAuthStatus>('/oauth/status');
+        return response.data;
     },
 
     /**

@@ -84,6 +84,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(UserProfile::class);
     }
 
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->profile?->avatar_url;
+    }
+
     /**
      * Get the tenant that the user belongs to.
      */

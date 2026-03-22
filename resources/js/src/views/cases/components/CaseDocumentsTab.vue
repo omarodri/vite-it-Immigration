@@ -9,6 +9,7 @@
                 <FolderTree
                     :folders="folders"
                     :current-folder-id="currentFolderId"
+                    :show-sync-status="isCloudStorage"
                     @select-folder="selectFolder"
                     @create-folder="showNewFolderDialog"
                     @rename-folder="showRenameFolderDialog"
@@ -22,20 +23,39 @@
             <DocumentToolbar
                 :current-folder="currentFolder"
                 :view-mode="viewMode"
+                :is-syncing="syncStatus === 'syncing'"
                 @upload-click="uploadDropzoneRef?.triggerFileInput()"
                 @create-folder="showNewFolderDialog"
                 @toggle-view="(m: 'grid' | 'list') => documentStore.setViewMode(m)"
                 @refresh="refreshAll"
                 @navigate-root="selectFolder(null)"
-                @settings="showSettings = !showSettings"
+                @sync="handleSync"
             />
 
-            <CloudStorageSettings
-                v-if="showSettings"
-                :storage-type="props.storageType ?? 'local'"
-                class="mb-4"
-                @close="showSettings = false"
-            />
+            <!-- Sync Status Banners -->
+            <div
+                v-if="isCloudStorage && (hasPendingSync || syncStatus === 'syncing')"
+                class="flex items-center gap-2 px-4 py-2.5 mb-3 rounded-md bg-warning/10 border border-warning/20 text-warning text-sm"
+            >
+                <icon-clock class="w-4 h-4 shrink-0 animate-pulse" />
+                <span>{{ $t('documents.sync_pending', { provider: storageProvider }) }}</span>
+            </div>
+            <div
+                v-else-if="isCloudStorage && (hasFailedSync || syncStatus === 'error')"
+                class="flex items-center justify-between gap-2 px-4 py-2.5 mb-3 rounded-md bg-danger/10 border border-danger/20 text-danger text-sm"
+            >
+                <div class="flex items-center gap-2">
+                    <icon-x-circle class="w-4 h-4 shrink-0" />
+                    <span>{{ $t('documents.sync_failed') }}</span>
+                </div>
+                <button
+                    type="button"
+                    class="btn btn-outline-danger btn-sm py-1 px-2 text-xs"
+                    @click="handleSync"
+                >
+                    {{ $t('documents.sync_retry') }}
+                </button>
+            </div>
 
             <DocumentGrid
                 :documents="documents"
@@ -81,7 +101,7 @@
             <div
                 v-if="previewDoc"
                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-                @click.self="previewDoc = null"
+                @click.self="closePreview"
             >
                 <div class="relative w-full max-w-5xl max-h-[90vh] mx-4 bg-white dark:bg-[#0e1726] rounded-lg shadow-xl overflow-hidden flex flex-col">
                     <!-- Header -->
@@ -92,22 +112,29 @@
                                 <icon-download class="w-4 h-4" />
                                 {{ $t('documents.download') }}
                             </button>
-                            <button type="button" class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="previewDoc = null">
+                            <button type="button" class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" @click="closePreview">
                                 <icon-x class="w-5 h-5" />
                             </button>
                         </div>
                     </div>
                     <!-- Content -->
                     <div class="flex-1 overflow-auto flex items-center justify-center p-4 min-h-[400px]">
+                        <div v-if="!previewBlobUrl" class="flex flex-col items-center gap-2 text-gray-400">
+                            <svg class="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            <span class="text-sm">{{ $t('loading') }}...</span>
+                        </div>
                         <img
-                            v-if="previewDoc.mime_type?.startsWith('image/')"
-                            :src="previewUrl"
+                            v-else-if="previewDoc.mime_type?.startsWith('image/')"
+                            :src="previewBlobUrl"
                             :alt="previewDoc.original_name"
                             class="max-w-full max-h-[75vh] object-contain"
                         />
                         <iframe
                             v-else-if="previewDoc.mime_type === 'application/pdf'"
-                            :src="previewUrl"
+                            :src="previewBlobUrl"
                             class="w-full h-[75vh] border-0"
                         ></iframe>
                     </div>
@@ -125,33 +152,41 @@ import Swal from 'sweetalert2';
 import type { DocumentFolder, Document } from '@/types/document';
 import documentService from '@/services/documentService';
 import { useDocumentStore } from '@/stores/documentStore';
+import { useTenantStore } from '@/stores/tenant';
 
 import FolderTree from './documents/FolderTree.vue';
 import DocumentToolbar from './documents/DocumentToolbar.vue';
 import DocumentGrid from './documents/DocumentGrid.vue';
 import UploadDropzone from './documents/UploadDropzone.vue';
-import CloudStorageSettings from './documents/CloudStorageSettings.vue';
 import ReplaceDocumentModal from './documents/ReplaceDocumentModal.vue';
 import MoveDocumentModal from './documents/MoveDocumentModal.vue';
 import IconDownload from '@/components/icon/icon-download.vue';
 import IconX from '@/components/icon/icon-x.vue';
+import IconClock from '@/components/icon/icon-clock.vue';
+import IconXCircle from '@/components/icon/icon-x-circle.vue';
 
 const { t } = useI18n();
 const documentStore = useDocumentStore();
-const { folders, documents, currentFolderId, isLoading: isLoadingDocs, viewMode } = storeToRefs(documentStore);
+const tenantStore = useTenantStore();
+const { folders, documents, currentFolderId, isLoading: isLoadingDocs, viewMode, syncStatus } = storeToRefs(documentStore);
+
+const isCloudStorage = computed(() => tenantStore.isCloudStorage);
+const storageProvider = computed(() => {
+    const type = tenantStore.storageType;
+    if (type === 'onedrive') return t('documents.provider_onedrive');
+    if (type === 'google_drive') return t('documents.provider_google_drive');
+    return t('documents.provider_local');
+});
+const hasPendingSync = computed(() => documentStore.hasPendingSyncFolders);
+const hasFailedSync = computed(() => documentStore.hasFailedSyncFolders);
 
 const props = defineProps<{
     caseId: number;
-    storageType?: 'local' | 'onedrive' | 'google_drive';
 }>();
 
 const uploadDropzoneRef = ref<InstanceType<typeof UploadDropzone> | null>(null);
-const showSettings = ref(false);
 const previewDoc = ref<Document | null>(null);
-const previewUrl = computed(() => {
-    if (!previewDoc.value) return '';
-    return documentService.getPreviewUrl(props.caseId, previewDoc.value.id);
-});
+const previewBlobUrl = ref('');
 
 const currentFolder = computed(() => documentStore.currentFolder);
 
@@ -176,6 +211,20 @@ async function fetchDocuments() {
 
 async function refreshAll() {
     await Promise.all([fetchFolders(), fetchDocuments()]);
+
+    // Auto-pull cloud folders and documents on refresh
+    if (isCloudStorage.value) {
+        try {
+            const result = await documentService.syncFromCloud(props.caseId);
+            const hasChanges = result.folders_added > 0 || result.folders_removed > 0
+                || result.documents_added > 0 || result.documents_removed > 0;
+            if (hasChanges) {
+                await Promise.all([fetchFolders(), fetchDocuments()]);
+            }
+        } catch {
+            // Silent fail — cloud sync is best-effort on refresh
+        }
+    }
 }
 
 function selectFolder(id: number | null) {
@@ -186,13 +235,41 @@ watch(currentFolderId, () => {
     fetchDocuments();
 });
 
-onMounted(() => {
-    refreshAll();
+onMounted(async () => {
+    await refreshAll();
+    // If tenant uses cloud storage, check folder sync status
+    if (tenantStore.isCloudStorage) {
+        await documentStore.fetchSyncStatus(props.caseId);
+    }
 });
 
 onUnmounted(() => {
     documentStore.reset();
 });
+
+// ---- Cloud Sync ----
+
+async function handleSync() {
+    await documentStore.syncFolders(props.caseId);
+
+    // Pull folders and documents from cloud, prune deleted items
+    try {
+        const result = await documentService.syncFromCloud(props.caseId);
+        const hasChanges = result.folders_added > 0 || result.folders_removed > 0
+            || result.documents_added > 0 || result.documents_removed > 0;
+        if (hasChanges) {
+            await Promise.all([fetchFolders(), fetchDocuments()]);
+            showMessage(result.message);
+            return;
+        }
+    } catch {
+        // Cloud sync is best-effort
+    }
+
+    if (documentStore.syncStatus === 'synced') {
+        showMessage(t('documents.sync_success'));
+    }
+}
 
 // ---- Upload ----
 
@@ -203,8 +280,25 @@ function onUploadComplete() {
 
 // ---- Preview ----
 
-function handlePreview(doc: Document) {
+async function handlePreview(doc: Document) {
     previewDoc.value = doc;
+    previewBlobUrl.value = '';
+
+    try {
+        const blob = await documentService.getPreviewBlob(props.caseId, doc.id);
+        const typedBlob = new Blob([blob], { type: doc.mime_type || 'application/octet-stream' });
+        previewBlobUrl.value = URL.createObjectURL(typedBlob);
+    } catch {
+        previewBlobUrl.value = '';
+    }
+}
+
+function closePreview() {
+    if (previewBlobUrl.value) {
+        URL.revokeObjectURL(previewBlobUrl.value);
+        previewBlobUrl.value = '';
+    }
+    previewDoc.value = null;
 }
 
 // ---- Folder Actions ----

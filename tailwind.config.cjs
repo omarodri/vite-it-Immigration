@@ -13,12 +13,12 @@ module.exports = {
         extend: {
             colors: {
                 primary: {
-                    DEFAULT: "#4361ee",
+                    DEFAULT: "rgb(var(--tenant-primary-rgb, 67 97 238) / <alpha-value>)",
                     light: "#eaf1ff",
                     "dark-light": "rgba(67,97,238,.15)",
                 },
                 secondary: {
-                    DEFAULT: "#805dca",
+                    DEFAULT: "rgb(var(--tenant-secondary-rgb, 128 93 202) / <alpha-value>)",
                     light: "#ebe4f7",
                     "dark-light": "rgb(128 93 202 / 15%)",
                 },

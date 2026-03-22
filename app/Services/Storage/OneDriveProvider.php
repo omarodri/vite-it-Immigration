@@ -6,7 +6,6 @@ namespace App\Services\Storage;
 
 use App\Contracts\DocumentStorageInterface;
 use App\Models\Document;
-use App\Models\User;
 use App\Services\OAuthCredentialService;
 use App\Services\OAuthTokenService;
 use Illuminate\Http\UploadedFile;
@@ -21,28 +20,57 @@ class OneDriveProvider implements DocumentStorageInterface
 
     private const SIMPLE_UPLOAD_MAX_SIZE = 4 * 1024 * 1024; // 4MB
 
+    private ?int $tenantId;
+
     public function __construct(
         private readonly OAuthTokenService $tokenService,
-        private readonly OAuthCredentialService $credentialService
-    ) {}
+        private readonly OAuthCredentialService $credentialService,
+        ?int $tenantId = null
+    ) {
+        $this->tenantId = $tenantId;
+    }
 
     /**
      * Upload a file to OneDrive.
      *
      * @return array{storage_path: string, size: int, external_id: string, external_url: string}
      */
-    public function upload(UploadedFile $file, string $destinationPath): array
+    public function upload(UploadedFile $file, string $destinationPath, array $metadata = []): array
     {
-        $user = $this->getAuthenticatedUser();
-        $accessToken = $this->getAccessToken($user);
+        $accessToken = $this->getAccessToken();
 
         $filename = basename($destinationPath);
         $folderPath = dirname($destinationPath);
 
-        if ($file->getSize() <= self::SIMPLE_UPLOAD_MAX_SIZE) {
-            $result = $this->simpleUpload($accessToken, $file, $folderPath, $filename);
+        // If a parent_external_id is provided, upload into that folder by ID
+        if (!empty($metadata['parent_external_id'])) {
+            $parentId = $metadata['parent_external_id'];
+
+            if ($file->getSize() <= self::SIMPLE_UPLOAD_MAX_SIZE) {
+                $encodedName = rawurlencode($filename);
+                $response = Http::withToken($accessToken)
+                    ->timeout(30)
+                    ->withBody($file->getContent(), $file->getClientMimeType())
+                    ->put(self::BASE_URL . "/me/drive/items/{$parentId}:/{$encodedName}:/content");
+
+                if (!$response->successful()) {
+                    Log::error('OneDrive upload to folder failed', [
+                        'status' => $response->status(),
+                        'error' => $response->json('error', 'Unknown error'),
+                    ]);
+                    throw new \RuntimeException('Failed to upload file to OneDrive folder: ' . $response->json('error.message', 'Unknown error'));
+                }
+
+                $result = $response->json();
+            } else {
+                $result = $this->resumableUpload($accessToken, $file, $folderPath, $filename);
+            }
         } else {
-            $result = $this->resumableUpload($accessToken, $file, $folderPath, $filename);
+            if ($file->getSize() <= self::SIMPLE_UPLOAD_MAX_SIZE) {
+                $result = $this->simpleUpload($accessToken, $file, $folderPath, $filename);
+            } else {
+                $result = $this->resumableUpload($accessToken, $file, $folderPath, $filename);
+            }
         }
 
         return [
@@ -58,8 +86,7 @@ class OneDriveProvider implements DocumentStorageInterface
      */
     public function download(Document $document): StreamedResponse|string
     {
-        $user = $this->getAuthenticatedUser();
-        $accessToken = $this->getAccessToken($user);
+        $accessToken = $this->getAccessToken();
 
         $response = Http::withToken($accessToken)
             ->timeout(30)
@@ -107,8 +134,7 @@ class OneDriveProvider implements DocumentStorageInterface
             return true;
         }
 
-        $user = $this->getAuthenticatedUser();
-        $accessToken = $this->getAccessToken($user);
+        $accessToken = $this->getAccessToken();
 
         $response = Http::withToken($accessToken)
             ->timeout(30)
@@ -135,8 +161,7 @@ class OneDriveProvider implements DocumentStorageInterface
             return false;
         }
 
-        $user = $this->getAuthenticatedUser();
-        $accessToken = $this->getAccessToken($user);
+        $accessToken = $this->getAccessToken();
 
         $newFilename = basename($newPath);
         $newFolder = dirname($newPath);
@@ -163,27 +188,124 @@ class OneDriveProvider implements DocumentStorageInterface
     }
 
     /**
-     * Check if OneDrive is available for the current user.
+     * Check if OneDrive is available for the current user's tenant.
      */
     public function isAvailable(): bool
     {
         try {
-            $user = Auth::user();
-            if (!$user) {
+            $tenantId = $this->resolveTenantId();
+            if (!$tenantId) {
                 return false;
             }
 
-            $tenant = $user->tenant;
-            $credentials = $this->credentialService->getMicrosoftCredentials($tenant);
-
-            if (!$credentials) {
-                return false;
-            }
-
-            return $this->tokenService->hasValidToken($user, 'microsoft');
+            return $this->tokenService->hasTenantToken($tenantId, 'microsoft');
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    /**
+     * Create a folder in OneDrive.
+     *
+     * @return array{external_id: string, external_url: string}
+     */
+    public function createFolder(string $folderName, ?string $parentExternalId = null): array
+    {
+        $accessToken = $this->getAccessToken();
+
+        if ($parentExternalId) {
+            $url = self::BASE_URL . "/me/drive/items/{$parentExternalId}/children";
+        } else {
+            $url = self::BASE_URL . '/me/drive/root/children';
+        }
+
+        $response = Http::withToken($accessToken)
+            ->timeout(30)
+            ->post($url, [
+                'name' => $folderName,
+                'folder' => new \stdClass(),
+                '@microsoft.graph.conflictBehavior' => 'rename',
+            ]);
+
+        if (!$response->successful()) {
+            Log::error('OneDrive create folder failed', [
+                'folder_name' => $folderName,
+                'parent_id' => $parentExternalId,
+                'status' => $response->status(),
+                'error' => $response->json('error', 'Unknown error'),
+            ]);
+            throw new \RuntimeException('Failed to create folder in OneDrive: ' . $response->json('error.message', 'Unknown error'));
+        }
+
+        $data = $response->json();
+
+        return [
+            'external_id' => $data['id'],
+            'external_url' => $data['webUrl'] ?? '',
+        ];
+    }
+
+    /**
+     * Delete a folder from OneDrive.
+     */
+    public function deleteFolder(string $externalId): bool
+    {
+        $accessToken = $this->getAccessToken();
+
+        $response = Http::withToken($accessToken)
+            ->timeout(30)
+            ->delete(self::BASE_URL . "/me/drive/items/{$externalId}");
+
+        if (!$response->successful() && $response->status() !== 404) {
+            Log::error('OneDrive delete folder failed', [
+                'external_id' => $externalId,
+                'status' => $response->status(),
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * List contents of a folder in OneDrive.
+     *
+     * @return array<int, array{name: string, type: string, external_id: string}>
+     */
+    public function listFolder(string $externalId): array
+    {
+        $accessToken = $this->getAccessToken();
+
+        $response = Http::withToken($accessToken)
+            ->timeout(30)
+            ->get(self::BASE_URL . "/me/drive/items/{$externalId}/children");
+
+        if (!$response->successful()) {
+            Log::error('OneDrive list folder failed', [
+                'external_id' => $externalId,
+                'status' => $response->status(),
+            ]);
+            throw new \RuntimeException('Failed to list OneDrive folder contents.');
+        }
+
+        $items = [];
+        foreach ($response->json('value', []) as $item) {
+            $entry = [
+                'name' => $item['name'],
+                'type' => isset($item['folder']) ? 'folder' : 'file',
+                'external_id' => $item['id'],
+            ];
+
+            if (!isset($item['folder'])) {
+                $entry['size'] = $item['size'] ?? 0;
+                $entry['mime_type'] = $item['file']['mimeType'] ?? 'application/octet-stream';
+                $entry['web_url'] = $item['webUrl'] ?? '';
+            }
+
+            $items[] = $entry;
+        }
+
+        return $items;
     }
 
     /**
@@ -270,29 +392,36 @@ class OneDriveProvider implements DocumentStorageInterface
     }
 
     /**
-     * Get the authenticated user.
+     * Get a valid access token for the resolved tenant.
      */
-    private function getAuthenticatedUser(): User
+    private function getAccessToken(): string
     {
-        $user = Auth::user();
-        if (!$user) {
-            throw new \RuntimeException('User must be authenticated to use OneDrive storage.');
+        $tenantId = $this->resolveTenantId();
+
+        if (!$tenantId) {
+            throw new \RuntimeException('User must be authenticated with a tenant to use OneDrive storage.');
         }
 
-        return $user;
-    }
-
-    /**
-     * Get a valid access token for the authenticated user.
-     */
-    private function getAccessToken(User $user): string
-    {
-        $token = $this->tokenService->getValidToken($user, 'microsoft');
+        $token = $this->tokenService->getValidTenantToken($tenantId, 'microsoft');
 
         if (!$token) {
-            throw new \RuntimeException('No valid Microsoft OAuth token found. Please connect your OneDrive account.');
+            throw new \RuntimeException('OneDrive is not connected for this organization. An administrator must connect the OneDrive account in Admin > OAuth Settings.');
         }
 
         return $token;
+    }
+
+    /**
+     * Resolve the tenant ID from the explicit property or the authenticated user.
+     */
+    private function resolveTenantId(): ?int
+    {
+        if ($this->tenantId !== null) {
+            return $this->tenantId;
+        }
+
+        $user = Auth::user();
+
+        return $user?->tenant_id;
     }
 }

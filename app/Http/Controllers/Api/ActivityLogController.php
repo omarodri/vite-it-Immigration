@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
-use Spatie\Activitylog\Models\Activity;
+use App\Models\Activity;
 
 class ActivityLogController extends Controller
 {
@@ -24,6 +24,7 @@ class ActivityLogController extends Controller
             new OA\Parameter(name: 'subject_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer'), description: 'Filter by subject ID'),
             new OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date-time'), description: 'Filter from date'),
             new OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date-time'), description: 'Filter to date'),
+            new OA\Parameter(name: 'tenant_id', in: 'query', required: false, schema: new OA\Schema(type: 'integer'), description: 'Filter by tenant ID (super-admin only)'),
             new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 20)),
         ],
         responses: [
@@ -39,6 +40,17 @@ class ActivityLogController extends Controller
         }
 
         $query = Activity::with('causer', 'subject')->latest();
+
+        // Tenant scoping: non-super-admin users only see their tenant's logs
+        $user = $request->user();
+        if ($user->isSuperAdmin()) {
+            // Super-admin can optionally filter by tenant_id
+            if ($tenantId = $request->get('tenant_id')) {
+                $query->where('tenant_id', $tenantId);
+            }
+        } else {
+            $query->where('tenant_id', $user->tenant_id);
+        }
 
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
@@ -104,6 +116,12 @@ class ActivityLogController extends Controller
     {
         if (! $request->user()->can('activity-logs.view')) {
             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // Tenant scoping: non-super-admin users can only view their tenant's logs
+        $user = $request->user();
+        if (! $user->isSuperAdmin() && $activity->tenant_id !== $user->tenant_id) {
+            return response()->json(['message' => 'Not found'], 404);
         }
 
         $activity->load('causer', 'subject');

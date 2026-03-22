@@ -44,7 +44,13 @@
       "Bash(git checkout:*)",
       "Bash(ls:*)",
       "Bash(node:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(cat:*)",
+      "Bash(herd restart:*)",
+      "Bash(lsof:*)",
+      "Bash(: > /Users/omar/Herd/vite-it-Immigration/storage/logs/laravel.log)",
+      "Bash(:)",
+      "Bash(php artisan tinker --execute=\":*)"
     ]
   }
 }

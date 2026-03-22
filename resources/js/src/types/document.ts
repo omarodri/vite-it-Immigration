@@ -3,6 +3,8 @@
  * Interfaces for case document management
  */
 
+export type FolderSyncStatus = 'pending' | 'synced' | 'failed';
+
 export interface DocumentFolder {
     id: number;
     name: string;
@@ -12,6 +14,9 @@ export interface DocumentFolder {
     category: string | null;
     children: DocumentFolder[];
     documents_count: number;
+    sync_status: FolderSyncStatus;
+    synced_at: string | null;
+    external_id: string | null;
     created_at: string;
 }
 
@@ -23,6 +28,7 @@ export interface Document {
     size: number;
     category: string;
     storage_type: string;
+    external_url: string | null;
     version: number;
     folder_id: number | null;
     uploaded_by: { id: number; name: string } | null;

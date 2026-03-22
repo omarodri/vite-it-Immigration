@@ -22,6 +22,7 @@ class DocumentResource extends JsonResource
             'size' => $this->size,
             'category' => $this->category,
             'storage_type' => $this->storage_type,
+            'external_url' => $this->external_url,
             'version' => $this->version,
             'folder_id' => $this->folder_id,
 

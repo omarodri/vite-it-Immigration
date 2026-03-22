@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -44,8 +45,10 @@ class OAuthFlowController extends Controller
         }
 
         // Generate state parameter for CSRF protection
+        // Use cache instead of session because the callback comes from the OAuth
+        // provider (different origin), so Sanctum's session middleware won't activate.
         $state = Str::random(40);
-        session(['oauth_state' => $state, 'oauth_user_id' => $user->id]);
+        Cache::put("oauth_state:{$state}", $user->id, now()->addMinutes(10));
 
         $authUrl = match ($provider) {
             'microsoft' => $this->buildMicrosoftAuthUrl($credentials, $state),
@@ -63,7 +66,8 @@ class OAuthFlowController extends Controller
      */
     public function callback(Request $request, string $provider): RedirectResponse
     {
-        $frontendUrl = config('app.frontend_url', config('app.url'));
+        $frontendUrl = rtrim(config('app.url'), '/');
+        $oauthPage = "{$frontendUrl}/admin/tenant/oauth";
 
         if ($request->has('error')) {
             Log::error("OAuth {$provider} callback error", [
@@ -71,29 +75,27 @@ class OAuthFlowController extends Controller
                 'description' => $request->input('error_description'),
             ]);
 
-            return redirect("{$frontendUrl}/settings/integrations?oauth_error=" . urlencode($request->input('error_description', 'Authorization failed')));
+            return redirect("{$oauthPage}?oauth_error=" . urlencode($request->input('error_description', 'Authorization failed')));
         }
 
         $code = $request->input('code');
         $state = $request->input('state');
 
         if (!$code) {
-            return redirect("{$frontendUrl}/settings/integrations?oauth_error=No+authorization+code+received");
+            return redirect("{$oauthPage}?oauth_error=No+authorization+code+received");
         }
 
-        // Validate state
-        $expectedState = session('oauth_state');
-        $userId = session('oauth_user_id');
+        // Validate state from cache (session is not available here because
+        // the callback comes from the OAuth provider, not the SPA)
+        $cacheKey = "oauth_state:{$state}";
+        $userId = $state ? Cache::pull($cacheKey) : null;
 
-        if (!$expectedState || $state !== $expectedState || !$userId) {
+        if (!$userId) {
             Log::error("OAuth {$provider} callback state mismatch", [
-                'expected' => $expectedState,
-                'received' => $state,
+                'received_state' => $state,
             ]);
-            return redirect("{$frontendUrl}/settings/integrations?oauth_error=Invalid+state+parameter");
+            return redirect("{$oauthPage}?oauth_error=Invalid+state+parameter");
         }
-
-        session()->forget(['oauth_state', 'oauth_user_id']);
 
         try {
             $user = \App\Models\User::findOrFail($userId);
@@ -106,7 +108,7 @@ class OAuthFlowController extends Controller
             };
 
             if (!$credentials) {
-                return redirect("{$frontendUrl}/settings/integrations?oauth_error=No+credentials+configured");
+                return redirect("{$oauthPage}?oauth_error=No+credentials+configured");
             }
 
             $tokenData = match ($provider) {
@@ -115,18 +117,18 @@ class OAuthFlowController extends Controller
             };
 
             if (!$tokenData) {
-                return redirect("{$frontendUrl}/settings/integrations?oauth_error=Token+exchange+failed");
+                return redirect("{$oauthPage}?oauth_error=Token+exchange+failed");
             }
 
-            $this->tokenService->storeToken($user, $provider, $tokenData);
+            $this->tokenService->storeTenantToken($user->tenant_id, $user->id, $provider, $tokenData);
 
-            return redirect("{$frontendUrl}/settings/integrations?oauth_success={$provider}");
+            return redirect("{$oauthPage}?oauth_success={$provider}");
         } catch (\Exception $e) {
             Log::error("OAuth {$provider} callback exception", [
                 'error' => $e->getMessage(),
             ]);
 
-            return redirect("{$frontendUrl}/settings/integrations?oauth_error=" . urlencode('An unexpected error occurred'));
+            return redirect("{$oauthPage}?oauth_error=" . urlencode('An unexpected error occurred'));
         }
     }
 
@@ -137,12 +139,13 @@ class OAuthFlowController extends Controller
     {
         $user = Auth::user();
         $tenant = $user->tenant;
+        $tenantId = $tenant->id;
 
-        $microsoftToken = OauthToken::where('user_id', $user->id)
+        $microsoftToken = OauthToken::where('tenant_id', $tenantId)
             ->where('provider', 'microsoft')
             ->first();
 
-        $googleToken = OauthToken::where('user_id', $user->id)
+        $googleToken = OauthToken::where('tenant_id', $tenantId)
             ->where('provider', 'google')
             ->first();
 
@@ -170,7 +173,7 @@ class OAuthFlowController extends Controller
     {
         $user = Auth::user();
 
-        $revoked = $this->tokenService->revokeToken($user, $provider);
+        $revoked = $this->tokenService->revokeTenantToken($user->tenant_id, $provider);
 
         if (!$revoked) {
             return response()->json([

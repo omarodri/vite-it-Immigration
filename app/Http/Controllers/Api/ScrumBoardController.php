@@ -18,7 +18,7 @@ class ScrumBoardController extends Controller
     public function index(Request $request): JsonResponse
     {
         $columns = ScrumColumn::with(['tasks' => function ($q) {
-            $q->with(['assignedTo', 'immigrationCase.client'])
+            $q->with(['assignedTo.profile', 'immigrationCase.client'])
                 ->orderBy('order_index');
         }])->orderBy('order_index')->get();
 
@@ -38,6 +38,7 @@ class ScrumBoardController extends Controller
         $users = User::where('tenant_id', $tenantId)
             ->where('is_active', true)
             ->whereHas('roles', fn ($q) => $q->whereIn('name', ['consultor', 'apoyo']))
+            ->with('profile:id,user_id,avatar_url')
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 

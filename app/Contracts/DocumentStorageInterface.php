@@ -11,9 +11,10 @@ interface DocumentStorageInterface
     /**
      * Upload a file to storage.
      *
+     * @param  array  $metadata  Optional metadata (e.g., parent_external_id for cloud folder placement).
      * @return array{storage_path: string, size: int}
      */
-    public function upload(UploadedFile $file, string $destinationPath): array;
+    public function upload(UploadedFile $file, string $destinationPath, array $metadata = []): array;
 
     /**
      * Download a file from storage.
@@ -34,4 +35,23 @@ interface DocumentStorageInterface
      * Check if the storage provider is available.
      */
     public function isAvailable(): bool;
+
+    /**
+     * Create a folder in cloud storage.
+     *
+     * @return array{external_id: string, external_url: string}
+     */
+    public function createFolder(string $folderName, ?string $parentExternalId = null): array;
+
+    /**
+     * Delete a folder from cloud storage.
+     */
+    public function deleteFolder(string $externalId): bool;
+
+    /**
+     * List contents of a folder in cloud storage.
+     *
+     * @return array<int, array{name: string, type: string, external_id: string}>
+     */
+    public function listFolder(string $externalId): array;
 }

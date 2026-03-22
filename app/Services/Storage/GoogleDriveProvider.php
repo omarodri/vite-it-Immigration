@@ -6,7 +6,6 @@ namespace App\Services\Storage;
 
 use App\Contracts\DocumentStorageInterface;
 use App\Models\Document;
-use App\Models\User;
 use App\Services\OAuthCredentialService;
 use App\Services\OAuthTokenService;
 use Illuminate\Http\UploadedFile;
@@ -21,27 +20,34 @@ class GoogleDriveProvider implements DocumentStorageInterface
 
     private const SIMPLE_UPLOAD_MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
+    private const FOLDER_MIME_TYPE = 'application/vnd.google-apps.folder';
+
+    private ?int $tenantId;
+
     public function __construct(
         private readonly OAuthTokenService $tokenService,
-        private readonly OAuthCredentialService $credentialService
-    ) {}
+        private readonly OAuthCredentialService $credentialService,
+        ?int $tenantId = null
+    ) {
+        $this->tenantId = $tenantId;
+    }
 
     /**
      * Upload a file to Google Drive.
      *
      * @return array{storage_path: string, size: int, external_id: string, external_url: string}
      */
-    public function upload(UploadedFile $file, string $destinationPath): array
+    public function upload(UploadedFile $file, string $destinationPath, array $metadata = []): array
     {
-        $user = $this->getAuthenticatedUser();
-        $accessToken = $this->getAccessToken($user);
+        $accessToken = $this->getAccessToken();
 
         $filename = basename($destinationPath);
+        $parentExternalId = $metadata['parent_external_id'] ?? null;
 
         if ($file->getSize() <= self::SIMPLE_UPLOAD_MAX_SIZE) {
-            $result = $this->multipartUpload($accessToken, $file, $filename);
+            $result = $this->multipartUpload($accessToken, $file, $filename, $parentExternalId);
         } else {
-            $result = $this->resumableUpload($accessToken, $file, $filename);
+            $result = $this->resumableUpload($accessToken, $file, $filename, $parentExternalId);
         }
 
         return [
@@ -57,8 +63,7 @@ class GoogleDriveProvider implements DocumentStorageInterface
      */
     public function download(Document $document): StreamedResponse|string
     {
-        $user = $this->getAuthenticatedUser();
-        $accessToken = $this->getAccessToken($user);
+        $accessToken = $this->getAccessToken();
 
         return response()->stream(
             function () use ($accessToken, $document) {
@@ -96,8 +101,7 @@ class GoogleDriveProvider implements DocumentStorageInterface
             return true;
         }
 
-        $user = $this->getAuthenticatedUser();
-        $accessToken = $this->getAccessToken($user);
+        $accessToken = $this->getAccessToken();
 
         $response = Http::withToken($accessToken)
             ->timeout(30)
@@ -124,8 +128,7 @@ class GoogleDriveProvider implements DocumentStorageInterface
             return false;
         }
 
-        $user = $this->getAuthenticatedUser();
-        $accessToken = $this->getAccessToken($user);
+        $accessToken = $this->getAccessToken();
 
         // Get current parents
         $metaResponse = Http::withToken($accessToken)
@@ -165,37 +168,144 @@ class GoogleDriveProvider implements DocumentStorageInterface
     }
 
     /**
-     * Check if Google Drive is available for the current user.
+     * Check if Google Drive is available for the current user's tenant.
      */
     public function isAvailable(): bool
     {
         try {
-            $user = Auth::user();
-            if (!$user) {
+            $tenantId = $this->resolveTenantId();
+            if (!$tenantId) {
                 return false;
             }
 
-            $tenant = $user->tenant;
-            $credentials = $this->credentialService->getGoogleCredentials($tenant);
-
-            if (!$credentials) {
-                return false;
-            }
-
-            return $this->tokenService->hasValidToken($user, 'google');
+            return $this->tokenService->hasTenantToken($tenantId, 'google');
         } catch (\Exception $e) {
             return false;
         }
     }
 
     /**
+     * Create a folder in Google Drive.
+     *
+     * @return array{external_id: string, external_url: string}
+     */
+    public function createFolder(string $folderName, ?string $parentExternalId = null): array
+    {
+        $accessToken = $this->getAccessToken();
+
+        $metadata = [
+            'name' => $folderName,
+            'mimeType' => self::FOLDER_MIME_TYPE,
+        ];
+
+        if ($parentExternalId) {
+            $metadata['parents'] = [$parentExternalId];
+        }
+
+        $response = Http::withToken($accessToken)
+            ->timeout(30)
+            ->post(self::API_BASE . '/drive/v3/files?fields=id,webViewLink', $metadata);
+
+        if (!$response->successful()) {
+            Log::error('Google Drive create folder failed', [
+                'folder_name' => $folderName,
+                'parent_id' => $parentExternalId,
+                'status' => $response->status(),
+                'error' => $response->json('error', 'Unknown error'),
+            ]);
+            throw new \RuntimeException('Failed to create folder in Google Drive: ' . ($response->json('error.message') ?? 'Unknown error'));
+        }
+
+        $data = $response->json();
+
+        return [
+            'external_id' => $data['id'],
+            'external_url' => $data['webViewLink'] ?? '',
+        ];
+    }
+
+    /**
+     * Delete a folder from Google Drive.
+     */
+    public function deleteFolder(string $externalId): bool
+    {
+        $accessToken = $this->getAccessToken();
+
+        $response = Http::withToken($accessToken)
+            ->timeout(30)
+            ->delete(self::API_BASE . "/drive/v3/files/{$externalId}");
+
+        if (!$response->successful() && $response->status() !== 404) {
+            Log::error('Google Drive delete folder failed', [
+                'external_id' => $externalId,
+                'status' => $response->status(),
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * List contents of a folder in Google Drive.
+     *
+     * @return array<int, array{name: string, type: string, external_id: string}>
+     */
+    public function listFolder(string $externalId): array
+    {
+        $accessToken = $this->getAccessToken();
+
+        $response = Http::withToken($accessToken)
+            ->timeout(30)
+            ->get(self::API_BASE . '/drive/v3/files', [
+                'q' => "'{$externalId}' in parents and trashed = false",
+                'fields' => 'files(id,name,mimeType,size,webViewLink)',
+                'pageSize' => 1000,
+            ]);
+
+        if (!$response->successful()) {
+            Log::error('Google Drive list folder failed', [
+                'external_id' => $externalId,
+                'status' => $response->status(),
+            ]);
+            throw new \RuntimeException('Failed to list Google Drive folder contents.');
+        }
+
+        $items = [];
+        foreach ($response->json('files', []) as $file) {
+            $isFolder = $file['mimeType'] === self::FOLDER_MIME_TYPE;
+            $entry = [
+                'name' => $file['name'],
+                'type' => $isFolder ? 'folder' : 'file',
+                'external_id' => $file['id'],
+            ];
+
+            if (!$isFolder) {
+                $entry['size'] = (int) ($file['size'] ?? 0);
+                $entry['mime_type'] = $file['mimeType'];
+                $entry['web_url'] = $file['webViewLink'] ?? '';
+            }
+
+            $items[] = $entry;
+        }
+
+        return $items;
+    }
+
+    /**
      * Multipart upload for files <= 5MB.
      */
-    private function multipartUpload(string $accessToken, UploadedFile $file, string $filename): array
+    private function multipartUpload(string $accessToken, UploadedFile $file, string $filename, ?string $parentExternalId = null): array
     {
-        $metadata = json_encode([
+        $metadataArray = [
             'name' => $filename,
-        ]);
+        ];
+
+        if ($parentExternalId) {
+            $metadataArray['parents'] = [$parentExternalId];
+        }
+
+        $metadata = json_encode($metadataArray);
 
         $boundary = 'boundary_' . uniqid();
         $body = "--{$boundary}\r\n"
@@ -228,11 +338,15 @@ class GoogleDriveProvider implements DocumentStorageInterface
     /**
      * Resumable upload for files > 5MB.
      */
-    private function resumableUpload(string $accessToken, UploadedFile $file, string $filename): array
+    private function resumableUpload(string $accessToken, UploadedFile $file, string $filename, ?string $parentExternalId = null): array
     {
         $metadata = [
             'name' => $filename,
         ];
+
+        if ($parentExternalId) {
+            $metadata['parents'] = [$parentExternalId];
+        }
 
         // Initiate resumable upload
         $initResponse = Http::withToken($accessToken)
@@ -295,29 +409,36 @@ class GoogleDriveProvider implements DocumentStorageInterface
     }
 
     /**
-     * Get the authenticated user.
+     * Get a valid access token for the resolved tenant.
      */
-    private function getAuthenticatedUser(): User
+    private function getAccessToken(): string
     {
-        $user = Auth::user();
-        if (!$user) {
-            throw new \RuntimeException('User must be authenticated to use Google Drive storage.');
+        $tenantId = $this->resolveTenantId();
+
+        if (!$tenantId) {
+            throw new \RuntimeException('User must be authenticated with a tenant to use Google Drive storage.');
         }
 
-        return $user;
-    }
-
-    /**
-     * Get a valid access token for the authenticated user.
-     */
-    private function getAccessToken(User $user): string
-    {
-        $token = $this->tokenService->getValidToken($user, 'google');
+        $token = $this->tokenService->getValidTenantToken($tenantId, 'google');
 
         if (!$token) {
-            throw new \RuntimeException('No valid Google OAuth token found. Please connect your Google Drive account.');
+            throw new \RuntimeException('Google Drive is not connected for this organization. An administrator must connect the Google Drive account in Admin > OAuth Settings.');
         }
 
         return $token;
+    }
+
+    /**
+     * Resolve the tenant ID from the explicit property or the authenticated user.
+     */
+    private function resolveTenantId(): ?int
+    {
+        if ($this->tenantId !== null) {
+            return $this->tenantId;
+        }
+
+        $user = Auth::user();
+
+        return $user?->tenant_id;
     }
 }

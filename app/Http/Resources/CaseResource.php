@@ -81,6 +81,7 @@ class CaseResource extends JsonResource
                 'id' => $this->assignedTo->id,
                 'name' => $this->assignedTo->name,
                 'email' => $this->assignedTo->email,
+                'avatar_url' => $this->assignedTo->profile?->avatar_url,
             ]),
 
             'companions' => $this->whenLoaded('companions', fn () => CompanionResource::collection($this->companions)),

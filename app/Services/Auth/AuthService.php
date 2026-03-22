@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth;
 
+use App\Models\InvitationCode;
 use App\Models\LoginAttempt;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
@@ -20,17 +21,22 @@ class AuthService
 
     public function register(array $data): User
     {
-        // For self-registration, assign to default tenant if exists
-        // In production, you may want to create a new tenant for each registration
-        // or disable self-registration entirely
-        $defaultTenantId = \App\Models\Tenant::where('is_active', true)->first()?->id;
+        $invitationCode = InvitationCode::where('code', $data['invitation_code'])->first();
+
+        if (! $invitationCode || ! $invitationCode->isValid($data['email'])) {
+            throw ValidationException::withMessages([
+                'invitation_code' => ['Invalid or expired invitation code.'],
+            ]);
+        }
 
         $user = $this->userRepository->create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'tenant_id' => $defaultTenantId,
+            'tenant_id' => $invitationCode->tenant_id,
         ]);
+
+        $invitationCode->redeem();
 
         // Assign default role
         $user->assignRole('user');
@@ -40,7 +46,10 @@ class AuthService
         activity('auth')
             ->causedBy($user)
             ->performedOn($user)
-            ->withProperties(['ip' => request()->ip()])
+            ->withProperties([
+                'ip' => request()->ip(),
+                'invitation_code' => $invitationCode->code,
+            ])
             ->log('User registered');
 
         return $user;

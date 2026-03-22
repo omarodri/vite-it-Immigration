@@ -25,7 +25,7 @@ class ScrumTaskController extends Controller
             'order_index' => $maxOrder + 1000,
         ]));
 
-        $task->load(['assignedTo', 'immigrationCase.client']);
+        $task->load(['assignedTo.profile', 'immigrationCase.client']);
 
         return (new ScrumTaskResource($task))
             ->response()
@@ -37,7 +37,7 @@ class ScrumTaskController extends Controller
      */
     public function show(ScrumTask $scrumTask): ScrumTaskResource
     {
-        $scrumTask->load(['assignedTo', 'immigrationCase.client']);
+        $scrumTask->load(['assignedTo.profile', 'immigrationCase.client']);
 
         return new ScrumTaskResource($scrumTask);
     }
@@ -48,7 +48,7 @@ class ScrumTaskController extends Controller
     public function update(UpdateScrumTaskRequest $request, ScrumTask $scrumTask): ScrumTaskResource
     {
         $scrumTask->update($request->validated());
-        $scrumTask->load(['assignedTo', 'immigrationCase.client']);
+        $scrumTask->load(['assignedTo.profile', 'immigrationCase.client']);
 
         return new ScrumTaskResource($scrumTask);
     }

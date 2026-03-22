@@ -23,10 +23,10 @@ class ResilientStorageProvider implements DocumentStorageInterface
         private readonly string $providerName,
     ) {}
 
-    public function upload(UploadedFile $file, string $destinationPath): array
+    public function upload(UploadedFile $file, string $destinationPath, array $metadata = []): array
     {
         return $this->executeWithResilience(
-            fn () => $this->inner->upload($file, $destinationPath),
+            fn () => $this->inner->upload($file, $destinationPath, $metadata),
             'upload'
         );
     }
@@ -62,6 +62,30 @@ class ResilientStorageProvider implements DocumentStorageInterface
         } catch (Throwable) {
             return false;
         }
+    }
+
+    public function createFolder(string $folderName, ?string $parentExternalId = null): array
+    {
+        return $this->executeWithResilience(
+            fn () => $this->inner->createFolder($folderName, $parentExternalId),
+            'createFolder'
+        );
+    }
+
+    public function deleteFolder(string $externalId): bool
+    {
+        return $this->executeWithResilience(
+            fn () => $this->inner->deleteFolder($externalId),
+            'deleteFolder'
+        );
+    }
+
+    public function listFolder(string $externalId): array
+    {
+        return $this->executeWithResilience(
+            fn () => $this->inner->listFolder($externalId),
+            'listFolder'
+        );
     }
 
     /**

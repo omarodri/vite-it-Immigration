@@ -43,12 +43,16 @@ class ImmigrationCase extends Model
         'fees',
         'closed_at',
         'closure_notes',
+        'root_external_folder_id',
+        'folder_sync_status',
+        'folder_synced_at',
     ];
 
     protected $casts = [
         'closed_at' => 'date',
         'progress' => 'integer',
         'fees' => 'decimal:2',
+        'folder_synced_at' => 'datetime',
     ];
 
     /**

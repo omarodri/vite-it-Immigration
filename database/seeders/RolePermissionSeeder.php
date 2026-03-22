@@ -107,6 +107,9 @@ class RolePermissionSeeder extends Seeder
             ['name' => 'todos.create', 'display_name' => 'Create Todos'],
             ['name' => 'todos.edit', 'display_name' => 'Edit Todos'],
             ['name' => 'todos.delete', 'display_name' => 'Delete Todos'],
+
+            // Invitation Codes
+            ['name' => 'invitation-codes.manage', 'display_name' => 'Manage Invitation Codes'],
         ];
 
         foreach ($permissions as $permission) {
@@ -140,6 +143,7 @@ class RolePermissionSeeder extends Seeder
                     'reports.view',
                     'scrum.view', 'scrum.create', 'scrum.edit', 'scrum.delete',
                     'todos.view', 'todos.create', 'todos.edit', 'todos.delete',
+                    'invitation-codes.manage',
                 ],
             ],
             'consultor' => [
@@ -189,6 +193,12 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'profile.view', 'profile.update',
                     'documents.view', 'documents.download',
+                ],
+            ],
+            'user' => [
+                'display_name' => 'Registered User',
+                'permissions' => [
+                    'profile.view', 'profile.update',
                 ],
             ],
         ];

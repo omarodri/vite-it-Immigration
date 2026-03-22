@@ -7,6 +7,7 @@ use App\Models\Companion;
 use App\Models\Document;
 use App\Models\DocumentFolder;
 use App\Models\ImmigrationCase;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Policies\CasePolicy;
 use App\Policies\ClientPolicy;
@@ -14,6 +15,7 @@ use App\Policies\CompanionPolicy;
 use App\Policies\DocumentFolderPolicy;
 use App\Policies\DocumentPolicy;
 use App\Policies\RolePolicy;
+use App\Policies\TenantPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
@@ -34,6 +36,7 @@ class AuthServiceProvider extends ServiceProvider
         ImmigrationCase::class => CasePolicy::class,
         Document::class => DocumentPolicy::class,
         DocumentFolder::class => DocumentFolderPolicy::class,
+        Tenant::class => TenantPolicy::class,
     ];
 
     /**
@@ -41,9 +44,12 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Implicitly grant "admin" role all permissions
+        // Implicitly grant "super-admin" and "admin" roles all permissions
         Gate::before(function ($user, $ability) {
-            return $user->hasRole('admin') ? true : null;
+            if ($user->hasRole('super-admin') || $user->hasRole('admin')) {
+                return true;
+            }
+            return null;
         });
     }
 }

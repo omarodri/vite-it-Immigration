@@ -44,7 +44,7 @@
                                 type="button"
                                 class="btn"
                                 :class="[store.theme === 'light' ? 'btn-primary' : 'btn-outline-primary']"
-                                @click="store.toggleTheme('light')"
+                                @click="setTheme('light')"
                             >
                                 <icon-sun class="w-5 h-5 shrink-0 ltr:mr-2 rtl:ml-2" />
                                 Light
@@ -53,7 +53,7 @@
                                 type="button"
                                 class="btn"
                                 :class="[store.theme === 'dark' ? 'btn-primary' : 'btn-outline-primary']"
-                                @click="store.toggleTheme('dark')"
+                                @click="setTheme('dark')"
                             >
                                 <icon-moon class="w-5 h-5 shrink-0 ltr:mr-2 rtl:ml-2" />
                                 Dark
@@ -62,7 +62,7 @@
                                 type="button"
                                 class="btn"
                                 :class="[store.theme === 'system' ? 'btn-primary' : 'btn-outline-primary']"
-                                @click="store.toggleTheme('system')"
+                                @click="setTheme('system')"
                             >
                                 <icon-laptop class="w-5 h-5 shrink-0 ltr:mr-2 rtl:ml-2" />
                                 System
@@ -78,7 +78,7 @@
                                 type="button"
                                 class="btn"
                                 :class="[store.menu === 'horizontal' ? 'btn-primary' : 'btn-outline-primary']"
-                                @click="store.toggleMenu('horizontal')"
+                                @click="setMenu('horizontal')"
                             >
                                 Horizontal
                             </button>
@@ -86,7 +86,7 @@
                                 type="button"
                                 class="btn"
                                 :class="[store.menu === 'vertical' ? 'btn-primary' : 'btn-outline-primary']"
-                                @click="store.toggleMenu('vertical')"
+                                @click="setMenu('vertical')"
                             >
                                 Vertical
                             </button>
@@ -94,14 +94,14 @@
                                 type="button"
                                 class="btn"
                                 :class="[store.menu === 'collapsible-vertical' ? 'btn-primary' : 'btn-outline-primary']"
-                                @click="store.toggleMenu('collapsible-vertical')"
+                                @click="setMenu('collapsible-vertical')"
                             >
                                 Collapsible
                             </button>
                         </div>
                         <div class="mt-5 text-primary">
                             <label class="inline-flex mb-0">
-                                <input v-model="store.semidark" type="checkbox" class="form-checkbox" @change="store.toggleSemidark(store.semidark)" />
+                                <input v-model="store.semidark" type="checkbox" class="form-checkbox" @change="setSemidark(store.semidark)" />
                                 <span>Semi Dark (Sidebar & Header)</span>
                             </label>
                         </div>
@@ -114,7 +114,7 @@
                                 type="button"
                                 class="btn flex-auto"
                                 :class="[store.layout === 'boxed-layout' ? 'btn-primary' : 'btn-outline-primary']"
-                                @click="store.toggleLayout('boxed-layout')"
+                                @click="setLayout('boxed-layout')"
                             >
                                 Box
                             </button>
@@ -122,7 +122,7 @@
                                 type="button"
                                 class="btn flex-auto"
                                 :class="[store.layout === 'full' ? 'btn-primary' : 'btn-outline-primary']"
-                                @click="store.toggleLayout('full')"
+                                @click="setLayout('full')"
                             >
                                 Full
                             </button>
@@ -136,7 +136,7 @@
                                 type="button"
                                 class="btn flex-auto"
                                 :class="[store.rtlClass === 'ltr' ? 'btn-primary' : 'btn-outline-primary']"
-                                @click="store.toggleRTL('ltr')"
+                                @click="setRTL('ltr')"
                             >
                                 LTR
                             </button>
@@ -144,7 +144,7 @@
                                 type="button"
                                 class="btn flex-auto"
                                 :class="[store.rtlClass === 'rtl' ? 'btn-primary' : 'btn-outline-primary']"
-                                @click="store.toggleRTL('rtl')"
+                                @click="setRTL('rtl')"
                             >
                                 RTL
                             </button>
@@ -161,7 +161,7 @@
                                     type="radio"
                                     value="navbar-sticky"
                                     class="form-radio"
-                                    @change="store.toggleNavbar('navbar-sticky')"
+                                    @change="setNavbar('navbar-sticky')"
                                 />
                                 <span>Sticky</span>
                             </label>
@@ -171,7 +171,7 @@
                                     type="radio"
                                     value="navbar-floating"
                                     class="form-radio"
-                                    @change="store.toggleNavbar('navbar-floating')"
+                                    @change="setNavbar('navbar-floating')"
                                 />
                                 <span>Floating</span>
                             </label>
@@ -181,7 +181,7 @@
                                     type="radio"
                                     value="navbar-static"
                                     class="form-radio"
-                                    @change="store.toggleNavbar('navbar-static')"
+                                    @change="setNavbar('navbar-static')"
                                 />
                                 <span>Static</span>
                             </label>
@@ -192,7 +192,7 @@
                         <h5 class="mb-1 text-base dark:text-white leading-none">Router Transition</h5>
                         <p class="text-white-dark text-xs">Animation of main content.</p>
                         <div class="mt-3">
-                            <select v-model="store.animation" class="form-select border-primary text-primary" @change="store.toggleAnimation()">
+                            <select v-model="store.animation" class="form-select border-primary text-primary" @change="setAnimation()">
                                 <option value="">None</option>
                                 <option value="animate__fadeIn">Fade</option>
                                 <option value="animate__fadeInDown">Fade Down</option>
@@ -215,11 +215,66 @@
 <script lang="ts" setup>
     import { ref } from 'vue';
     import { useAppStore } from '@/stores/index';
+    import { useTenantStore } from '@/stores/tenant';
     import IconSettings from '@/components/icon/icon-settings.vue';
     import IconX from '@/components/icon/icon-x.vue';
     import IconSun from '@/components/icon/icon-sun.vue';
     import IconMoon from '@/components/icon/icon-moon.vue';
     import IconLaptop from '@/components/icon/icon-laptop.vue';
+
     const store = useAppStore();
+    const tenantStore = useTenantStore();
     const showCustomizer = ref(false);
+
+    // Debounced save to avoid too many API calls
+    let saveTimeout: ReturnType<typeof setTimeout>;
+    function saveThemeToTenant() {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(async () => {
+            await tenantStore.updateTheme({
+                mode: store.theme,
+                menu: store.menu,
+                layout: store.layout,
+                rtl_class: store.rtlClass,
+                animation: store.animation,
+                navbar: store.navbar,
+                semidark: store.semidark,
+            });
+        }, 1000);
+    }
+
+    function setTheme(value: string) {
+        store.toggleTheme(value);
+        saveThemeToTenant();
+    }
+
+    function setMenu(value: string) {
+        store.toggleMenu(value);
+        saveThemeToTenant();
+    }
+
+    function setSemidark(value: boolean) {
+        store.toggleSemidark(value);
+        saveThemeToTenant();
+    }
+
+    function setLayout(value: string) {
+        store.toggleLayout(value);
+        saveThemeToTenant();
+    }
+
+    function setRTL(value: string) {
+        store.toggleRTL(value);
+        saveThemeToTenant();
+    }
+
+    function setNavbar(value: string) {
+        store.toggleNavbar(value);
+        saveThemeToTenant();
+    }
+
+    function setAnimation() {
+        store.toggleAnimation();
+        saveThemeToTenant();
+    }
 </script>
