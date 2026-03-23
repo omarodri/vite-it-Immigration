@@ -147,8 +147,7 @@ const loadData = async () => {
             form.timezone = tenantStore.tenant.preferences?.timezone ?? 'America/Toronto';
             form.date_format = tenantStore.tenant.preferences?.date_format ?? 'Y-m-d';
             form.language = tenantStore.tenant.preferences?.language ?? 'es';
-            // show_customizer could come from settings if stored, default true
-            form.show_customizer = (tenantStore.tenant as any).show_customizer ?? true;
+            form.show_customizer = tenantStore.tenant.theme?.show_customizer !== false;
         }
     } catch (error) {
         console.error('Failed to load tenant data:', error);
@@ -160,12 +159,18 @@ const loadData = async () => {
 const saveSettings = async () => {
     saving.value = true;
     try {
+        // Save general settings
         const result = await tenantStore.updateSettings({
             name: form.company_name,
             company_name: form.company_name,
             timezone: form.timezone,
             date_format: form.date_format,
             language: form.language,
+        });
+
+        // Save show_customizer (theme setting)
+        await tenantStore.updateTheme({
+            show_customizer: form.show_customizer,
         });
 
         if (result.success) {
