@@ -17,6 +17,9 @@ return new class extends Migration
             $table->text('ms_client_secret')->nullable();
             $table->text('google_client_id')->nullable();
             $table->text('google_client_secret')->nullable();
+            $table->string('storage_type', 20)->default('local');
+            $table->unsignedInteger('storage_quota_mb')->default(5000);
+            $table->unsignedBigInteger('storage_used_bytes')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

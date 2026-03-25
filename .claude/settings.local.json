@@ -51,7 +51,9 @@
       "Bash(: > /Users/omar/Herd/vite-it-Immigration/storage/logs/laravel.log)",
       "Bash(:)",
       "Bash(php artisan tinker --execute=\":*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(for f:*)",
+      "Bash(do php:*)"
     ]
   }
 }
