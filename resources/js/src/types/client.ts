@@ -42,7 +42,9 @@ export interface Client {
     postal_code: string | null;
     country: string | null;
     phone: string | null;
+    phone_country_code: string | null;
     secondary_phone: string | null;
+    secondary_phone_country_code: string | null;
 
     // Legal Status in Canada
     canada_status: CanadaStatus | null;
@@ -103,7 +105,9 @@ export interface CreateClientData {
     postal_code?: string;
     country?: string;
     phone?: string;
+    phone_country_code?: string;
     secondary_phone?: string;
+    secondary_phone_country_code?: string;
 
     // Legal Status in Canada
     canada_status?: CanadaStatus;
@@ -148,7 +152,9 @@ export interface UpdateClientData {
     postal_code?: string;
     country?: string;
     phone?: string;
+    phone_country_code?: string;
     secondary_phone?: string;
+    secondary_phone_country_code?: string;
 
     // Legal Status in Canada
     canada_status?: CanadaStatus;

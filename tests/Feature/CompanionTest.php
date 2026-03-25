@@ -519,6 +519,123 @@ class CompanionTest extends TestCase
             ->assertJsonPath('data.relationship', 'sibling');
     }
 
+    // ==================== Spec 31: Contact & Status Fields ====================
+
+    public function test_can_create_companion_with_contact_and_status(): void
+    {
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->postJson("/api/clients/{$this->client->id}/companions", [
+                'first_name' => 'Maria',
+                'last_name' => 'Lopez',
+                'relationship' => 'spouse',
+                'email' => 'maria@example.com',
+                'phone' => '(514) 555-1234',
+                'phone_country_code' => '+1',
+                'canada_status' => 'permanent_resident',
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.email', 'maria@example.com')
+            ->assertJsonPath('data.phone', '(514) 555-1234')
+            ->assertJsonPath('data.phone_country_code', '+1')
+            ->assertJsonPath('data.canada_status', 'permanent_resident')
+            ->assertJsonPath('data.canada_status_label', 'Residente Permanente');
+    }
+
+    public function test_canada_status_other_required_when_status_is_other(): void
+    {
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->postJson("/api/clients/{$this->client->id}/companions", [
+                'first_name' => 'Carlos',
+                'last_name' => 'Ruiz',
+                'relationship' => 'parent',
+                'canada_status' => 'other',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors('canada_status_other');
+    }
+
+    public function test_canada_status_other_saved_when_status_is_other(): void
+    {
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->postJson("/api/clients/{$this->client->id}/companions", [
+                'first_name' => 'Carlos',
+                'last_name' => 'Ruiz',
+                'relationship' => 'parent',
+                'canada_status' => 'other',
+                'canada_status_other' => 'proteccion temporal',
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.canada_status', 'other')
+            ->assertJsonPath('data.canada_status_other', 'Proteccion temporal'); // ucfirst applied
+    }
+
+    public function test_canada_status_other_cleared_when_status_changes(): void
+    {
+        $companion = Companion::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'canada_status' => 'other',
+            'canada_status_other' => 'Proteccion temporal',
+        ]);
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->putJson("/api/clients/{$this->client->id}/companions/{$companion->id}", [
+                'canada_status' => 'refugee',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('data.canada_status', 'refugee')
+            ->assertJsonPath('data.canada_status_other', null);
+    }
+
+    public function test_phone_country_code_defaults_to_plus_one(): void
+    {
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->postJson("/api/clients/{$this->client->id}/companions", [
+                'first_name' => 'Ana',
+                'last_name' => 'Garcia',
+                'relationship' => 'child',
+                'phone' => '5551234567',
+                'phone_country_code' => '+1',
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.phone_country_code', '+1');
+
+        $this->assertDatabaseHas('companions', [
+            'first_name' => 'Ana',
+            'phone_country_code' => '+1',
+        ]);
+    }
+
+    public function test_companion_resource_includes_new_fields(): void
+    {
+        $companion = Companion::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'client_id' => $this->client->id,
+            'email' => 'test@example.com',
+            'phone' => '5551234567',
+            'phone_country_code' => '+52',
+            'canada_status' => 'student',
+        ]);
+
+        $response = $this->actingAs($this->adminUser, 'sanctum')
+            ->getJson("/api/clients/{$this->client->id}/companions/{$companion->id}");
+
+        $response->assertStatus(200)
+            ->assertJsonStructure(['data' => [
+                'email',
+                'phone',
+                'phone_country_code',
+                'canada_status',
+                'canada_status_other',
+                'canada_status_label',
+            ]]);
+    }
+
     // ==================== Passport Information ====================
 
     public function test_can_create_companion_with_passport_info(): void

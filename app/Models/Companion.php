@@ -30,6 +30,11 @@ class Companion extends Model
         'nationality',
         'notes',
         'iuc',
+        'email',
+        'phone',
+        'phone_country_code',
+        'canada_status',
+        'canada_status_other',
     ];
 
     protected $casts = [
@@ -118,6 +123,25 @@ class Companion extends Model
     }
 
     /**
+     * Get the canada status label in Spanish.
+     */
+    public function getCanadaStatusLabelAttribute(): ?string
+    {
+        return match($this->canada_status) {
+            'asylum_seeker'      => 'Solicitante de Asilo',
+            'refugee'            => 'Refugiado',
+            'temporary_resident' => 'Residente Temporal',
+            'permanent_resident' => 'Residente Permanente',
+            'citizen'            => 'Ciudadano',
+            'visitor'            => 'Visitante',
+            'student'            => 'Estudiante',
+            'worker'             => 'Trabajador',
+            'other'              => $this->canada_status_other ?? 'Otro',
+            default              => null,
+        };
+    }
+
+    /**
      * Get the activity log options.
      */
     public function getActivitylogOptions(): LogOptions
@@ -126,6 +150,7 @@ class Companion extends Model
             ->logOnly([
                 'first_name', 'last_name', 'relationship',
                 'date_of_birth', 'nationality',
+                'email', 'phone', 'canada_status',
             ])
             ->logOnlyDirty()
             ->useLogName('companions')

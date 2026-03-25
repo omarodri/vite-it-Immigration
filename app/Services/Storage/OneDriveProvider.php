@@ -268,6 +268,58 @@ class OneDriveProvider implements DocumentStorageInterface
     }
 
     /**
+     * Rename a file or folder in OneDrive.
+     */
+    public function renameItem(string $externalId, string $newName): bool
+    {
+        $accessToken = $this->getAccessToken();
+
+        $response = Http::withToken($accessToken)
+            ->timeout(30)
+            ->patch(self::BASE_URL . "/me/drive/items/{$externalId}", [
+                'name' => $newName,
+            ]);
+
+        if (!$response->successful()) {
+            Log::error('OneDrive rename item failed', [
+                'external_id' => $externalId,
+                'new_name' => $newName,
+                'status' => $response->status(),
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Move a file or folder to a different parent in OneDrive.
+     */
+    public function moveItem(string $externalId, string $targetParentExternalId): bool
+    {
+        $accessToken = $this->getAccessToken();
+
+        $response = Http::withToken($accessToken)
+            ->timeout(30)
+            ->patch(self::BASE_URL . "/me/drive/items/{$externalId}", [
+                'parentReference' => [
+                    'id' => $targetParentExternalId,
+                ],
+            ]);
+
+        if (!$response->successful()) {
+            Log::error('OneDrive move item failed', [
+                'external_id' => $externalId,
+                'target_parent_id' => $targetParentExternalId,
+                'status' => $response->status(),
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * List contents of a folder in OneDrive.
      *
      * @return array<int, array{name: string, type: string, external_id: string}>

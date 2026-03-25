@@ -190,15 +190,18 @@
                         <div>
                             <label class="text-gray-500 text-sm">{{ $t('clients.phone') }}</label>
                             <p class="font-semibold">
-                                <a v-if="client.phone" :href="`tel:${client.phone}`" class="text-primary hover:underline">
-                                    {{ client.phone }}
+                                <a v-if="client.phone" :href="`tel:${client.phone_country_code || '+1'}${client.phone}`" class="text-primary hover:underline">
+                                    {{ client.phone_country_code || '+1' }} {{ client.phone }}
                                 </a>
                                 <span v-else>-</span>
                             </p>
                         </div>
                         <div>
                             <label class="text-gray-500 text-sm">{{ $t('clients.secondary_phone') }}</label>
-                            <p class="font-semibold">{{ client.secondary_phone || '-' }}</p>
+                            <p class="font-semibold">
+                                <template v-if="client.secondary_phone">{{ client.secondary_phone_country_code || '+1' }} {{ client.secondary_phone }}</template>
+                                <template v-else>-</template>
+                            </p>
                         </div>
                         <div class="md:col-span-2">
                             <label class="text-gray-500 text-sm">{{ $t('clients.residential_address') }}</label>
@@ -302,6 +305,8 @@
                                             <h6 class="font-semibold">{{ companion.first_name }} {{ companion.last_name }}</h6>
                                             <p class="text-sm text-gray-500">{{ companion.relationship_label || formatRelationship(companion.relationship) }}</p>
                                             <p v-if="companion.age" class="text-xs text-gray-400">{{ companion.age }} {{ $t('companions.years_old') }}</p>
+                                            <p v-if="companion.email" class="text-xs text-gray-400">{{ companion.email }}</p>
+                                            <p v-if="companion.canada_status_label" class="text-xs text-gray-400">{{ companion.canada_status_label }}</p>
                                         </div>
                                     </div>
                                     <div class="flex gap-1">
@@ -619,6 +624,48 @@
                                         ></textarea>
                                     </div>
 
+                                    <!-- Contact & Immigration Status -->
+                                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+                                        <h6 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">{{ $t('clients.contact_information') }}</h6>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.email') }}</label>
+                                                <input
+                                                    v-model="companionForm.email"
+                                                    type="email"
+                                                    class="form-input"
+                                                    :placeholder="$t('clients.email')"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.phone') }}</label>
+                                                <PhoneInput
+                                                    v-model="companionForm.phone as string"
+                                                    v-model:country-code="companionForm.phone_country_code as string"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.canada_status') }}</label>
+                                                <select v-model="companionForm.canada_status" class="form-select">
+                                                    <option value="">{{ $t('clients.select_status') }}</option>
+                                                    <option v-for="option in CANADA_STATUS_OPTIONS" :key="option.value" :value="option.value">
+                                                        {{ $t(`clients.status_${option.value}`) }}
+                                                    </option>
+                                                </select>
+                                            </div>
+                                            <div v-if="companionForm.canada_status === 'other'">
+                                                <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.canada_status_other') }}</label>
+                                                <input
+                                                    v-model="companionForm.canada_status_other"
+                                                    type="text"
+                                                    class="form-input"
+                                                    :placeholder="$t('clients.canada_status_other_placeholder')"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="flex justify-end gap-3 mt-6">
                                         <button
                                             type="button"
@@ -659,6 +706,8 @@ import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } fro
 import type { Client, ClientStatus } from '@/types/client';
 import type { Companion, CreateCompanionData, UpdateCompanionData, RelationshipType } from '@/types/companion';
 import CountrySelect from '@/components/CountrySelect.vue';
+import PhoneInput from '@/components/PhoneInput.vue';
+import { CANADA_STATUS_OPTIONS } from '@/types/client';
 import flatPickr from 'vue-flatpickr-component';
 import 'flatpickr/dist/flatpickr.css';
 
@@ -705,6 +754,11 @@ const companionForm = ref<CreateCompanionData>({
     passport_country: '',
     passport_expiry_date: '',
     notes: '',
+    email: '',
+    phone: '',
+    phone_country_code: '+1',
+    canada_status: '',
+    canada_status_other: '',
 });
 
 // Date picker config
@@ -815,6 +869,11 @@ const resetCompanionForm = () => {
         passport_country: '',
         passport_expiry_date: '',
         notes: '',
+        email: '',
+        phone: '',
+        phone_country_code: '+1',
+        canada_status: '',
+        canada_status_other: '',
     };
     companionErrors.value = {};
 };
@@ -836,6 +895,11 @@ const openCompanionModal = (companion?: Companion) => {
             passport_country: companion.passport_country || '',
             passport_expiry_date: companion.passport_expiry_date || '',
             notes: companion.notes || '',
+            email: companion.email || '',
+            phone: companion.phone || '',
+            phone_country_code: companion.phone_country_code || '+1',
+            canada_status: companion.canada_status || '',
+            canada_status_other: companion.canada_status_other || '',
         };
     } else {
         editingCompanion.value = null;

@@ -90,13 +90,10 @@
                                         <label class="block text-sm font-medium mb-1 dark:text-white">
                                             {{ $t('clients.phone') }} *
                                         </label>
-                                        <input
+                                        <PhoneInput
                                             v-model="form.phone"
-                                            type="tel"
-                                            class="form-input"
-                                            :placeholder="'(___) ___-____'"
-                                            :class="{ 'border-danger': errors.phone }"
-                                            v-maska="'(###) ###-####'"
+                                            v-model:country-code="form.phone_country_code"
+                                            :error="!!errors.phone"
                                             required
                                         />
                                         <p v-if="errors.phone" class="text-danger text-xs mt-1">
@@ -151,13 +148,13 @@
 <script lang="ts" setup>
 import { ref, reactive, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { vMaska } from 'maska/vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue';
 import clientService from '@/services/clientService';
 import { useNotification } from '@/composables/useNotification';
 import type { Client, CreateClientData } from '@/types/client';
 import IconLoader from '@/components/icon/icon-loader.vue';
 import CountrySelect from '@/components/CountrySelect.vue';
+import PhoneInput from '@/components/PhoneInput.vue';
 
 interface Props {
     open: boolean;
@@ -182,6 +179,7 @@ const form = reactive<CreateClientData>({
     last_name: '',
     email: '',
     phone: '',
+    phone_country_code: '+1',
     nationality: '',
     language: 'es',
 });
@@ -201,6 +199,7 @@ function resetForm() {
     form.last_name = '';
     form.email = '';
     form.phone = '';
+    form.phone_country_code = '+1';
     form.nationality = '';
     form.language = 'es';
     errors.value = {};

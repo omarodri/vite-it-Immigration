@@ -187,14 +187,11 @@
                             <label for="phone" class="mb-2 block">{{ $t('clients.phone') }}
                                 <span class="text-danger">*</span>
                             </label>
-                            <input 
-                                id="phone" 
-                                v-model="form.phone" 
-                                type="text" 
-                                placeholder="(___) ___-____" 
-                                class="form-input" 
-                                v-maska="'(###) ###-####'" 
-                                :class="{ 'border-danger': v$.phone.$error }"
+                            <PhoneInput
+                                v-model="form.phone"
+                                v-model:country-code="form.phone_country_code"
+                                :error="v$.phone.$error"
+                                required
                             />
                             <p v-if="v$.phone.$error" class="text-danger mt-1 text-sm">{{ v$.phone.$errors[0]?.$message }}</p>
                         </div>
@@ -202,7 +199,10 @@
                         <!-- Secondary Phone -->
                         <div>
                             <label for="secondary_phone" class="mb-2 block">{{ $t('clients.secondary_phone') }}</label>
-                            <input id="secondary_phone" v-model="form.secondary_phone" type="text" placeholder="(___) ___-____" class="form-input" v-maska="'(###) ###-####'" />
+                            <PhoneInput
+                                v-model="form.secondary_phone"
+                                v-model:country-code="form.secondary_phone_country_code"
+                            />
                         </div>
 
                         <!-- Residential Address -->
@@ -288,6 +288,18 @@
                                 <option value="">{{ $t('clients.select_status') }}</option>
                                 <option v-for="opt in CanadaStatusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                             </select>
+                        </div>
+
+                        <!-- Canada Status Other -->
+                        <div v-if="form.canada_status === 'other'">
+                            <label class="mb-2 block">{{ $t('clients.canada_status_other') }}</label>
+                            <input
+                                v-model="form.canada_status_other"
+                                type="text"
+                                class="form-input"
+                                :placeholder="$t('clients.canada_status_other_placeholder')"
+                                required
+                            />
                         </div>
 
                         <!-- Entry Point -->
@@ -388,7 +400,6 @@ import { useMeta } from '@/composables/use-meta';
 import { useClientStore } from '@/stores/client';
 import { useNotification } from '@/composables/useNotification';
 import { useI18n } from 'vue-i18n';
-import { vMaska } from 'maska/vue';
 import flatPickr from 'vue-flatpickr-component';
 import 'flatpickr/dist/flatpickr.css';
 import {
@@ -408,6 +419,7 @@ import IconSettings from '@/components/icon/icon-settings.vue';
 import IconSave from '@/components/icon/icon-save.vue';
 import IconX from '@/components/icon/icon-x.vue';
 import CountrySelect from '@/components/CountrySelect.vue';
+import PhoneInput from '@/components/PhoneInput.vue';
 import EasyMDE from 'easymde';
 import 'easymde/dist/easymde.min.css';
 
@@ -501,13 +513,16 @@ const form = reactive({
     profession: '',
     email: '',
     phone: '',
+    phone_country_code: '+1',
     secondary_phone: '',
+    secondary_phone_country_code: '+1',
     residential_address: '',
     city: '',
     province: '',
     postal_code: '',
     country: '',
     canada_status: '',
+    canada_status_other: '',
     entry_point: '',
     arrival_date: '',
     passport_number: '',
@@ -548,10 +563,14 @@ const handleSubmit = async () => {
     errorMessage.value = '';
 
     try {
-        // Only send changed fields
-        const data = Object.fromEntries(
-            Object.entries(form).filter(([_, v]) => v !== '' && v !== null)
+        // Only send changed fields and map canada_status_other to other_status_1
+        const { canada_status_other, ...rest } = form;
+        const data: Record<string, any> = Object.fromEntries(
+            Object.entries(rest).filter(([_, v]) => v !== '' && v !== null)
         );
+        if (canada_status_other) {
+            data.other_status_1 = canada_status_other;
+        }
 
         await clientStore.updateClient(clientId.value, data as any);
 
@@ -592,6 +611,10 @@ const loadClient = async () => {
                 const value = (client as any)[key];
                 (form as any)[key] = value ?? '';
             });
+            // Map server fields to form fields
+            form.phone_country_code = (client as any).phone_country_code || '+1';
+            form.secondary_phone_country_code = (client as any).secondary_phone_country_code || '+1';
+            form.canada_status_other = (client as any).other_status_1 || '';
         }
     } catch (err) {
         error(t('clients.failed_to_load'));

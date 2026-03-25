@@ -49,6 +49,16 @@ interface DocumentStorageInterface
     public function deleteFolder(string $externalId): bool;
 
     /**
+     * Rename a file or folder in cloud storage.
+     */
+    public function renameItem(string $externalId, string $newName): bool;
+
+    /**
+     * Move a file or folder to a different parent in cloud storage.
+     */
+    public function moveItem(string $externalId, string $targetParentExternalId): bool;
+
+    /**
      * List contents of a folder in cloud storage.
      *
      * @return array<int, array{name: string, type: string, external_id: string}>

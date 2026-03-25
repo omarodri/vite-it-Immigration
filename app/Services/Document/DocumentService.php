@@ -12,6 +12,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -215,7 +216,44 @@ class DocumentService
             ])
             ->log('Moved document: ' . $document->original_name);
 
+        // Sync move to cloud if document has an external_id
+        if ($document->external_id) {
+            try {
+                $targetFolder = DocumentFolder::find($targetFolderId);
+                if ($targetFolder && $targetFolder->external_id) {
+                    $provider = $this->providerFactory->make($document->storage_type);
+                    $provider->moveItem($document->external_id, $targetFolder->external_id);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('DocumentService: Failed to move document in cloud, local move succeeded.', [
+                    'document_id' => $document->id,
+                    'external_id' => $document->external_id,
+                    'target_folder_id' => $targetFolderId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         return $document->fresh('uploader:id,name');
+    }
+
+    /**
+     * Sync a document rename to the cloud provider.
+     * Failures are logged but do not throw.
+     */
+    public function syncRenameToCloud(Document $document, string $newName): void
+    {
+        try {
+            $provider = $this->providerFactory->make($document->storage_type);
+            $provider->renameItem($document->external_id, $newName);
+        } catch (\Throwable $e) {
+            Log::warning('DocumentService: Failed to rename document in cloud, local rename succeeded.', [
+                'document_id' => $document->id,
+                'external_id' => $document->external_id,
+                'new_name' => $newName,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

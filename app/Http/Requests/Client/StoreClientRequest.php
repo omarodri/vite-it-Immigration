@@ -66,6 +66,8 @@ class StoreClientRequest extends FormRequest
                 }),
             ],
             'secondary_phone' => ['nullable', 'string', 'max:30'],
+            'phone_country_code'           => ['nullable', 'string', 'max:6'],
+            'secondary_phone_country_code' => ['nullable', 'string', 'max:6'],
 
             // Legal Status in Canada
             'canada_status' => ['nullable', Rule::in([

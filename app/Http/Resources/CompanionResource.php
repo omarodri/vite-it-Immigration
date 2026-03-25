@@ -32,6 +32,12 @@ class CompanionResource extends JsonResource
             'nationality' => $this->nationality,
             'notes' => $this->notes,
             'iuc' => $this->iuc,
+            'email'                => $this->email,
+            'phone'                => $this->phone,
+            'phone_country_code'   => $this->phone_country_code,
+            'canada_status'        => $this->canada_status,
+            'canada_status_other'  => $this->canada_status_other,
+            'canada_status_label'  => $this->canada_status_label,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

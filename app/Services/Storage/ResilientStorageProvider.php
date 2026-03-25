@@ -80,6 +80,22 @@ class ResilientStorageProvider implements DocumentStorageInterface
         );
     }
 
+    public function renameItem(string $externalId, string $newName): bool
+    {
+        return $this->executeWithResilience(
+            fn () => $this->inner->renameItem($externalId, $newName),
+            'renameItem'
+        );
+    }
+
+    public function moveItem(string $externalId, string $targetParentExternalId): bool
+    {
+        return $this->executeWithResilience(
+            fn () => $this->inner->moveItem($externalId, $targetParentExternalId),
+            'moveItem'
+        );
+    }
+
     public function listFolder(string $externalId): array
     {
         return $this->executeWithResilience(

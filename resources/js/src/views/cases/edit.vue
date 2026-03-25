@@ -57,6 +57,19 @@
                             </select>
                         </div>
 
+                        <!-- Closure Notes (if closed) -->
+                        <div v-if="form.status === 'closed'" class="mt-6">
+                            <label for="closure_notes" class="block text-sm font-medium mb-2">{{ $t('cases.closure_notes') }} <span class="text-danger">*</span></label>
+                            <textarea id="closure_notes" v-model="form.closure_notes" rows="3" class="form-textarea" :class="{ 'border-danger': errors.closure_notes }" required></textarea>
+                            <p v-if="errors.closure_notes" class="text-danger text-xs mt-1">{{ errors.closure_notes }}</p>
+                        </div>
+
+                        <!-- Archive Box Number (if archived) -->
+                        <div v-if="form.status === 'archived' || form.status === 'closed'" class="mt-6">
+                            <label for="archive_box_number" class="block text-sm font-medium mb-2">{{ $t('cases.archive_box_number') }}</label>
+                            <input id="archive_box_number" v-model="form.archive_box_number" type="text" class="form-input" placeholder="BOX-001" />
+                        </div>
+                        
                         <!-- assigned_to -->
                         <div>
                             <label class="block text-sm font-medium mb-2">{{ $t('cases.assigned_to') }}</label>
@@ -169,18 +182,7 @@
                     <textarea id="description" v-model="form.description" rows="4" class="form-textarea"></textarea>
                 </div>
 
-                <!-- Closure Notes (if closed) -->
-                <div v-if="form.status === 'closed'" class="mt-6">
-                    <label for="closure_notes" class="block text-sm font-medium mb-2">{{ $t('cases.closure_notes') }} <span class="text-danger">*</span></label>
-                    <textarea id="closure_notes" v-model="form.closure_notes" rows="3" class="form-textarea" :class="{ 'border-danger': errors.closure_notes }" required></textarea>
-                    <p v-if="errors.closure_notes" class="text-danger text-xs mt-1">{{ errors.closure_notes }}</p>
-                </div>
 
-                <!-- Archive Box Number (if archived) -->
-                <div v-if="form.status === 'archived' || form.status === 'closed'" class="mt-6">
-                    <label for="archive_box_number" class="block text-sm font-medium mb-2">{{ $t('cases.archive_box_number') }}</label>
-                    <input id="archive_box_number" v-model="form.archive_box_number" type="text" class="form-input" placeholder="BOX-001" />
-                </div>
 
                 <!-- Financial Information Section -->
                 <div class="mt-6">

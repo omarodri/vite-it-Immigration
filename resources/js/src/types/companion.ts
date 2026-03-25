@@ -3,7 +3,7 @@
  * Interfaces for companion-related data structures
  */
 
-import type { Gender } from './client';
+import type { Gender, CanadaStatus } from './client';
 
 export type RelationshipType = 'spouse' | 'common-law partner' | 'dependent child' | 'grandchild' | 'parent' | 'grandparent' | 'sibling' | 'half-sibling' | 'step-sibling' | 'aunt / uncle' | 'niece / nephew' | 'cousin' | 'child-in-law' | 'parent-in-law' | 'other';
 
@@ -26,6 +26,12 @@ export interface Companion {
     nationality: string | null;
     notes: string | null;
     iuc?: string | null;
+    email: string | null;
+    phone: string | null;
+    phone_country_code: string | null;
+    canada_status: CanadaStatus | null;
+    canada_status_other: string | null;
+    canada_status_label?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -43,6 +49,11 @@ export interface CreateCompanionData {
     nationality?: string;
     notes?: string;
     iuc?: string;
+    email?: string;
+    phone?: string;
+    phone_country_code?: string;
+    canada_status?: string;
+    canada_status_other?: string;
 }
 
 export interface UpdateCompanionData {
@@ -58,6 +69,11 @@ export interface UpdateCompanionData {
     nationality?: string;
     notes?: string;
     iuc?: string;
+    email?: string;
+    phone?: string;
+    phone_country_code?: string;
+    canada_status?: string;
+    canada_status_other?: string;
 }
 
 // Relationship type options for select dropdowns

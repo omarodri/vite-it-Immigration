@@ -42,7 +42,9 @@ class Client extends Model
         'postal_code',
         'country',
         'phone',
+        'phone_country_code',
         'secondary_phone',
+        'secondary_phone_country_code',
         // Legal Status in Canada
         'canada_status',
         'status_date',

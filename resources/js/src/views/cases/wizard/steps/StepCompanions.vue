@@ -256,6 +256,43 @@
                                         ></textarea>
                                     </div>
 
+                                    <!-- Contact & Immigration Status -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.email') }}</label>
+                                            <input v-model="companionForm.email" type="email" class="form-input" :placeholder="$t('clients.email')" />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.phone') }}</label>
+                                            <PhoneInput
+                                                v-model="companionForm.phone"
+                                                v-model:country-code="companionForm.phone_country_code"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.canada_status') }}</label>
+                                            <select v-model="companionForm.canada_status" class="form-select">
+                                                <option value="">{{ $t('clients.select_status') }}</option>
+                                                <option v-for="option in CANADA_STATUS_OPTIONS" :key="option.value" :value="option.value">
+                                                    {{ $t(`clients.status_${option.value}`) }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div v-if="companionForm.canada_status === 'other'">
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.canada_status_other') }}</label>
+                                            <input
+                                                v-model="companionForm.canada_status_other"
+                                                type="text"
+                                                class="form-input"
+                                                :placeholder="$t('clients.canada_status_other_placeholder')"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div class="flex justify-end gap-3 mt-6">
                                         <button
                                             type="button"
@@ -295,6 +332,8 @@ import IconUsers from '@/components/icon/icon-users.vue';
 import IconInfoTriangle from '@/components/icon/icon-info-triangle.vue';
 import IconPlus from '@/components/icon/icon-plus.vue';
 import CountrySelect from '@/components/CountrySelect.vue';
+import PhoneInput from '@/components/PhoneInput.vue';
+import { CANADA_STATUS_OPTIONS } from '@/types/client';
 
 // Get wizard from parent
 const wizard = inject<ReturnType<typeof import('@/composables/useCaseWizard').useCaseWizard>>('wizard')!;
@@ -325,6 +364,11 @@ const companionForm = ref<CreateCompanionData>({
     passport_country: '',
     passport_expiry_date: '',
     notes: '',
+    email: '',
+    phone: '',
+    phone_country_code: '+1',
+    canada_status: '',
+    canada_status_other: '',
 });
 
 const selectedCount = computed(() => wizard.state.selectedCompanionIds.length);
@@ -354,6 +398,11 @@ function resetCompanionForm() {
         passport_country: '',
         passport_expiry_date: '',
         notes: '',
+        email: '',
+        phone: '',
+        phone_country_code: '+1',
+        canada_status: '',
+        canada_status_other: '',
     };
     companionErrors.value = {};
 }

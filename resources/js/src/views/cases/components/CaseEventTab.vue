@@ -80,7 +80,7 @@
                             </span>
                         </td>
                         <td class="whitespace-nowrap text-sm text-white-dark">
-                            {{ formatEventDate(ev.start) }}
+                            {{ formatEventDate(ev.start, ev.allDay) }}
                         </td>
                         <td>
                             <div
@@ -345,8 +345,15 @@ function categoryBadgeClass(category: string): string {
     return CATEGORY_BADGE_OUTLINE[category] ?? 'badge-outline-primary';
 }
 
-function formatEventDate(isoStr: string): string {
+function formatEventDate(isoStr: string, allDay = false): string {
     if (!isoStr) return '-';
+    if (allDay) {
+        // Parse YYYY-MM-DD without timezone shift
+        const [y, m, d] = isoStr.split('T')[0].split('-').map(Number);
+        return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+            month: 'short', day: 'numeric', year: 'numeric',
+        });
+    }
     return new Date(isoStr).toLocaleString(undefined, {
         month: 'short', day: 'numeric', year: 'numeric',
         hour: '2-digit', minute: '2-digit',

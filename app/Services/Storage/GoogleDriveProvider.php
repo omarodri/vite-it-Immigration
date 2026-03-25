@@ -247,6 +247,71 @@ class GoogleDriveProvider implements DocumentStorageInterface
     }
 
     /**
+     * Rename a file or folder in Google Drive.
+     */
+    public function renameItem(string $externalId, string $newName): bool
+    {
+        $accessToken = $this->getAccessToken();
+
+        $response = Http::withToken($accessToken)
+            ->timeout(30)
+            ->patch(self::API_BASE . "/drive/v3/files/{$externalId}", [
+                'name' => $newName,
+            ]);
+
+        if (!$response->successful()) {
+            Log::error('Google Drive rename item failed', [
+                'external_id' => $externalId,
+                'new_name' => $newName,
+                'status' => $response->status(),
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Move a file or folder to a different parent in Google Drive.
+     */
+    public function moveItem(string $externalId, string $targetParentExternalId): bool
+    {
+        $accessToken = $this->getAccessToken();
+
+        // Get current parents so we can remove them
+        $metaResponse = Http::withToken($accessToken)
+            ->timeout(30)
+            ->get(self::API_BASE . "/drive/v3/files/{$externalId}", [
+                'fields' => 'parents',
+            ]);
+
+        if (!$metaResponse->successful()) {
+            Log::error('Google Drive move item: failed to get current parents', [
+                'external_id' => $externalId,
+                'status' => $metaResponse->status(),
+            ]);
+            return false;
+        }
+
+        $previousParents = implode(',', $metaResponse->json('parents', []));
+
+        $response = Http::withToken($accessToken)
+            ->timeout(30)
+            ->patch(self::API_BASE . "/drive/v3/files/{$externalId}?addParents={$targetParentExternalId}&removeParents={$previousParents}");
+
+        if (!$response->successful()) {
+            Log::error('Google Drive move item failed', [
+                'external_id' => $externalId,
+                'target_parent_id' => $targetParentExternalId,
+                'status' => $response->status(),
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * List contents of a folder in Google Drive.
      *
      * @return array<int, array{name: string, type: string, external_id: string}>

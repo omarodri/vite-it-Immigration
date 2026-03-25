@@ -145,7 +145,13 @@ class DocumentController extends Controller
 
         $this->validateDocumentBelongsToCase($document, $case);
 
-        $document->update($request->validated());
+        $validated = $request->validated();
+        $document->update($validated);
+
+        // Sync rename to cloud if original_name changed and document has an external_id
+        if (isset($validated['original_name']) && $document->external_id) {
+            $this->documentService->syncRenameToCloud($document, $validated['original_name']);
+        }
 
         return (new DocumentResource($document->fresh('uploader:id,name')))
             ->additional(['message' => 'Document updated successfully.']);

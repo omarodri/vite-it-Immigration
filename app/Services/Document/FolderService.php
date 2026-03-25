@@ -42,6 +42,16 @@ class FolderService
      */
     public function createFolder(ImmigrationCase $case, array $data): DocumentFolder
     {
+        // Prevent duplicate folder names in the same parent
+        $exists = DocumentFolder::where('case_id', $case->id)
+            ->where('parent_id', $data['parent_id'] ?? null)
+            ->where('name', $data['name'])
+            ->exists();
+
+        if ($exists) {
+            throw new \RuntimeException("A folder named \"{$data['name']}\" already exists in this location.");
+        }
+
         $folder = DocumentFolder::create([
             'tenant_id' => $case->tenant_id,
             'case_id' => $case->id,
@@ -99,6 +109,23 @@ class FolderService
             ])
             ->log('Renamed folder from "' . $oldName . '" to "' . $name . '"');
 
+        // Sync rename to cloud if folder has an external_id
+        if ($folder->external_id) {
+            try {
+                $tenant = Tenant::find($folder->tenant_id);
+                if ($tenant && in_array($tenant->storage_type, ['onedrive', 'google_drive'], true)) {
+                    $provider = $this->providerFactory->makeForTenant($tenant);
+                    $provider->renameItem($folder->external_id, $name);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('FolderService: Failed to rename folder in cloud, local rename succeeded.', [
+                    'folder_id' => $folder->id,
+                    'external_id' => $folder->external_id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         return $folder;
     }
 
@@ -111,10 +138,8 @@ class FolderService
      */
     public function deleteFolder(DocumentFolder $folder): bool
     {
-        // Check for documents (including soft-deleted)
-        $documentCount = Document::withTrashed()
-            ->where('folder_id', $folder->id)
-            ->count();
+        // Check for active documents only (soft-deleted should not block deletion)
+        $documentCount = Document::where('folder_id', $folder->id)->count();
 
         if ($documentCount > 0) {
             throw new \RuntimeException('Cannot delete folder that contains documents.');
@@ -162,6 +187,14 @@ class FolderService
      */
     public function createDefaultStructure(ImmigrationCase $case): void
     {
+        // Guard: skip if folders already exist for this case
+        if (DocumentFolder::where('case_id', $case->id)->exists()) {
+            Log::info('FolderService: Default folders already exist, skipping', [
+                'case_id' => $case->id,
+            ]);
+            return;
+        }
+
         $defaultFolders = [
             ['name' => 'Admision', 'category' => Document::CATEGORY_ADMISSION],
             ['name' => 'Archivo', 'category' => Document::CATEGORY_ARCHIVE],

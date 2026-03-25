@@ -53,7 +53,11 @@ class DocumentFolderController extends Controller
             'category' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $folder = $this->folderService->createFolder($case, $validated);
+        try {
+            $folder = $this->folderService->createFolder($case, $validated);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return (new DocumentFolderResource($folder))
             ->additional(['message' => 'Folder created successfully.'])

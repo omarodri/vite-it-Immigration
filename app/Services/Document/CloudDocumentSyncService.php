@@ -35,6 +35,9 @@ class CloudDocumentSyncService
 
         $provider = $this->providerFactory->makeForTenant($tenant);
 
+        // Step 0: Clean up duplicate documents (same external_id in same case)
+        $this->deduplicateDocuments($case);
+
         // Step 1: Sync folders (add new, collect cloud inventory)
         [$foldersAdded, $cloudFolderExternalIds] = $this->pullFolders($case, $provider);
 
@@ -68,6 +71,7 @@ class CloudDocumentSyncService
     /**
      * Pull folders from cloud that don't exist in the database.
      * Scans the root case folder and all known subfolders recursively.
+     * Also updates local folder names when they differ from cloud (mirrors renames).
      *
      * @return array{0: int, 1: array<string>} [imported count, all cloud folder external_ids]
      */
@@ -77,7 +81,7 @@ class CloudDocumentSyncService
             return [0, []];
         }
 
-        // Existing folder external_ids for this case
+        // Existing folder external_ids for this case (keyed by local ID)
         $existingExternalIds = DocumentFolder::where('case_id', $case->id)
             ->whereNotNull('external_id')
             ->where('external_id', '!=', '')
@@ -114,8 +118,14 @@ class CloudDocumentSyncService
 
                 // Already tracked?
                 if (in_array($item['external_id'], $existingExternalIds, true)) {
-                    // Still need to scan its children — find its local ID
                     $localId = array_search($item['external_id'], $existingExternalIds, true);
+
+                    // Update local name if it was renamed in cloud
+                    $localFolder = DocumentFolder::find($localId);
+                    if ($localFolder && $localFolder->name !== $item['name']) {
+                        $localFolder->update(['name' => $item['name']]);
+                    }
+
                     $queue[] = [$item['external_id'], $localId];
                     continue;
                 }
@@ -294,29 +304,52 @@ class CloudDocumentSyncService
                     $cloudDocExternalIds[] = $item['external_id'];
 
                     if (in_array($item['external_id'], $existingExternalIds, true)) {
+                        // Update local name/folder if renamed or moved in cloud
+                        $existingDoc = Document::where('case_id', $case->id)
+                            ->where('external_id', $item['external_id'])
+                            ->first();
+                        if ($existingDoc) {
+                            $updates = [];
+                            if ($existingDoc->original_name !== $item['name']) {
+                                $updates['name'] = $item['name'];
+                                $updates['original_name'] = $item['name'];
+                            }
+                            if ($existingDoc->folder_id !== $scanTarget['folder_id']) {
+                                $updates['folder_id'] = $scanTarget['folder_id'];
+                            }
+                            if (!empty($updates)) {
+                                $existingDoc->update($updates);
+                            }
+                        }
                         continue;
                     }
 
-                    Document::create([
-                        'tenant_id' => $case->tenant_id,
-                        'case_id' => $case->id,
-                        'folder_id' => $scanTarget['folder_id'],
-                        'uploaded_by' => $uploadedBy,
-                        'name' => $item['name'],
-                        'original_name' => $item['name'],
-                        'mime_type' => $item['mime_type'] ?? 'application/octet-stream',
-                        'size' => $item['size'] ?? 0,
-                        'category' => Document::CATEGORY_OTHER,
-                        'storage_type' => $storageTypeConstant,
-                        'storage_path' => '',
-                        'external_id' => $item['external_id'],
-                        'external_url' => $item['web_url'] ?? '',
-                        'version' => 1,
-                        'checksum' => null,
-                    ]);
+                    $doc = Document::firstOrCreate(
+                        [
+                            'case_id' => $case->id,
+                            'external_id' => $item['external_id'],
+                        ],
+                        [
+                            'tenant_id' => $case->tenant_id,
+                            'folder_id' => $scanTarget['folder_id'],
+                            'uploaded_by' => $uploadedBy,
+                            'name' => $item['name'],
+                            'original_name' => $item['name'],
+                            'mime_type' => $item['mime_type'] ?? 'application/octet-stream',
+                            'size' => $item['size'] ?? 0,
+                            'category' => Document::CATEGORY_OTHER,
+                            'storage_type' => $storageTypeConstant,
+                            'storage_path' => '',
+                            'external_url' => $item['web_url'] ?? '',
+                            'version' => 1,
+                            'checksum' => null,
+                        ]
+                    );
 
                     $existingExternalIds[] = $item['external_id'];
-                    $imported++;
+                    if ($doc->wasRecentlyCreated) {
+                        $imported++;
+                    }
                 }
             } catch (\Throwable $e) {
                 Log::warning('CloudDocumentSyncService: Failed to scan folder for documents', [
@@ -335,6 +368,39 @@ class CloudDocumentSyncService
         }
 
         return [$imported, $cloudDocExternalIds];
+    }
+
+    /**
+     * Remove duplicate document records that share the same external_id within a case.
+     * Keeps the oldest record (lowest id) and deletes the rest.
+     */
+    private function deduplicateDocuments(ImmigrationCase $case): void
+    {
+        $duplicates = Document::where('case_id', $case->id)
+            ->whereNotNull('external_id')
+            ->where('external_id', '!=', '')
+            ->selectRaw('external_id, MIN(id) as keep_id, COUNT(*) as cnt')
+            ->groupBy('external_id')
+            ->havingRaw('COUNT(*) > 1')
+            ->get();
+
+        if ($duplicates->isEmpty()) {
+            return;
+        }
+
+        $removed = 0;
+        foreach ($duplicates as $dup) {
+            $deleted = Document::where('case_id', $case->id)
+                ->where('external_id', $dup->external_id)
+                ->where('id', '!=', $dup->keep_id)
+                ->delete();
+            $removed += $deleted;
+        }
+
+        Log::info('CloudDocumentSyncService: Removed duplicate documents', [
+            'case_id' => $case->id,
+            'duplicates_removed' => $removed,
+        ]);
     }
 
     /**

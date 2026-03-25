@@ -187,6 +187,7 @@ const props = defineProps<{
 const uploadDropzoneRef = ref<InstanceType<typeof UploadDropzone> | null>(null);
 const previewDoc = ref<Document | null>(null);
 const previewBlobUrl = ref('');
+const isBusy = ref(false); // Guard against double-submit
 
 const currentFolder = computed(() => documentStore.currentFolder);
 
@@ -213,7 +214,8 @@ async function refreshAll() {
     await Promise.all([fetchFolders(), fetchDocuments()]);
 
     // Auto-pull cloud folders and documents on refresh
-    if (isCloudStorage.value) {
+    if (isCloudStorage.value && !isSyncing.value) {
+        isSyncing.value = true;
         try {
             const result = await documentService.syncFromCloud(props.caseId);
             const hasChanges = result.folders_added > 0 || result.folders_removed > 0
@@ -223,6 +225,8 @@ async function refreshAll() {
             }
         } catch {
             // Silent fail — cloud sync is best-effort on refresh
+        } finally {
+            isSyncing.value = false;
         }
     }
 }
@@ -236,10 +240,9 @@ watch(currentFolderId, () => {
 });
 
 onMounted(async () => {
-    await refreshAll();
+    await Promise.all([fetchFolders(), fetchDocuments()]);
 
-    // Auto-initialize folders if the case has none (repair for cases created
-    // before folder auto-creation or when it failed during case creation)
+    // Auto-initialize folders if the case has none
     if (folders.value.length === 0) {
         try {
             const result = await documentService.initializeFolders(props.caseId);
@@ -263,25 +266,33 @@ onUnmounted(() => {
 
 // ---- Cloud Sync ----
 
+const isSyncing = ref(false);
+
 async function handleSync() {
-    await documentStore.syncFolders(props.caseId);
-
-    // Pull folders and documents from cloud, prune deleted items
+    if (isSyncing.value) return;
+    isSyncing.value = true;
     try {
-        const result = await documentService.syncFromCloud(props.caseId);
-        const hasChanges = result.folders_added > 0 || result.folders_removed > 0
-            || result.documents_added > 0 || result.documents_removed > 0;
-        if (hasChanges) {
-            await Promise.all([fetchFolders(), fetchDocuments()]);
-            showMessage(result.message);
-            return;
-        }
-    } catch {
-        // Cloud sync is best-effort
-    }
+        await documentStore.syncFolders(props.caseId);
 
-    if (documentStore.syncStatus === 'synced') {
-        showMessage(t('documents.sync_success'));
+        // Pull folders and documents from cloud, prune deleted items
+        try {
+            const result = await documentService.syncFromCloud(props.caseId);
+            const hasChanges = result.folders_added > 0 || result.folders_removed > 0
+                || result.documents_added > 0 || result.documents_removed > 0;
+            if (hasChanges) {
+                await Promise.all([fetchFolders(), fetchDocuments()]);
+                showMessage(result.message);
+                return;
+            }
+        } catch {
+            // Cloud sync is best-effort
+        }
+
+        if (documentStore.syncStatus === 'synced') {
+            showMessage(t('documents.sync_success'));
+        }
+    } finally {
+        isSyncing.value = false;
     }
 }
 
@@ -318,6 +329,8 @@ function closePreview() {
 // ---- Folder Actions ----
 
 async function showNewFolderDialog() {
+    if (isBusy.value) return;
+
     const { value: name } = await Swal.fire({
         title: t('documents.new_folder'),
         input: 'text',
@@ -333,6 +346,7 @@ async function showNewFolderDialog() {
     });
 
     if (name) {
+        isBusy.value = true;
         try {
             await documentService.createFolder(props.caseId, {
                 name: name.trim(),
@@ -342,11 +356,15 @@ async function showNewFolderDialog() {
             await fetchFolders();
         } catch {
             // Error handled by api interceptor
+        } finally {
+            isBusy.value = false;
         }
     }
 }
 
 async function showRenameFolderDialog(folder: DocumentFolder) {
+    if (isBusy.value) return;
+
     const { value: name } = await Swal.fire({
         title: t('documents.rename'),
         input: 'text',
@@ -362,17 +380,22 @@ async function showRenameFolderDialog(folder: DocumentFolder) {
     });
 
     if (name && name.trim() !== folder.name) {
+        isBusy.value = true;
         try {
             await documentService.renameFolder(props.caseId, folder.id, name.trim());
             showMessage(t('documents.rename'));
             await fetchFolders();
         } catch {
             // Error handled by api interceptor
+        } finally {
+            isBusy.value = false;
         }
     }
 }
 
 async function confirmDeleteFolder(folder: DocumentFolder) {
+    if (isBusy.value) return;
+
     if (folder.documents_count > 0 || (folder.children && folder.children.length > 0)) {
         showMessage(t('documents.folder_not_empty'), 'error');
         return;
@@ -389,6 +412,7 @@ async function confirmDeleteFolder(folder: DocumentFolder) {
     });
 
     if (result.isConfirmed) {
+        isBusy.value = true;
         try {
             await documentService.deleteFolder(props.caseId, folder.id);
             if (currentFolderId.value === folder.id) {
@@ -398,6 +422,8 @@ async function confirmDeleteFolder(folder: DocumentFolder) {
             await fetchFolders();
         } catch {
             // Error handled by api interceptor
+        } finally {
+            isBusy.value = false;
         }
     }
 }

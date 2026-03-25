@@ -121,6 +121,22 @@ class LocalStorageProvider implements DocumentStorageInterface
     }
 
     /**
+     * Rename a file or folder in local storage (no-op, handled elsewhere).
+     */
+    public function renameItem(string $externalId, string $newName): bool
+    {
+        return true;
+    }
+
+    /**
+     * Move a file or folder in local storage (no-op, handled elsewhere).
+     */
+    public function moveItem(string $externalId, string $targetParentExternalId): bool
+    {
+        return true;
+    }
+
+    /**
      * List contents of a folder in local storage.
      *
      * @return array<int, array{name: string, type: string, external_id: string}>

@@ -64,7 +64,7 @@ export const DEFAULT_CASE_DETAILS: CaseDetailsForm = {
     language: 'es',
     description: '',
     important_dates: [
-        { label: 'Fecha de inicio',     due_date: new Date().toISOString().split('T')[0], sort_order: 0 },
+        { label: 'Fecha de inicio',     due_date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(), sort_order: 0 },
         { label: 'Fecha límite legal',  due_date: null, sort_order: 1 },
         { label: 'Fecha de envío IRCC', due_date: null, sort_order: 2 },
         { label: 'Fecha de decisión',   due_date: null, sort_order: 3 },

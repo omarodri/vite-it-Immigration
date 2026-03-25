@@ -38,6 +38,8 @@
                 <span v-if="companion.iuc" class="text-xs text-gray-500 dark:text-gray-400">
                     IUC: {{ companion.iuc }}
                 </span>
+                <span v-if="companion.email" class="text-xs text-gray-400">{{ companion.email }}</span>
+                <span v-if="companion.canada_status_label" class="text-xs text-gray-400">{{ companion.canada_status_label }}</span>
             </div>
         </div>
 

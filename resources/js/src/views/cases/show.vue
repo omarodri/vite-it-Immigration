@@ -311,6 +311,8 @@
                                 <DateManager
                                     :model-value="currentCase.important_dates ?? []"
                                     :readonly="true"
+                                    :show-quick-event="true"
+                                    @quick-event="createQuickEvent"
                                 />
                             </div>
 
@@ -448,8 +450,9 @@ import { useCaseStore } from '@/stores/case';
 import { useNotification } from '@/composables/useNotification';
 import userService from '@/services/userService';
 import { formatDate } from '@/utils/formatters';
-import type { CaseStatus, CasePriority } from '@/types/case';
+import type { CaseStatus, CasePriority, ImportantDate } from '@/types/case';
 import { CASE_STAGE_OPTIONS, IRCC_STATUS_OPTIONS, FINAL_RESULT_OPTIONS, SERVICE_TYPE_OPTIONS } from '@/types/case';
+import api from '@/services/api';
 import DateManager from '@/components/DateManager.vue';
 import LifecycleChecklist from '@/components/LifecycleChecklist.vue';
 import InvoiceTable from '@/views/cases/components/InvoiceTable.vue';
@@ -585,6 +588,29 @@ watch(activeTab, async (newTab) => {
         await caseStore.fetchTimeline(currentCase.value.id);
     }
 });
+
+// Quick event from important date
+const isCreatingEvent = ref(false);
+async function createQuickEvent(date: ImportantDate) {
+    if (!date.due_date || isCreatingEvent.value || !currentCase.value) return;
+    isCreatingEvent.value = true;
+    try {
+        await api.post('/events', {
+            title: `${date.label} - ${currentCase.value.case_number}`,
+            start_date: date.due_date,
+            end_date: date.due_date,
+            all_day: true,
+            category: 'importante',
+            case_id: currentCase.value.id,
+            assigned_to_id: currentCase.value.assigned_to ?? undefined,
+        });
+        success(t('cases.event_created_from_date'));
+    } catch {
+        error(t('cases.event_creation_failed'));
+    } finally {
+        isCreatingEvent.value = false;
+    }
+}
 
 // Initialize
 onMounted(async () => {

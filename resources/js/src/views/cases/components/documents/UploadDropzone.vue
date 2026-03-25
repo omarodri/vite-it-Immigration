@@ -103,6 +103,7 @@ const emit = defineEmits<{
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const isDragging = ref(false);
+const isUploading = ref(false);
 const uploadQueue = ref<UploadItem[]>([]);
 
 const completedCount = computed(() => uploadQueue.value.filter(i => i.status === 'done' || i.status === 'error').length);
@@ -154,6 +155,9 @@ function triggerFileInput() {
 }
 
 async function processFiles(files: File[]) {
+    if (isUploading.value) return;
+    isUploading.value = true;
+
     const startIndex = uploadQueue.value.length;
     const newItems: UploadItem[] = files.map(file => ({
         file,
@@ -196,6 +200,8 @@ async function processFiles(files: File[]) {
     if (hasSuccess) {
         emit('upload-complete');
     }
+
+    isUploading.value = false;
 
     // Auto-clear successful items after a delay; keep errors visible longer
     const hasErrors = reactiveItems.some(i => i.status === 'error');
