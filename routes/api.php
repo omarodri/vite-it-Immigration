@@ -120,6 +120,7 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     Route::post('/cases/{case}/folders', [DocumentFolderController::class, 'store']);
     Route::patch('/cases/{case}/folders/{folder}', [DocumentFolderController::class, 'update']);
     Route::delete('/cases/{case}/folders/{folder}', [DocumentFolderController::class, 'destroy']);
+    Route::post('/cases/{case}/folders/initialize', [DocumentFolderController::class, 'initialize']);
     Route::post('/cases/{case}/folders/sync', [DocumentFolderController::class, 'sync']);
     Route::get('/cases/{case}/folders/sync-status', [DocumentFolderController::class, 'syncStatus']);
 

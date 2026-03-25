@@ -3,18 +3,19 @@
 namespace App\Services\Case;
 
 use App\Helpers\CaseCodeHelper;
-use App\Jobs\SyncCaseFolderStructure;
 use App\Models\CaseType;
 use App\Models\Client;
 use App\Models\ImmigrationCase;
 use App\Models\User;
 use App\Repositories\Contracts\CaseRepositoryInterface;
 use App\Repositories\Contracts\CaseTypeRepositoryInterface;
+use App\Services\Document\CaseFolderSyncService;
 use App\Services\Document\FolderService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\Activitylog\Models\Activity;
 
 class CaseService
@@ -23,7 +24,8 @@ class CaseService
         private CaseRepositoryInterface $caseRepository,
         private CaseTypeRepositoryInterface $caseTypeRepository,
         private CaseTaskService $caseTaskService,
-        private FolderService $folderService
+        private FolderService $folderService,
+        private CaseFolderSyncService $caseFolderSyncService,
     ) {}
 
     /**
@@ -94,9 +96,6 @@ class CaseService
                 $this->caseTaskService->syncTasks($case, $caseTasks);
             }
 
-            // Create default folder structure for the case
-            $this->folderService->createDefaultStructure($case);
-
             activity()
                 ->causedBy(Auth::user())
                 ->performedOn($case)
@@ -111,13 +110,34 @@ class CaseService
             return $case->load(['client', 'caseType', 'assignedTo.profile', 'companions', 'importantDates', 'tasks']);
         });
 
-        // Dispatch cloud folder sync after the transaction has committed.
-        // For local storage, folders are already created synchronously in createDefaultStructure().
+        // Create default folder structure AFTER transaction commits.
+        // Runs outside the transaction so folder creation errors
+        // do not prevent the case from being created.
+        try {
+            $this->folderService->createDefaultStructure($case);
+        } catch (\Throwable $e) {
+            Log::error('CaseService: Failed to create default folder structure', [
+                'case_id' => $case->id,
+                'case_number' => $case->case_number,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        // Sync folders to cloud synchronously (no queue dependency).
+        // For local storage, folders are already synced in createDefaultStructure().
         $tenant = $case->tenant ?? \App\Models\Tenant::find($case->tenant_id);
         $storageType = $tenant->storage_type ?? 'local';
 
         if (in_array($storageType, ['onedrive', 'google_drive'], true)) {
-            SyncCaseFolderStructure::dispatch($case->id)->afterCommit();
+            try {
+                $this->caseFolderSyncService->syncFolderStructure($case);
+            } catch (\Throwable $e) {
+                Log::error('CaseService: Failed to sync folders to cloud', [
+                    'case_id' => $case->id,
+                    'storage_type' => $storageType,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return $case;

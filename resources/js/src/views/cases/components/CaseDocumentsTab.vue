@@ -237,6 +237,20 @@ watch(currentFolderId, () => {
 
 onMounted(async () => {
     await refreshAll();
+
+    // Auto-initialize folders if the case has none (repair for cases created
+    // before folder auto-creation or when it failed during case creation)
+    if (folders.value.length === 0) {
+        try {
+            const result = await documentService.initializeFolders(props.caseId);
+            if (result.folders_count > 0) {
+                await fetchFolders();
+            }
+        } catch {
+            // Silent fail — initialization is best-effort
+        }
+    }
+
     // If tenant uses cloud storage, check folder sync status
     if (tenantStore.isCloudStorage) {
         await documentStore.fetchSyncStatus(props.caseId);

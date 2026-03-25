@@ -50,6 +50,14 @@ const documentService = {
         await api.delete(`/cases/${caseId}/folders/${folderId}`);
     },
 
+    /**
+     * Initialize default folder structure for a case that has no folders
+     */
+    async initializeFolders(caseId: number): Promise<{ message: string; folders_count: number }> {
+        const response = await api.post<{ message: string; folders_count: number }>(`/cases/${caseId}/folders/initialize`);
+        return response.data;
+    },
+
     // ===============================
     // DOCUMENTS
     // ===============================

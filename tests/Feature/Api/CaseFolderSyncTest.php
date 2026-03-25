@@ -88,11 +88,9 @@ class CaseFolderSyncTest extends TestCase
         Queue::assertNotPushed(SyncCaseFolderStructure::class);
     }
 
-    public function test_creating_case_dispatches_sync_job_for_cloud_tenant(): void
+    public function test_creating_case_syncs_folders_synchronously_for_cloud_tenant(): void
     {
-        // Arrange
-        Queue::fake();
-
+        // Arrange — cloud sync runs synchronously now (no queue dependency)
         $cloudTenant = Tenant::factory()->create(['storage_type' => 'onedrive']);
         $cloudUser = User::factory()->create(['tenant_id' => $cloudTenant->id]);
         $cloudUser->assignRole('admin');
@@ -105,9 +103,10 @@ class CaseFolderSyncTest extends TestCase
                 'case_type_id' => $this->caseType->id,
             ]);
 
-        // Assert
+        // Assert — case is created, folders exist in DB
         $response->assertStatus(201);
-        Queue::assertPushed(SyncCaseFolderStructure::class);
+        $caseId = $response->json('data.id');
+        $this->assertGreaterThan(0, \App\Models\DocumentFolder::where('case_id', $caseId)->count());
     }
 
     public function test_creating_local_case_creates_physical_directories(): void

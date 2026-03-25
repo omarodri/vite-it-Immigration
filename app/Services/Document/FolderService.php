@@ -163,20 +163,20 @@ class FolderService
     public function createDefaultStructure(ImmigrationCase $case): void
     {
         $defaultFolders = [
-            ['name' => 'Archivo', 'category' => Document::CATEGORY_ARCHIVE, 'sort_order' => 0],
-            ['name' => 'Cartas', 'category' => Document::CATEGORY_LETTERS, 'sort_order' => 1],
-            ['name' => 'Comunicaciones', 'category' => Document::CATEGORY_COMMUNICATION, 'sort_order' => 2],
-            ['name' => 'Contrato', 'category' => Document::CATEGORY_CONTRACT, 'sort_order' => 3],
-            ['name' => 'Contabilidad', 'category' => Document::CATEGORY_ACCOUNTING, 'sort_order' => 4],
-            ['name' => 'Documentos', 'category' => Document::CATEGORY_DOCUMENTS, 'sort_order' => 5],
-            ['name' => 'Enlaces', 'category' => Document::CATEGORY_LINKS, 'sort_order' => 6],
-            ['name' => 'Questionarios', 'category' => Document::CATEGORY_QUESTIONARY, 'sort_order' => 7],
-            ['name' => 'Formularios', 'category' => Document::CATEGORY_FORMS, 'sort_order' => 8],
-            ['name' => 'Admision', 'category' => Document::CATEGORY_ADMISSION, 'sort_order' => 9],
-            ['name' => 'Historial', 'category' => Document::CATEGORY_HISTORY, 'sort_order' => 10],
-            ['name' => 'Evidencia', 'category' => Document::CATEGORY_EVIDENCE, 'sort_order' => 11],
-            ['name' => 'Audiencias', 'category' => Document::CATEGORY_HEARING, 'sort_order' => 12],
-            ['name' => 'Otros', 'category' => Document::CATEGORY_OTHER, 'sort_order' => 13],
+            ['name' => 'Admision', 'category' => Document::CATEGORY_ADMISSION],
+            ['name' => 'Archivo', 'category' => Document::CATEGORY_ARCHIVE],
+            ['name' => 'Audiencias', 'category' => Document::CATEGORY_HEARING],
+            ['name' => 'Cartas', 'category' => Document::CATEGORY_LETTERS],
+            ['name' => 'Comunicaciones', 'category' => Document::CATEGORY_COMMUNICATION],
+            ['name' => 'Contabilidad', 'category' => Document::CATEGORY_ACCOUNTING],
+            ['name' => 'Contrato', 'category' => Document::CATEGORY_CONTRACT],
+            ['name' => 'Documentos', 'category' => Document::CATEGORY_DOCUMENTS],
+            ['name' => 'Enlaces', 'category' => Document::CATEGORY_LINKS],
+            ['name' => 'Evidencia', 'category' => Document::CATEGORY_EVIDENCE],
+            ['name' => 'Formularios', 'category' => Document::CATEGORY_FORMS],
+            ['name' => 'Historial', 'category' => Document::CATEGORY_HISTORY],
+            ['name' => 'Otros', 'category' => Document::CATEGORY_OTHER],
+            ['name' => 'Questionarios', 'category' => Document::CATEGORY_QUESTIONARY],
         ];
 
         // Determine if local storage — create physical dirs synchronously
@@ -184,11 +184,20 @@ class FolderService
         $isLocal = !$tenant || !in_array($tenant->storage_type ?? 'local', ['onedrive', 'google_drive'], true);
         $rootPath = "tenants/{$case->tenant_id}/cases/{$case->case_number}";
 
+        Log::info('FolderService: Creating default folder structure', [
+            'case_id' => $case->id,
+            'case_number' => $case->case_number,
+            'tenant_id' => $case->tenant_id,
+            'storage_type' => $tenant?->storage_type ?? 'local',
+            'is_local' => $isLocal,
+        ]);
+
         if ($isLocal) {
             Storage::disk('local')->makeDirectory($rootPath);
         }
 
-        foreach ($defaultFolders as $folderData) {
+        $created = 0;
+        foreach ($defaultFolders as $index => $folderData) {
             $folderPath = $rootPath . '/' . $folderData['name'];
 
             if ($isLocal) {
@@ -200,13 +209,14 @@ class FolderService
                 'case_id' => $case->id,
                 'parent_id' => null,
                 'name' => $folderData['name'],
-                'sort_order' => $folderData['sort_order'],
+                'sort_order' => $index,
                 'is_default' => true,
                 'category' => $folderData['category'],
                 'external_id' => $isLocal ? $folderPath : null,
                 'sync_status' => $isLocal ? 'synced' : 'pending',
                 'synced_at' => $isLocal ? now() : null,
             ]);
+            $created++;
         }
 
         if ($isLocal) {
@@ -216,6 +226,11 @@ class FolderService
                 'folder_synced_at' => now(),
             ]);
         }
+
+        Log::info('FolderService: Default folder structure created', [
+            'case_id' => $case->id,
+            'folders_created' => $created,
+        ]);
     }
 
     /**

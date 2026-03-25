@@ -99,6 +99,46 @@ class DocumentFolderController extends Controller
     }
 
     /**
+     * Initialize default folder structure for a case that has no folders,
+     * and sync to cloud if applicable. Runs synchronously — no queue needed.
+     */
+    public function initialize(ImmigrationCase $case): JsonResponse
+    {
+        $this->authorize('create', [DocumentFolder::class, $case]);
+
+        $this->validateCaseTenant($case);
+
+        $existingCount = DocumentFolder::where('case_id', $case->id)->count();
+
+        // Step 1: Create DB folders if none exist
+        if ($existingCount === 0) {
+            $this->folderService->createDefaultStructure($case);
+            $existingCount = DocumentFolder::where('case_id', $case->id)->count();
+        }
+
+        // Step 2: If cloud storage and folders are pending, sync now (synchronously)
+        $case->refresh();
+        if (!$case->root_external_folder_id || $case->folder_sync_status === 'pending' || $case->folder_sync_status === 'failed') {
+            $tenant = $case->tenant ?? \App\Models\Tenant::find($case->tenant_id);
+            if ($tenant && in_array($tenant->storage_type, ['onedrive', 'google_drive'], true)) {
+                try {
+                    $this->caseFolderSyncService->syncFolderStructure($case);
+                } catch (\Throwable $e) {
+                    return response()->json([
+                        'message' => "Created {$existingCount} folders. Cloud sync failed: " . $e->getMessage(),
+                        'folders_count' => $existingCount,
+                    ], 201);
+                }
+            }
+        }
+
+        return response()->json([
+            'message' => "Initialized {$existingCount} folders.",
+            'folders_count' => $existingCount,
+        ], 201);
+    }
+
+    /**
      * Dispatch a job to sync the folder structure of a case to the cloud provider.
      *
      * Returns 202 Accepted since the sync happens asynchronously.
