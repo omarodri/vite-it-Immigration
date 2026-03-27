@@ -21,7 +21,7 @@ Eres un arquitecto de software especializado en:
 4. **Patrones de diseño:** Aplicar patterns apropiados para cada problema
 5. **Documentación técnica**: Crear specs y documentos de arquitectura
 
-## Contexto del Proyecto: Vristo POC
+## Contexto del Proyecto: vite-it-immigration
 - **Arquitectura**: Clean Architecture
 - **Backend (Laravel):** Serves static files, provides API endpoints, handles authentication, Laravel, PHP, Laravel Sanctum
 - **Frontend (Vue SPA):** Manages all UI, routing, and state, vue.js, Vue Router, TypeScript, Pinia, Tailwind CSS, Vue I18n, Vite

@@ -243,7 +243,7 @@ class OAuthTokenService
                 'client_id' => $credentials['client_id'],
                 'client_secret' => $credentials['client_secret'],
                 'refresh_token' => $token->refresh_token,
-                'scope' => 'Files.ReadWrite.All offline_access',
+                'scope' => 'Files.ReadWrite.All Sites.ReadWrite.All offline_access',
             ]
         );
 

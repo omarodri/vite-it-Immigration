@@ -124,7 +124,7 @@ class DocumentFolderController extends Controller
         $case->refresh();
         if (!$case->root_external_folder_id || $case->folder_sync_status === 'pending' || $case->folder_sync_status === 'failed') {
             $tenant = $case->tenant ?? \App\Models\Tenant::find($case->tenant_id);
-            if ($tenant && in_array($tenant->storage_type, ['onedrive', 'google_drive'], true)) {
+            if ($tenant && in_array($tenant->storage_type, ['onedrive', 'google_drive', 'sharepoint'], true)) {
                 try {
                     $this->caseFolderSyncService->syncFolderStructure($case);
                 } catch (\Throwable $e) {

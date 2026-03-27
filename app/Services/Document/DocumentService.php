@@ -52,7 +52,10 @@ class DocumentService
 
             $originalName = $file->getClientOriginalName();
             $storedName = $this->resolveUniqueFilename($case, $originalName);
-            $destinationPath = "tenants/{$case->tenant_id}/cases/{$case->case_number}/{$storedName}";
+            $basePath = $tenant->base_folder_path
+                ? "tenants/{$tenant->id}/{$tenant->base_folder_path}/cases/{$case->case_number}"
+                : "tenants/{$case->tenant_id}/cases/{$case->case_number}";
+            $destinationPath = "{$basePath}/{$storedName}";
 
             // For cloud storage, resolve the target folder's external_id so the file
             // is uploaded inside the case's OneDrive/GDrive folder, not at a raw path.
@@ -69,6 +72,7 @@ class DocumentService
             $storageTypeConstant = match ($storageType) {
                 'onedrive' => Document::STORAGE_ONEDRIVE,
                 'google_drive' => Document::STORAGE_GOOGLE_DRIVE,
+                'sharepoint' => Document::STORAGE_SHAREPOINT,
                 default => Document::STORAGE_LOCAL,
             };
 
@@ -279,7 +283,10 @@ class DocumentService
             $currentProvider = $this->providerFactory->make();
             $case = ImmigrationCase::findOrFail($document->case_id);
             $storedName = $this->resolveUniqueFilename($case, $file->getClientOriginalName());
-            $destinationPath = "tenants/{$document->tenant_id}/cases/{$case->case_number}/{$storedName}";
+            $basePath = $tenant->base_folder_path
+                ? "tenants/{$tenant->id}/{$tenant->base_folder_path}/cases/{$case->case_number}"
+                : "tenants/{$document->tenant_id}/cases/{$case->case_number}";
+            $destinationPath = "{$basePath}/{$storedName}";
 
             $metadata = [];
             $parentExternalId = $this->resolveUploadParentExternalId($case, $document->folder_id);
@@ -294,6 +301,7 @@ class DocumentService
             $storageTypeConstant = match ($storageType) {
                 'onedrive' => Document::STORAGE_ONEDRIVE,
                 'google_drive' => Document::STORAGE_GOOGLE_DRIVE,
+                'sharepoint' => Document::STORAGE_SHAREPOINT,
                 default => Document::STORAGE_LOCAL,
             };
 
@@ -346,7 +354,7 @@ class DocumentService
     {
         $storageType = Auth::user()?->tenant?->storage_type ?? 'local';
 
-        if (!in_array($storageType, ['onedrive', 'google_drive'], true)) {
+        if (!in_array($storageType, ['onedrive', 'google_drive', 'sharepoint'], true)) {
             return null;
         }
 

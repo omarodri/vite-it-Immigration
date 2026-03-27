@@ -128,7 +128,7 @@ class CaseService
         $tenant = $case->tenant ?? \App\Models\Tenant::find($case->tenant_id);
         $storageType = $tenant->storage_type ?? 'local';
 
-        if (in_array($storageType, ['onedrive', 'google_drive'], true)) {
+        if (in_array($storageType, ['onedrive', 'google_drive', 'sharepoint'], true)) {
             try {
                 $this->caseFolderSyncService->syncFolderStructure($case);
             } catch (\Throwable $e) {

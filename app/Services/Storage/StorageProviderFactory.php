@@ -29,7 +29,7 @@ class StorageProviderFactory
         $type = $storageType ?? Auth::user()?->tenant?->storage_type ?? 'local';
 
         // Local storage does not need circuit breaker protection
-        if ($type === 'local' || ! in_array($type, ['onedrive', 'google_drive'], true)) {
+        if ($type === 'local' || ! in_array($type, ['onedrive', 'google_drive', 'sharepoint'], true)) {
             return app(LocalStorageProvider::class);
         }
 
@@ -41,6 +41,7 @@ class StorageProviderFactory
         $innerProvider = match ($type) {
             'onedrive' => app(OneDriveProvider::class),
             'google_drive' => app(GoogleDriveProvider::class),
+            'sharepoint' => app(SharePointProvider::class),
         };
 
         return new ResilientStorageProvider(
@@ -61,7 +62,7 @@ class StorageProviderFactory
         $type = $tenant->storage_type ?? 'local';
 
         // Local storage does not need circuit breaker protection
-        if ($type === 'local' || ! in_array($type, ['onedrive', 'google_drive'], true)) {
+        if ($type === 'local' || ! in_array($type, ['onedrive', 'google_drive', 'sharepoint'], true)) {
             return app(LocalStorageProvider::class);
         }
 
@@ -76,6 +77,7 @@ class StorageProviderFactory
         $innerProvider = match ($type) {
             'onedrive' => new OneDriveProvider($tokenService, $credentialService, $tenant->id),
             'google_drive' => new GoogleDriveProvider($tokenService, $credentialService, $tenant->id),
+            'sharepoint' => new SharePointProvider($tokenService, $credentialService, $tenant->id),
         };
 
         return new ResilientStorageProvider(

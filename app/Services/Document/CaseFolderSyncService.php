@@ -33,9 +33,10 @@ class CaseFolderSyncService
 
         if (!$rootExternalId) {
             $rootFolderName = "Case-{$case->case_number}";
+            $baseFolderExternalId = $this->resolveBaseFolderExternalId($tenant, $provider);
 
             try {
-                $rootResult = $provider->createFolder($rootFolderName);
+                $rootResult = $provider->createFolder($rootFolderName, $baseFolderExternalId);
                 $rootExternalId = $rootResult['external_id'];
 
                 $case->update([
@@ -161,6 +162,22 @@ class CaseFolderSyncService
                 // Continue syncing other children
             }
         }
+    }
+
+    private function resolveBaseFolderExternalId(Tenant $tenant, DocumentStorageInterface $provider): ?string
+    {
+        if (!$tenant->base_folder_path) {
+            return null;
+        }
+
+        if ($tenant->base_folder_external_id) {
+            return $tenant->base_folder_external_id;
+        }
+
+        $result = $provider->createFolder($tenant->base_folder_path);
+        $tenant->update(['base_folder_external_id' => $result['external_id']]);
+
+        return $result['external_id'];
     }
 
     /**

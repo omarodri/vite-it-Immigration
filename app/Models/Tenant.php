@@ -20,6 +20,8 @@ class Tenant extends Model
 
     public const STORAGE_GOOGLE_DRIVE = 'google_drive';
 
+    public const STORAGE_SHAREPOINT = 'sharepoint';
+
     protected $fillable = [
         'name',
         'slug',
@@ -29,6 +31,11 @@ class Tenant extends Model
         'google_client_id',
         'google_client_secret',
         'storage_type',
+        'sharepoint_site_id',
+        'sharepoint_drive_id',
+        'sharepoint_site_url',
+        'base_folder_path',
+        'base_folder_external_id',
         'storage_quota_mb',
         'storage_used_bytes',
         'is_active',

@@ -105,6 +105,7 @@ const providerLabel = computed(() => {
     const type = tenantStore.storageType;
     if (type === 'onedrive') return t('documents.provider_onedrive');
     if (type === 'google_drive') return t('documents.provider_google_drive');
+    if (type === 'sharepoint') return t('documents.provider_sharepoint');
     return t('documents.provider_local');
 });
 

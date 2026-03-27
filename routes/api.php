@@ -182,6 +182,10 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     Route::delete('/tenant/branding/logo', [TenantController::class, 'deleteLogo']);
     Route::put('/tenant/storage-type', [TenantController::class, 'updateStorageType']);
     Route::put('/tenant/theme', [TenantController::class, 'updateTheme']);
+    Route::get('/tenant/sharepoint/sites', [TenantController::class, 'listSharePointSites']);
+    Route::get('/tenant/sharepoint/sites/{siteId}/drives', [TenantController::class, 'listSharePointDrives']);
+    Route::put('/tenant/sharepoint/config', [TenantController::class, 'saveSharePointConfig']);
+    Route::put('/tenant/base-folder', [TenantController::class, 'updateBaseFolder']);
 
     // Scrum Board routes
     Route::prefix('scrum')->group(function () {

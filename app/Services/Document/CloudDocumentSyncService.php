@@ -29,7 +29,7 @@ class CloudDocumentSyncService
         $tenant = $case->tenant ?? Tenant::findOrFail($case->tenant_id);
         $storageType = $tenant->storage_type ?? 'local';
 
-        if (!in_array($storageType, ['onedrive', 'google_drive'], true)) {
+        if (!in_array($storageType, ['onedrive', 'google_drive', 'sharepoint'], true)) {
             return ['folders_added' => 0, 'folders_removed' => 0, 'documents_added' => 0, 'documents_removed' => 0];
         }
 
@@ -289,6 +289,7 @@ class CloudDocumentSyncService
         $storageTypeConstant = match ($storageType) {
             'onedrive' => Document::STORAGE_ONEDRIVE,
             'google_drive' => Document::STORAGE_GOOGLE_DRIVE,
+            'sharepoint' => Document::STORAGE_SHAREPOINT,
             default => Document::STORAGE_LOCAL,
         };
 

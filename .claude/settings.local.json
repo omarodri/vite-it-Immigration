@@ -53,7 +53,8 @@
       "Bash(php artisan tinker --execute=\":*)",
       "Bash(git stash:*)",
       "Bash(for f:*)",
-      "Bash(do php:*)"
+      "Bash(do php:*)",
+      "Bash(wc:*)"
     ]
   }
 }

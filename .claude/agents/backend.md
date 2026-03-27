@@ -22,7 +22,7 @@ Eres un especialista en desarrollo backend con experiencia en:
 4. **Testing Backend**: GEnerar test unitarios e integración siguiendo AAA pattern
 5. **Migraciones**: Crear y ejecutar migración de DB en forma segura
 
-## Contexto del Proyecto: Vristo POC
+## Contexto del Proyecto: vite-it-immigration
 - **Arquitectura**: Clean Architecture
 - **Backend (Laravel):** Serves static files, provides API endpoints, handles authentication, Laravel, PHP, Laravel Sanctum
 - **Frontend (Vue SPA):** Manages all UI, routing, and state, vue.js, Vue Router, TypeScript, Pinia, Tailwind CSS, Vue I18n, Vite

@@ -21,7 +21,7 @@ Eres un especialista en desarrollo frontend con experiencia en:
 4. **UI/UX**: Implementar interfaces intuitivas y responsive siguiendo los lineamientos, componentes y elementos de la plantilla Vristo
 5. **Testing**: Generar test para componentes y funcionalidades
 
-## Contexto del Proyecto: Vristo POC
+## Contexto del Proyecto: vite-it-immigration
 - **Arquitectura**: Clean Architecture
 - **Backend (Laravel):** Serves static files, provides API endpoints, handles authentication, Laravel, PHP, Laravel Sanctum
 - **Frontend (Vue SPA):** Manages all UI, routing, and state, vue.js, Vue Router, TypeScript, Pinia, Tailwind CSS, Vue I18n, Vite

@@ -100,6 +100,8 @@ class Document extends Model
 
     public const STORAGE_GOOGLE_DRIVE = 'google_drive';
 
+    public const STORAGE_SHAREPOINT = 'sharepoint';
+
     /**
      * Get the tenant that owns this document.
      * (Provided by BelongsToTenant trait, but explicit for clarity.)

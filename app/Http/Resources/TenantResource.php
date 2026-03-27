@@ -66,6 +66,11 @@ class TenantResource extends JsonResource
             // Storage info
             'storage_type' => $this->storage_type ?? 'local',
             'storage_quota_mb' => $this->storage_quota_mb,
+            'sharepoint_site_id' => $this->sharepoint_site_id,
+            'sharepoint_drive_id' => $this->sharepoint_drive_id,
+            'sharepoint_site_url' => $this->sharepoint_site_url,
+            'sharepoint_configured' => !empty($this->sharepoint_site_id) && !empty($this->sharepoint_drive_id),
+            'base_folder_path' => $this->base_folder_path,
 
             // Conditional: included when withCount('users') is loaded
             'users_count' => $this->whenCounted('users'),

@@ -42,3 +42,16 @@ export interface UploadItem {
     status: 'pending' | 'uploading' | 'done' | 'error';
     error?: string;
 }
+
+export interface SharePointSite {
+    id: string;
+    displayName: string;
+    webUrl: string;
+}
+
+export interface SharePointDrive {
+    id: string;
+    name: string;
+    driveType: string;
+    webUrl: string;
+}

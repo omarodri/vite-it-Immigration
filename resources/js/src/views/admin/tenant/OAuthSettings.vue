@@ -49,6 +49,14 @@
                                 <span class="font-medium dark:text-white-light">{{ $t('tenant.storage_google') }}</span>
                             </div>
                         </label>
+
+                        <label class="flex items-center gap-3 p-3 rounded-lg border border-[#e0e6ed] dark:border-[#1b2e4b] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" :class="{ 'border-primary bg-primary/5': storageForm.storage_type === 'sharepoint' }">
+                            <input type="radio" v-model="storageForm.storage_type" value="sharepoint" class="form-radio text-primary" />
+                            <div>
+                                <span class="font-medium dark:text-white-light">{{ $t('tenant.storage_sharepoint') }}</span>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('tenant.storage_sharepoint_desc') }}</p>
+                            </div>
+                        </label>
                     </div>
 
                     <div class="mt-4">
@@ -56,6 +64,27 @@
                             <span v-if="savingStorage" class="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4 mr-2 inline-block"></span>
                             {{ $t('tenant.save_settings') }}
                         </button>
+                    </div>
+
+                    <!-- Base Folder Configuration -->
+                    <div class="mt-4 pt-4 border-t border-[#e0e6ed] dark:border-[#1b2e4b]">
+                        <label class="block text-sm font-medium mb-2 dark:text-white-light">{{ $t('tenant.base_folder') }}</label>
+                        <div class="flex gap-2">
+                            <input
+                                v-model="baseFolderForm.base_folder_path"
+                                type="text"
+                                class="form-input flex-1"
+                                :placeholder="$t('tenant.base_folder_placeholder')"
+                            />
+                            <button type="button" class="btn btn-primary" :disabled="savingBaseFolder" @click="saveBaseFolder">
+                                <span v-if="savingBaseFolder" class="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4 mr-2 inline-block"></span>
+                                {{ $t('save') }}
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $t('tenant.base_folder_hint') }}</p>
+                        <p v-if="baseFolderForm.base_folder_path" class="text-xs text-primary mt-1">
+                            {{ $t('tenant.base_folder_preview') }}: <code class="bg-gray-100 dark:bg-gray-800 px-1 rounded">{{ baseFolderForm.base_folder_path }}/{{ $t('tenant.base_folder_case_example') }}/...</code>
+                        </p>
                     </div>
                 </div>
 
@@ -279,6 +308,51 @@
                     </div>
                 </div>
 
+                <!-- SharePoint Configuration -->
+                <div v-if="storageForm.storage_type === 'sharepoint' && connectionStatus.microsoft?.connected" class="border border-[#e0e6ed] dark:border-[#1b2e4b] rounded-lg p-5">
+                    <h6 class="font-semibold mb-4 dark:text-white-light">{{ $t('tenant.sharepoint_config') }}</h6>
+
+                    <!-- Site Selector -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">{{ $t('tenant.sharepoint_site') }}</label>
+                            <div class="flex gap-2">
+                                <select v-model="sharepointForm.site_id" class="form-select flex-1" @change="onSiteSelected">
+                                    <option value="">{{ $t('tenant.sharepoint_select_site') }}</option>
+                                    <option v-for="site in sharepointSites" :key="site.id" :value="site.id">{{ site.displayName }}</option>
+                                </select>
+                                <button type="button" class="btn btn-outline-primary btn-sm" :disabled="loadingSites" @click="fetchSharePointSites">
+                                    <span v-if="loadingSites" class="animate-spin border-2 border-primary border-l-transparent rounded-full w-4 h-4"></span>
+                                    <span v-else>{{ $t('tenant.sharepoint_refresh') }}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Drive/Library Selector -->
+                        <div v-if="sharepointForm.site_id">
+                            <label class="block text-sm font-medium mb-1">{{ $t('tenant.sharepoint_library') }}</label>
+                            <select v-model="sharepointForm.drive_id" class="form-select" :disabled="loadingDrives">
+                                <option value="">{{ $t('tenant.sharepoint_select_library') }}</option>
+                                <option v-for="drive in sharepointDrives" :key="drive.id" :value="drive.id">{{ drive.name }} ({{ drive.driveType }})</option>
+                            </select>
+                        </div>
+
+                        <!-- Save Button -->
+                        <div v-if="sharepointForm.site_id && sharepointForm.drive_id">
+                            <button type="button" class="btn btn-primary" :disabled="savingSharepoint" @click="saveSharePointConfig">
+                                <span v-if="savingSharepoint" class="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4 mr-2 inline-block"></span>
+                                {{ $t('tenant.sharepoint_save_config') }}
+                            </button>
+                        </div>
+
+                        <!-- Current Config Display -->
+                        <div v-if="(tenantStore.tenant as any)?.sharepoint_configured" class="p-3 bg-success/10 rounded-lg">
+                            <p class="text-sm text-success">{{ $t('tenant.sharepoint_configured_msg') }}</p>
+                            <p v-if="(tenantStore.tenant as any)?.sharepoint_site_url" class="text-xs text-gray-500 mt-1">{{ (tenantStore.tenant as any).sharepoint_site_url }}</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Help Text -->
                 <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <h6 class="font-semibold mb-2 dark:text-white-light">{{ $t('oauth.help_title') }}</h6>
@@ -319,6 +393,16 @@ const storageForm = reactive({ storage_type: 'local' });
 const microsoftForm = reactive({ client_id: '', client_secret: '' });
 const googleForm = reactive({ client_id: '', client_secret: '' });
 
+const savingBaseFolder = ref(false);
+const savingSharepoint = ref(false);
+const loadingSites = ref(false);
+const loadingDrives = ref(false);
+const sharepointSites = ref<any[]>([]);
+const sharepointDrives = ref<any[]>([]);
+
+const baseFolderForm = reactive({ base_folder_path: '' });
+const sharepointForm = reactive({ site_id: '', drive_id: '', site_url: '' });
+
 // Credential status (from TenantOAuthController — client_id/secret configured?)
 const credentialStatus = ref<any>({
     microsoft: { configured: false, client_id: null },
@@ -350,7 +434,14 @@ const fetchAll = async () => {
             await tenantStore.fetchTenant();
         }
         if (tenantStore.tenant) {
-            storageForm.storage_type = (tenantStore.tenant as any).storage_type ?? 'local';
+            const t = tenantStore.tenant as any;
+            storageForm.storage_type = t.storage_type ?? 'local';
+            baseFolderForm.base_folder_path = t.base_folder_path ?? '';
+
+            // Restore saved SharePoint config
+            if (t.sharepoint_site_id) sharepointForm.site_id = t.sharepoint_site_id;
+            if (t.sharepoint_drive_id) sharepointForm.drive_id = t.sharepoint_drive_id;
+            if (t.sharepoint_site_url) sharepointForm.site_url = t.sharepoint_site_url;
         }
     } catch (error) {
         console.error('Failed to fetch OAuth status:', error);
@@ -480,6 +571,63 @@ const saveStorageType = async () => {
     } catch (error: any) {
         Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message || t('tenant.save_failed') });
     } finally { savingStorage.value = false; }
+};
+
+// ---- Base Folder ----
+
+const saveBaseFolder = async () => {
+    savingBaseFolder.value = true;
+    try {
+        await axios.put('/api/tenant/base-folder', { base_folder_path: baseFolderForm.base_folder_path || null });
+        await tenantStore.fetchTenant();
+        Swal.fire({ icon: 'success', title: t('tenant.settings_saved'), timer: 2000, showConfirmButton: false });
+    } catch (error: any) {
+        Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message || t('tenant.save_failed') });
+    } finally { savingBaseFolder.value = false; }
+};
+
+// ---- SharePoint Config ----
+
+const fetchSharePointSites = async () => {
+    loadingSites.value = true;
+    try {
+        const res = await axios.get('/api/tenant/sharepoint/sites');
+        sharepointSites.value = res.data.data ?? [];
+    } catch (error: any) {
+        Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message || 'Failed to fetch SharePoint sites.' });
+    } finally { loadingSites.value = false; }
+};
+
+const onSiteSelected = async () => {
+    sharepointForm.drive_id = '';
+    sharepointDrives.value = [];
+    const selectedSite = sharepointSites.value.find((s: any) => s.id === sharepointForm.site_id);
+    sharepointForm.site_url = selectedSite?.webUrl ?? '';
+
+    if (!sharepointForm.site_id) return;
+
+    loadingDrives.value = true;
+    try {
+        const res = await axios.get(`/api/tenant/sharepoint/sites/${sharepointForm.site_id}/drives`);
+        sharepointDrives.value = res.data.data ?? [];
+    } catch (error: any) {
+        Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message || 'Failed to fetch drives.' });
+    } finally { loadingDrives.value = false; }
+};
+
+const saveSharePointConfig = async () => {
+    savingSharepoint.value = true;
+    try {
+        await axios.put('/api/tenant/sharepoint/config', {
+            sharepoint_site_id: sharepointForm.site_id,
+            sharepoint_drive_id: sharepointForm.drive_id,
+            sharepoint_site_url: sharepointForm.site_url,
+        });
+        await tenantStore.fetchTenant();
+        Swal.fire({ icon: 'success', title: t('tenant.settings_saved'), timer: 2000, showConfirmButton: false });
+    } catch (error: any) {
+        Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message || t('tenant.save_failed') });
+    } finally { savingSharepoint.value = false; }
 };
 
 onMounted(fetchAll);

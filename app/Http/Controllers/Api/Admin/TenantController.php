@@ -55,7 +55,7 @@ class TenantController extends Controller
             'slug' => ['required', 'string', 'max:100', 'unique:tenants,slug', 'regex:/^[a-z0-9-]+$/'],
             'is_active' => ['boolean'],
             'settings' => ['nullable', 'array'],
-            'storage_type' => ['nullable', 'string', 'in:local,onedrive,google_drive'],
+            'storage_type' => ['nullable', 'string', 'in:local,onedrive,google_drive,sharepoint'],
             'storage_quota_mb' => ['nullable', 'integer', 'min:100'],
         ]);
 
@@ -94,7 +94,7 @@ class TenantController extends Controller
             'name' => ['sometimes', 'string', 'max:255'],
             'slug' => ['sometimes', 'string', 'max:100', 'unique:tenants,slug,' . $tenant->id, 'regex:/^[a-z0-9-]+$/'],
             'is_active' => ['sometimes', 'boolean'],
-            'storage_type' => ['sometimes', 'string', 'in:local,onedrive,google_drive'],
+            'storage_type' => ['sometimes', 'string', 'in:local,onedrive,google_drive,sharepoint'],
             'storage_quota_mb' => ['sometimes', 'integer', 'min:100'],
         ]);
 

@@ -73,7 +73,7 @@ class FolderService
 
         // Sync to storage: cloud async or local immediate
         $tenant = Tenant::find($case->tenant_id);
-        $isCloud = $tenant && in_array($tenant->storage_type, ['onedrive', 'google_drive'], true);
+        $isCloud = $tenant && in_array($tenant->storage_type, ['onedrive', 'google_drive', 'sharepoint'], true);
 
         if ($isCloud) {
             $this->trySyncFolderToCloud($folder, $case);
@@ -113,7 +113,7 @@ class FolderService
         if ($folder->external_id) {
             try {
                 $tenant = Tenant::find($folder->tenant_id);
-                if ($tenant && in_array($tenant->storage_type, ['onedrive', 'google_drive'], true)) {
+                if ($tenant && in_array($tenant->storage_type, ['onedrive', 'google_drive', 'sharepoint'], true)) {
                     $provider = $this->providerFactory->makeForTenant($tenant);
                     $provider->renameItem($folder->external_id, $name);
                 }
@@ -154,7 +154,7 @@ class FolderService
         if ($folder->external_id) {
             try {
                 $tenant = Tenant::find($folder->tenant_id);
-                if ($tenant && in_array($tenant->storage_type, ['onedrive', 'google_drive'], true)) {
+                if ($tenant && in_array($tenant->storage_type, ['onedrive', 'google_drive', 'sharepoint'], true)) {
                     $provider = $this->providerFactory->makeForTenant($tenant);
                     $provider->deleteFolder($folder->external_id);
                 }
@@ -214,8 +214,10 @@ class FolderService
 
         // Determine if local storage — create physical dirs synchronously
         $tenant = $case->tenant ?? Tenant::find($case->tenant_id);
-        $isLocal = !$tenant || !in_array($tenant->storage_type ?? 'local', ['onedrive', 'google_drive'], true);
-        $rootPath = "tenants/{$case->tenant_id}/cases/{$case->case_number}";
+        $isLocal = !$tenant || !in_array($tenant->storage_type ?? 'local', ['onedrive', 'google_drive', 'sharepoint'], true);
+        $rootPath = $tenant && $tenant->base_folder_path
+            ? "tenants/{$case->tenant_id}/{$tenant->base_folder_path}/cases/{$case->case_number}"
+            : "tenants/{$case->tenant_id}/cases/{$case->case_number}";
 
         Log::info('FolderService: Creating default folder structure', [
             'case_id' => $case->id,
@@ -277,7 +279,7 @@ class FolderService
     {
         $tenant = Tenant::find($case->tenant_id);
 
-        if (!$tenant || !in_array($tenant->storage_type, ['onedrive', 'google_drive'], true)) {
+        if (!$tenant || !in_array($tenant->storage_type, ['onedrive', 'google_drive', 'sharepoint'], true)) {
             return;
         }
 

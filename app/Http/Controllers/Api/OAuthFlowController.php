@@ -198,7 +198,7 @@ class OAuthFlowController extends Controller
             'client_id' => $credentials['client_id'],
             'response_type' => 'code',
             'redirect_uri' => $redirectUri,
-            'scope' => 'Files.ReadWrite.All offline_access',
+            'scope' => 'Files.ReadWrite.All Sites.ReadWrite.All offline_access',
             'state' => $state,
             'response_mode' => 'query',
         ]);
@@ -242,7 +242,7 @@ class OAuthFlowController extends Controller
                 'client_secret' => $credentials['client_secret'],
                 'code' => $code,
                 'redirect_uri' => $redirectUri,
-                'scope' => 'Files.ReadWrite.All offline_access',
+                'scope' => 'Files.ReadWrite.All Sites.ReadWrite.All offline_access',
             ]
         );
 

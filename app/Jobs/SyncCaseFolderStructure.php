@@ -62,7 +62,7 @@ class SyncCaseFolderStructure implements ShouldQueue
         $storageType = $tenant->storage_type ?? 'local';
 
         // For local storage, create physical directories and mark as synced
-        if ($storageType === 'local' || !in_array($storageType, ['onedrive', 'google_drive'], true)) {
+        if ($storageType === 'local' || !in_array($storageType, ['onedrive', 'google_drive', 'sharepoint'], true)) {
             $rootPath = "tenants/{$tenant->id}/cases/{$case->case_number}";
 
             // Create root case directory
