@@ -178,8 +178,8 @@ class SharePointEndpointTest extends TestCase
         $mockProvider = \Mockery::mock(\App\Contracts\DocumentStorageInterface::class);
         $mockProvider->shouldReceive('createFolder')
             ->once()
-            ->with('Immigration Cloud Folder')
-            ->andReturn(['external_id' => 'cloud-folder-ext-id-123']);
+            ->with('Immigration Cloud Folder', null)
+            ->andReturn(['external_id' => 'cloud-folder-ext-id-123', 'external_url' => '']);
 
         $mockFactory = \Mockery::mock(StorageProviderFactory::class);
         $mockFactory->shouldReceive('makeForTenant')
@@ -203,7 +203,6 @@ class SharePointEndpointTest extends TestCase
     public function test_update_base_folder_rejects_invalid_characters(): void
     {
         $invalidPaths = [
-            'path/with/slashes',
             'path\\with\\backslashes',
             'path:with:colons',
             'path*with*asterisks',

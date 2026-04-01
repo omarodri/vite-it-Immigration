@@ -105,6 +105,20 @@ class ResilientStorageProvider implements DocumentStorageInterface
     }
 
     /**
+     * Find an existing folder or create it. Delegates to the inner provider
+     * if it supports the method, otherwise falls back to createFolder.
+     */
+    public function findOrCreateFolder(string $folderName, ?string $parentExternalId = null): array
+    {
+        return $this->executeWithResilience(
+            fn () => method_exists($this->inner, 'findOrCreateFolder')
+                ? $this->inner->findOrCreateFolder($folderName, $parentExternalId)
+                : $this->inner->createFolder($folderName, $parentExternalId),
+            'findOrCreateFolder'
+        );
+    }
+
+    /**
      * Execute a storage operation with retry logic and circuit breaker recording.
      *
      * @template T

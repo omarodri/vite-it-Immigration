@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Contracts\DocumentStorageInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\UpdateTenantSettingsRequest;
 use App\Http\Resources\TenantResource;
@@ -219,6 +220,20 @@ class TenantController extends Controller
     }
 
     /**
+     * List drives for a SharePoint site (site_id via query parameter).
+     */
+    public function listSharePointDrivesByQuery(Request $request)
+    {
+        $siteId = $request->query('site_id');
+
+        if (!$siteId) {
+            return response()->json(['message' => 'site_id is required'], 422);
+        }
+
+        return $this->listSharePointDrives($siteId);
+    }
+
+    /**
      * Save SharePoint site and drive configuration for the tenant.
      */
     public function saveSharePointConfig(Request $request)
@@ -242,7 +257,7 @@ class TenantController extends Controller
     public function updateBaseFolder(Request $request)
     {
         $validated = $request->validate([
-            'base_folder_path' => ['nullable', 'string', 'max:255', 'regex:/^[^\/\\\\:*?"<>|]+$/'],
+            'base_folder_path' => ['nullable', 'string', 'max:255', 'regex:/^[^\\\\:*?"<>|]+$/'],
         ]);
 
         $tenant = Auth::user()->tenant;
@@ -254,8 +269,7 @@ class TenantController extends Controller
             try {
                 $factory = app(StorageProviderFactory::class);
                 $provider = $factory->makeForTenant($tenant);
-                $result = $provider->createFolder($baseFolderPath);
-                $baseFolderExternalId = $result['external_id'] ?? null;
+                $baseFolderExternalId = $this->createNestedFolders($provider, $baseFolderPath);
             } catch (\Throwable $e) {
                 Log::warning('Failed to create base folder in cloud', [
                     'tenant_id' => $tenant->id,
@@ -272,6 +286,24 @@ class TenantController extends Controller
 
         return (new TenantResource($tenant->fresh()))
             ->additional(['message' => 'Base folder configuration saved successfully.']);
+    }
+
+    /**
+     * Create nested folders from a path like "ONIS/01_CLIENTES".
+     */
+    private function createNestedFolders(DocumentStorageInterface $provider, string $path): string
+    {
+        $segments = array_filter(explode('/', $path));
+        $currentParent = null;
+
+        foreach ($segments as $segment) {
+            $result = method_exists($provider, 'findOrCreateFolder')
+                ? $provider->findOrCreateFolder($segment, $currentParent)
+                : $provider->createFolder($segment, $currentParent);
+            $currentParent = $result['external_id'];
+        }
+
+        return $currentParent;
     }
 
     /**

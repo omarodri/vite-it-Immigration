@@ -438,10 +438,23 @@ const fetchAll = async () => {
             storageForm.storage_type = t.storage_type ?? 'local';
             baseFolderForm.base_folder_path = t.base_folder_path ?? '';
 
-            // Restore saved SharePoint config
+            // Restore saved SharePoint config and load related data
             if (t.sharepoint_site_id) sharepointForm.site_id = t.sharepoint_site_id;
             if (t.sharepoint_drive_id) sharepointForm.drive_id = t.sharepoint_drive_id;
             if (t.sharepoint_site_url) sharepointForm.site_url = t.sharepoint_site_url;
+
+            // If SharePoint is configured, load sites and drives so dropdowns show saved values
+            if (t.storage_type === 'sharepoint' && t.sharepoint_site_id && connRes.data.microsoft?.connected) {
+                try {
+                    const sitesRes = await axios.get('/api/tenant/sharepoint/sites');
+                    sharepointSites.value = sitesRes.data.data ?? [];
+                } catch (e) { console.warn('Failed to load SharePoint sites', e); }
+
+                try {
+                    const drivesRes = await axios.get('/api/tenant/sharepoint/drives', { params: { site_id: t.sharepoint_site_id } });
+                    sharepointDrives.value = drivesRes.data.data ?? [];
+                } catch (e) { console.warn('Failed to load SharePoint drives', e); }
+            }
         }
     } catch (error) {
         console.error('Failed to fetch OAuth status:', error);
@@ -608,7 +621,7 @@ const onSiteSelected = async () => {
 
     loadingDrives.value = true;
     try {
-        const res = await axios.get(`/api/tenant/sharepoint/sites/${sharepointForm.site_id}/drives`);
+        const res = await axios.get('/api/tenant/sharepoint/drives', { params: { site_id: sharepointForm.site_id } });
         sharepointDrives.value = res.data.data ?? [];
     } catch (error: any) {
         Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message || 'Failed to fetch drives.' });

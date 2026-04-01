@@ -253,6 +253,45 @@ abstract class MicrosoftGraphBaseProvider implements DocumentStorageInterface
     }
 
     /**
+     * Find an existing folder by name or create it if it doesn't exist.
+     *
+     * Unlike createFolder() which uses 'rename' conflict behavior (creating
+     * "ONIS 1" if "ONIS" exists), this method reuses the existing folder.
+     *
+     * @return array{external_id: string, external_url: string}
+     */
+    public function findOrCreateFolder(string $folderName, ?string $parentExternalId = null): array
+    {
+        $accessToken = $this->getAccessToken();
+
+        // Try to find the folder by name within the parent
+        if ($parentExternalId) {
+            $searchUrl = self::BASE_URL . "{$this->getDriveBasePath()}/items/{$parentExternalId}:/{$folderName}";
+        } else {
+            $searchUrl = self::BASE_URL . "{$this->getDriveBasePath()}/root:/{$folderName}";
+        }
+
+        $response = Http::withToken($accessToken)
+            ->timeout(30)
+            ->get($searchUrl);
+
+        if ($response->successful()) {
+            $data = $response->json();
+
+            // Verify it's actually a folder
+            if (isset($data['folder'])) {
+                return [
+                    'external_id' => $data['id'],
+                    'external_url' => $data['webUrl'] ?? '',
+                ];
+            }
+        }
+
+        // Folder not found — create it
+        return $this->createFolder($folderName, $parentExternalId);
+    }
+
+    /**
      * Delete a folder from Microsoft Graph drive.
      */
     public function deleteFolder(string $externalId): bool

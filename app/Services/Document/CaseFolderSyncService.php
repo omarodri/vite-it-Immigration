@@ -32,7 +32,7 @@ class CaseFolderSyncService
         $rootExternalId = $case->root_external_folder_id;
 
         if (!$rootExternalId) {
-            $rootFolderName = "Case-{$case->case_number}";
+            $rootFolderName = $case->case_number;
             $baseFolderExternalId = $this->resolveBaseFolderExternalId($tenant, $provider);
 
             try {
@@ -174,10 +174,31 @@ class CaseFolderSyncService
             return $tenant->base_folder_external_id;
         }
 
-        $result = $provider->createFolder($tenant->base_folder_path);
-        $tenant->update(['base_folder_external_id' => $result['external_id']]);
+        $externalId = $this->createNestedFolders($provider, $tenant->base_folder_path);
+        $tenant->update(['base_folder_external_id' => $externalId]);
 
-        return $result['external_id'];
+        return $externalId;
+    }
+
+    /**
+     * Create nested folders from a path like "ONIS/01_CLIENTES".
+     *
+     * Cloud APIs (Graph, Google Drive) only create one folder level at a time,
+     * so a path with "/" must be split into segments and created sequentially.
+     */
+    private function createNestedFolders(DocumentStorageInterface $provider, string $path, ?string $parentExternalId = null): string
+    {
+        $segments = array_filter(explode('/', $path));
+        $currentParent = $parentExternalId;
+
+        foreach ($segments as $segment) {
+            $result = method_exists($provider, 'findOrCreateFolder')
+                ? $provider->findOrCreateFolder($segment, $currentParent)
+                : $provider->createFolder($segment, $currentParent);
+            $currentParent = $result['external_id'];
+        }
+
+        return $currentParent;
     }
 
     /**
