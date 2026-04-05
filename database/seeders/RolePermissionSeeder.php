@@ -151,7 +151,7 @@ class RolePermissionSeeder extends Seeder
                 'permissions' => [
                     'profile.view', 'profile.update',
                     'clients.view', 'clients.create', 'clients.update',
-                    'companions.view', 'companions.create', 'companions.update',
+                    'companions.view', 'companions.create', 'companions.update', 'companions.delete',
                     'cases.view', 'cases.create', 'cases.update', 'cases.assign', 'cases.view-fees', 'cases.manage-invoices',
                     'tasks.view', 'tasks.create', 'tasks.update',
                     'follow-ups.view', 'follow-ups.create', 'follow-ups.update',

@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\TenantController;
+use App\Http\Controllers\Api\Admin\BackupController as AdminBackupController;
 use App\Http\Controllers\Api\Admin\TenantController as AdminTenantController;
 use App\Http\Controllers\Api\OAuthFlowController;
 use App\Http\Controllers\Api\TenantOAuthController;
@@ -245,6 +246,18 @@ Route::prefix('admin/tenants')->middleware(['auth:sanctum', 'role:super-admin'])
     Route::delete('/{id}', [AdminTenantController::class, 'destroy'])->where('id', '[0-9]+');
     Route::post('/{id}/activate', [AdminTenantController::class, 'activate'])->where('id', '[0-9]+');
 });
+
+// Backup routes — UI (admin)
+Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin|super-admin'])->group(function () {
+    Route::post('/tenants/{id}/backup', [AdminBackupController::class, 'run'])->where('id', '[0-9]+');
+    Route::get('/tenants/{id}/backups', [AdminBackupController::class, 'index'])->where('id', '[0-9]+');
+    Route::get('/backups/{logId}/download', [AdminBackupController::class, 'download'])->where('logId', '[0-9]+');
+    Route::delete('/backups/{logId}', [AdminBackupController::class, 'destroy'])->where('logId', '[0-9]+');
+});
+
+// Backup external endpoint — CRON/Job (API Key auth)
+Route::post('/admin/backup/run', [AdminBackupController::class, 'runExternal'])
+    ->middleware(['backup.key']);
 
 // OAuth callback route (no auth required - called by OAuth provider redirect)
 Route::middleware('throttle:login')->get('/oauth/{provider}/callback', [OAuthFlowController::class, 'callback'])

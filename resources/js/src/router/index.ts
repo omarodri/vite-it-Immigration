@@ -554,6 +554,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/admin/tenant/OAuthSettings.vue'),
         meta: { permission: 'settings.update' },
     },
+    {
+        path: '/admin/tenant/backups',
+        name: 'admin-tenant-backups',
+        component: () => import('../views/admin/tenant/TenantBackups.vue'),
+        meta: { permission: 'settings.update' },
+    },
 
     // Client Management
     {

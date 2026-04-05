@@ -60,7 +60,8 @@
       "Bash(head -5 grep -n \"DocumentRepeater\\\\|documentService\\\\|clientDocuments\" /Users/omar/Herd/vite-it-Immigration/resources/js/src/views/clients/show.vue)",
       "Bash(head -10 grep -n \"DocumentRepeater\\\\|documentService\" /Users/omar/Herd/vite-it-Immigration/resources/js/src/views/clients/edit.vue)",
       "Bash(head -5 grep -n \"DocumentRepeater\\\\|documentService\" /Users/omar/Herd/vite-it-Immigration/resources/js/src/views/clients/create.vue)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(python3 -c \"import sys,json; routes=[r for r in json.load\\(sys.stdin\\) if ''''backup'''' in r.get\\(''''uri'''',''''''''\\)]; [print\\(r\\) for r in routes]\")"
     ]
   }
 }

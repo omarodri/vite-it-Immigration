@@ -335,7 +335,7 @@
                                             <icon-pencil class="w-4 h-4" />
                                         </button>
                                         <button
-                                            v-can="'clients.delete'"
+                                            v-can="'companions.delete'"
                                             type="button"
                                             class="btn btn-sm btn-outline-danger p-1"
                                             @click="confirmDeleteCompanion(companion)"
