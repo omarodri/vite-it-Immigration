@@ -7,6 +7,7 @@ use App\Repositories\Contracts\ClientRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Exceptions\ClientHasDependentsException;
 
 class ClientService
 {
@@ -82,6 +83,16 @@ class ClientService
 
     public function deleteClient(Client $client): void
     {
+        $companionCount = $client->companions()->count();
+        if ($companionCount > 0) {
+            throw new ClientHasDependentsException('companions', $companionCount);
+        }
+
+        $caseCount = $client->cases()->count();
+        if ($caseCount > 0) {
+            throw new ClientHasDependentsException('cases', $caseCount);
+        }
+
         activity()
             ->causedBy(Auth::user())
             ->performedOn($client)

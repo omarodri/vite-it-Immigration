@@ -213,8 +213,8 @@ function editEvent(data: any = null) {
         const obj = data.event;
         const ext = obj.extendedProps ?? {};
         const isAllDay = obj.allDay ?? false;
-        const rawStart = obj.startStr ?? obj.start ?? '';
-        const rawEnd   = obj.endStr   ?? obj.end   ?? rawStart;
+        const rawStart = obj.startStr || obj.start || '';
+        const rawEnd   = obj.endStr   || obj.end   || rawStart;
         editingEvent.value = {
             id:             obj.id ? parseInt(obj.id) : null,
             title:          obj.title ?? '',
@@ -240,12 +240,12 @@ function editEvent(data: any = null) {
 
 function editDate(data: any) {
     const isAllDay = data.allDay ?? false;
-    const rawStart = data.startStr ?? data.start ?? '';
+    const rawStart = data.startStr || data.start || '';
     editingEvent.value = {
         id:             null,
         title:          '',
         start:          isAllDay ? rawStart.slice(0, 10) + 'T00:00' : toLocalDatetimeInput(rawStart),
-        end:            isAllDay ? rawStart.slice(0, 10) + 'T00:00' : toLocalDatetimeInput(data.endStr ?? data.end),
+        end:            isAllDay ? rawStart.slice(0, 10) + 'T00:00' : toLocalDatetimeInput(data.endStr || data.end || rawStart),
         description:    '',
         category:       'primera_sesion',
         assigned_to_id: null,

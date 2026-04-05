@@ -580,6 +580,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/clients/edit.vue'),
         meta: { permission: 'clients.update' },
     },
+    {
+        path: '/expiration-alerts',
+        name: 'expiration-alerts',
+        component: () => import('../views/alerts/expiration-alerts.vue'),
+        meta: { permission: 'clients.view' },
+    },
 
     // Case Management
     {

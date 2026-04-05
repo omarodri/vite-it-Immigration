@@ -139,6 +139,17 @@
                                             </div>
                                         </router-link>
                                     </li>
+                                    <!-- vencimientos -->
+                                    <li v-if="canViewClients" class="nav-item">
+                                        <router-link to="/expiration-alerts" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-clock class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('sidebar.expiration_alerts') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
                                     <!-- tareas pendientes -->
                                     <li  class="nav-item">
                                         <router-link to="/apps/todolist" class="group" @click="toggleMobileMenu">
@@ -895,6 +906,7 @@
     import IconUsers from '@/components/icon/icon-users.vue';
     import IconLockDots from '@/components/icon/icon-lock-dots.vue';
     import IconSettings from '@/components/icon/icon-settings.vue';
+    import IconClock from '@/components/icon/icon-clock.vue';
     import TenantLogo from '@/components/layout/TenantLogo.vue';
 
     const store = useAppStore();

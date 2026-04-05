@@ -9,6 +9,7 @@ use App\Models\Client;
 use App\Services\Client\ClientService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Exceptions\ClientHasDependentsException;
 use OpenApi\Attributes as OA;
 
 class ClientController extends Controller
@@ -175,9 +176,16 @@ class ClientController extends Controller
     {
         $this->authorize('delete', $client);
 
-        $this->clientService->deleteClient($client);
-
-        return response()->json(['message' => 'Client deleted successfully']);
+        try {
+            $this->clientService->deleteClient($client);
+            return response()->json(['message' => 'Client deleted successfully']);
+        } catch (ClientHasDependentsException $e) {
+            return response()->json([
+                'message' => __("clients.delete_blocked_{$e->reason}", ['count' => $e->count]),
+                'reason'  => $e->reason,
+                'count'   => $e->count,
+            ], 422);
+        }
     }
 
     #[OA\Delete(

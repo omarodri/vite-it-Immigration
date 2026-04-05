@@ -6,16 +6,22 @@ use App\Models\Client;
 use App\Models\Companion;
 use App\Models\Document;
 use App\Models\DocumentFolder;
+use App\Models\Event;
 use App\Models\ImmigrationCase;
+use App\Models\LegalDocument;
 use App\Models\Tenant;
+use App\Models\Todo;
 use App\Models\User;
 use App\Policies\CasePolicy;
 use App\Policies\ClientPolicy;
 use App\Policies\CompanionPolicy;
 use App\Policies\DocumentFolderPolicy;
 use App\Policies\DocumentPolicy;
+use App\Policies\EventPolicy;
+use App\Policies\LegalDocumentPolicy;
 use App\Policies\RolePolicy;
 use App\Policies\TenantPolicy;
+use App\Policies\TodoPolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
@@ -37,6 +43,9 @@ class AuthServiceProvider extends ServiceProvider
         Document::class => DocumentPolicy::class,
         DocumentFolder::class => DocumentFolderPolicy::class,
         Tenant::class => TenantPolicy::class,
+        Todo::class => TodoPolicy::class,
+        Event::class => EventPolicy::class,
+        LegalDocument::class => LegalDocumentPolicy::class,
     ];
 
     /**

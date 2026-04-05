@@ -8,8 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\DashboardCaseResource;
 use App\Http\Resources\DashboardEventResource;
 use App\Http\Resources\DashboardTodoResource;
+use App\Models\Client;
 use App\Models\Event;
 use App\Models\ImmigrationCase;
+use App\Models\LegalDocument;
 use App\Models\Todo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -89,6 +91,30 @@ class DashboardController extends Controller
             }
         }
 
+        // -- Expiring Documents (top 5) ------------------------------------
+        $expiringDocuments = LegalDocument::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->expiringSoon()
+            ->with('documentable')
+            ->orderBy('expiry_date')
+            ->limit(5)
+            ->get()
+            ->map(fn ($d) => [
+                'id'              => $d->id,
+                'document_type'   => $d->document_type,
+                'display_name'    => $d->display_name,
+                'document_number' => $d->document_number,
+                'expiry_date'     => $d->expiry_date?->format('Y-m-d'),
+                'days_remaining'  => $d->days_remaining,
+                'alert_status'    => $d->alert_status,
+                'entity_name'     => $d->documentable?->full_name,
+                'entity_type'     => $d->documentable instanceof Client ? 'client' : 'companion',
+                'entity_id'       => $d->documentable_id,
+                'client_id'       => $d->documentable instanceof Client
+                                     ? $d->documentable_id
+                                     : $d->documentable?->client_id,
+            ]);
+
         return response()->json([
             'data' => [
                 'metrics'         => [
@@ -96,9 +122,10 @@ class DashboardController extends Controller
                     'today_events'                => $todayEventsCount,
                     'pending_todos'               => $pendingTodosCount,
                 ],
-                'assigned_tasks'  => DashboardTodoResource::collection($assignedTasks),
-                'upcoming_events' => DashboardEventResource::collection($upcomingEvents),
-                'recent_cases'    => DashboardCaseResource::collection($recentCases),
+                'assigned_tasks'      => DashboardTodoResource::collection($assignedTasks),
+                'upcoming_events'     => DashboardEventResource::collection($upcomingEvents),
+                'recent_cases'        => DashboardCaseResource::collection($recentCases),
+                'expiring_documents'  => $expiringDocuments,
             ],
         ]);
     }

@@ -1,6 +1,9 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { useNotification } from '@/composables/useNotification';
 import router from '@/router';
+import i18n from '@/i18n';
+
+const t = (key: string) => i18n.global.t(key);
 
 // Error response types
 interface ApiErrorResponse {
@@ -85,7 +88,7 @@ api.interceptors.response.use(
 
         // No response - network error
         if (!error.response) {
-            notification.error('Network error. Please check your connection.');
+            notification.error(t('api_errors.network'));
             return Promise.reject(error);
         }
 
@@ -106,16 +109,16 @@ api.interceptors.response.use(
             case 403:
                 // Forbidden - user doesn't have permission
                 if (data?.error === 'email_not_verified') {
-                    notification.warning('Please verify your email address.');
+                    notification.warning(t('api_errors.verify_email'));
                     router.push({ name: 'email-verification-notice' });
                 } else {
-                    notification.error(data?.message || 'You do not have permission to perform this action.');
+                    notification.error(data?.message || t('api_errors.forbidden'));
                 }
                 break;
 
             case 404:
                 // Not found
-                notification.error(data?.message || 'The requested resource was not found.');
+                notification.error(data?.message || t('api_errors.not_found'));
                 break;
 
             case 419:
@@ -131,11 +134,11 @@ api.interceptors.response.use(
                         }
                         return api.request(originalRequest);
                     } catch (csrfError) {
-                        notification.error('Session expired. Please refresh the page.');
+                        notification.error(t('api_errors.session_expired'));
                         return Promise.reject(csrfError);
                     }
                 } else {
-                    notification.error('Session expired. Please refresh the page.');
+                    notification.error(t('api_errors.session_expired'));
                 }
                 break;
 
@@ -147,26 +150,26 @@ api.interceptors.response.use(
             case 429:
                 // Rate limit exceeded
                 notification.warning(
-                    data?.message || 'Too many requests. Please wait a moment and try again.'
+                    data?.message || t('api_errors.too_many_requests')
                 );
                 break;
 
             case 500:
                 // Server error
-                notification.error('Server error. Please try again later.');
+                notification.error(t('api_errors.server_error'));
                 break;
 
             case 502:
             case 503:
             case 504:
                 // Server unavailable
-                notification.error('Service temporarily unavailable. Please try again later.');
+                notification.error(t('api_errors.service_unavailable'));
                 break;
 
             default:
                 // Other errors
                 if (status >= 400) {
-                    notification.error(data?.message || 'An unexpected error occurred.');
+                    notification.error(data?.message || t('api_errors.unexpected'));
                 }
         }
 

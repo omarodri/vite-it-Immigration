@@ -146,7 +146,7 @@ class TenantController extends Controller
      */
     public function updateTheme(Request $request): TenantResource
     {
-        $request->validate([
+        $validated = $request->validate([
             'mode' => ['nullable', 'string', 'in:light,dark,system'],
             'menu' => ['nullable', 'string', 'in:vertical,collapsible-vertical,horizontal'],
             'layout' => ['nullable', 'string', 'in:full,boxed-layout'],
@@ -158,7 +158,7 @@ class TenantController extends Controller
         ]);
 
         $tenant = $request->user()->tenant;
-        $tenant = $this->tenantService->updateThemeSettings($tenant, $request->all());
+        $tenant = $this->tenantService->updateThemeSettings($tenant, $validated);
 
         return new TenantResource($tenant);
     }

@@ -1,8 +1,7 @@
 <script lang="ts" setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import flatPickr from 'vue-flatpickr-component'
-import 'flatpickr/dist/flatpickr.css'
+import AppDatePicker from '@/components/AppDatePicker.vue'
 import type { ImportantDate } from '@/types/case'
 
 const props = withDefaults(defineProps<{
@@ -29,10 +28,6 @@ watch(() => props.modelValue, (val) => {
     localDates.value = [...val]
 }, { deep: true })
 
-const dateConfig = {
-    dateFormat: 'Y-m-d',
-    allowInput: true,
-}
 
 function getDateStatus(dueDate: string | null): 'overdue' | 'upcoming' | 'future' | 'none' {
     if (!dueDate) return 'none'
@@ -59,12 +54,12 @@ const statusBorderClass: Record<string, string> = {
     none:     '',
 }
 
-const statusLabel: Record<string, string> = {
-    overdue:  'Vencida',
-    upcoming: 'Proxima',
-    future:   'Pendiente',
-    none:     'Sin fecha',
-}
+const statusLabel = computed(() => ({
+    overdue:  t('dates.overdue'),
+    upcoming: t('dates.upcoming'),
+    future:   t('dates.pending'),
+    none:     t('dates.no_date'),
+}))
 
 function addDate() {
     if (localDates.value.length >= props.maxDates) return
@@ -136,13 +131,12 @@ function onUpdate() {
             :placeholder="$t('cases.date_label')"
             @input="onUpdate"
           />
-          <!-- Flatpickr date input -->
-          <flat-pickr
+          <!-- Date input -->
+          <AppDatePicker
             v-model="date.due_date"
-            :config="dateConfig"
-            class="form-input w-36 text-sm"
+            input-class="form-input w-36 text-sm"
             :placeholder="$t('cases.pick_date')"
-            @on-change="onUpdate"
+            @update:model-value="onUpdate"
           />
           <!-- Status badge -->
           <span :class="statusBadgeClass[getDateStatus(date.due_date)]" class="text-xs shrink-0 hidden sm:inline-flex">

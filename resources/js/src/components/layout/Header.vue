@@ -170,7 +170,7 @@
                                     <template v-for="msg in messages" :key="msg.id">
                                         <li>
                                             <div class="flex items-center py-3 px-5">
-                                                <div v-html="msg.image"></div>
+                                                <div v-html="sanitizeHtml(msg.image)"></div>
                                                 <span class="px-3 dark:text-gray-500">
                                                     <div class="font-semibold text-sm dark:text-white-light/90" v-text="msg.title"></div>
                                                     <div v-text="msg.message"></div>
@@ -253,7 +253,7 @@
                                                 </div>
                                                 <div class="ltr:pl-3 rtl:pr-3 flex flex-auto">
                                                     <div class="ltr:pr-3 rtl:pl-3">
-                                                        <h6 v-html="notification.message"></h6>
+                                                        <h6 v-html="sanitizeHtml(notification.message)"></h6>
                                                         <span class="text-xs block font-normal dark:text-gray-500" v-text="notification.time"></span>
                                                     </div>
                                                     <button
@@ -884,6 +884,7 @@
     import { useRoute, useRouter } from 'vue-router';
     import { useAppStore } from '@/stores/index';
     import { useAuthStore } from '@/stores/auth';
+    import { sanitizeHtml } from '@/utils/sanitize';
 
 
     import IconMenu from '@/components/icon/icon-menu.vue';

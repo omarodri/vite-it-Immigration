@@ -701,7 +701,7 @@
                             </div>
                             <div
                                 class="mt-8 prose dark:prose-p:text-white prose-p:text-sm md:prose-p:text-sm max-w-full prose-img:inline-block prose-img:m-0"
-                                v-html="selectedMail.description"
+                                v-html="sanitizeHtml(selectedMail.description)"
                             ></div>
                             <p class="mt-4">Best Regards,</p>
                             <p>{{ selectedMail.firstName + ' ' + selectedMail.lastName }}</p>
@@ -814,6 +814,7 @@
     import Swal from 'sweetalert2';
     import { useAppStore } from '@/stores/index';
     import { useMeta } from '@/composables/use-meta';
+    import { sanitizeHtml } from '@/utils/sanitize';
 
     import IconMail from '@/components/icon/icon-mail.vue';
     import IconStar from '@/components/icon/icon-star.vue';

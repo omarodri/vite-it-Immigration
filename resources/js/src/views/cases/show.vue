@@ -348,20 +348,6 @@
                             </div>
                         </div>
 
-                        <!-- Metadata -->
-                        <div class="space-y-4 w-full lg:w-auto pt-4 border-t border-gray-200 dark:border-gray-700">
-                            <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.metadata') }}</h3>
-                            <div class="space-y-3 text-sm">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">{{ $t('cases.created') }}</span>
-                                    <span>{{ formatDateTime(currentCase.created_at) }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">{{ $t('cases.updated') }}</span>
-                                    <span>{{ formatDateTime(currentCase.updated_at) }}</span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Lifecycle Tab -->
@@ -427,6 +413,24 @@
 
                     <!-- Documents Tab -->
                     <CaseDocumentsTab v-else-if="activeTab === 'documents'" :case-id="currentCase.id" />
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            <div class="panel">
+                <div class="flex flex-wrap gap-6 text-sm text-gray-500">
+                    <div>
+                        <span class="font-medium">{{ $t('clients.created') }}:</span>
+                        {{ formatDate(currentCase.created_at) }}
+                    </div>
+                    <div>
+                        <span class="font-medium">{{ $t('clients.updated') }}:</span>
+                        {{ formatDate(currentCase.updated_at) }}
+                    </div>
+                    <div>
+                        <span class="font-medium">ID:</span>
+                        #{{ currentCase.id }}
+                    </div>
                 </div>
             </div>
         </div>

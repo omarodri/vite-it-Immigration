@@ -41,9 +41,23 @@ export interface DashboardCase {
     next_deadline: string | null;
 }
 
+export interface DashboardExpiringDocument {
+    id: number;
+    document_type: string;
+    display_name: string;
+    expiry_date: string;
+    days_remaining: number;
+    alert_status: 'overdue' | 'critical' | 'warning' | 'ok' | 'none';
+    entity_name: string;
+    entity_type: 'client' | 'companion';
+    entity_id: number;
+    client_id: number;
+}
+
 export interface DashboardData {
     metrics: DashboardMetrics;
     assigned_tasks: DashboardTask[];
     upcoming_events: DashboardEvent[];
     recent_cases: DashboardCase[];
+    expiring_documents?: DashboardExpiringDocument[];
 }

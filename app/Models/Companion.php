@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -24,9 +25,6 @@ class Companion extends Model
         'relationship_other',
         'date_of_birth',
         'gender',
-        'passport_number',
-        'passport_country',
-        'passport_expiry_date',
         'nationality',
         'notes',
         'iuc',
@@ -35,11 +33,12 @@ class Companion extends Model
         'phone_country_code',
         'canada_status',
         'canada_status_other',
+        'arrival_date',
     ];
 
     protected $casts = [
         'date_of_birth' => 'date',
-        'passport_expiry_date' => 'date',
+        'arrival_date' => 'date',
     ];
 
     /**
@@ -81,6 +80,15 @@ class Companion extends Model
     }
 
     /**
+     * Get the legal documents for this companion.
+     */
+    public function legalDocuments(): MorphMany
+    {
+        return $this->morphMany(LegalDocument::class, 'documentable')
+                    ->orderBy('sort_order');
+    }
+
+    /**
      * Get the companion's full name.
      */
     public function getFullNameAttribute(): string
@@ -111,6 +119,16 @@ class Companion extends Model
     }
 
     /**
+     * Register model event hooks.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Companion $companion) {
+            $companion->legalDocuments()->each(fn ($doc) => $doc->delete());
+        });
+    }
+
+    /**
      * Get the companion's age calculated from date of birth.
      */
     public function getAgeAttribute(): ?int
@@ -130,6 +148,7 @@ class Companion extends Model
         return match($this->canada_status) {
             'asylum_seeker'      => 'Solicitante de Asilo',
             'refugee'            => 'Refugiado',
+            'protected_person'   => 'Persona Protegida',
             'temporary_resident' => 'Residente Temporal',
             'permanent_resident' => 'Residente Permanente',
             'citizen'            => 'Ciudadano',

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentService
@@ -131,7 +132,7 @@ class DocumentService
     {
         $headers = [
             'Content-Type' => $document->mime_type,
-            'Content-Disposition' => 'inline; filename="' . $document->original_name . '"',
+            'Content-Disposition' => HeaderUtils::makeDisposition('inline', $document->original_name),
             'Cache-Control' => 'private, max-age=3600',
         ];
 

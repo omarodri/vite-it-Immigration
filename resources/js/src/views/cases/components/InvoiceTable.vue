@@ -57,11 +57,10 @@
                             <span v-else class="text-sm">{{ invoice.invoice_number }}</span>
                         </td>
                         <td class="py-1.5 pr-2">
-                            <flat-pickr
+                            <AppDatePicker
                                 v-if="canManage"
                                 v-model="invoice.invoice_date"
-                                class="form-input text-sm"
-                                :config="{ dateFormat: 'Y-m-d', altInput: true, altFormat: 'd/m/Y' }"
+                                input-class="form-input text-sm"
                             />
                             <span v-else class="text-sm">{{ invoice.invoice_date }}</span>
                         </td>
@@ -143,8 +142,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import flatPickr from 'vue-flatpickr-component';
-import 'flatpickr/dist/flatpickr.css';
+import AppDatePicker from '@/components/AppDatePicker.vue';
 import { useCaseStore } from '@/stores/case';
 import { useNotification } from '@/composables/useNotification';
 import type { CaseInvoice, FinancialSummary } from '@/types/invoice';

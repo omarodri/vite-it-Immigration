@@ -20,7 +20,7 @@ class ClientPolicy
      */
     public function view(User $user, Client $client): bool
     {
-        return $user->can('clients.view');
+        return $user->tenant_id === $client->tenant_id && $user->can('clients.view');
     }
 
     /**
@@ -36,7 +36,7 @@ class ClientPolicy
      */
     public function update(User $user, Client $client): bool
     {
-        return $user->can('clients.update');
+        return $user->tenant_id === $client->tenant_id && $user->can('clients.update');
     }
 
     /**
@@ -44,7 +44,7 @@ class ClientPolicy
      */
     public function delete(User $user, Client $client): bool
     {
-        return $user->can('clients.delete');
+        return $user->tenant_id === $client->tenant_id && $user->can('clients.delete');
     }
 
     /**
@@ -52,7 +52,7 @@ class ClientPolicy
      */
     public function restore(User $user, Client $client): bool
     {
-        return $user->can('clients.update');
+        return $user->tenant_id === $client->tenant_id && $user->can('clients.update');
     }
 
     /**
@@ -60,7 +60,7 @@ class ClientPolicy
      */
     public function forceDelete(User $user, Client $client): bool
     {
-        return $user->can('clients.delete');
+        return $user->tenant_id === $client->tenant_id && $user->can('clients.delete');
     }
 
     /**
@@ -68,6 +68,6 @@ class ClientPolicy
      */
     public function convert(User $user, Client $client): bool
     {
-        return $user->can('clients.update');
+        return $user->tenant_id === $client->tenant_id && $user->can('clients.update');
     }
 }

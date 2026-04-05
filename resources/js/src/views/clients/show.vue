@@ -73,6 +73,17 @@
                             <icon-arrow-left class="w-5 h-5" />
                             {{ $t('clients.back') }}
                         </router-link>
+                        <button
+                            v-can="'clients.delete'"
+                            type="button"
+                            class="btn btn-danger gap-2"
+                            :disabled="!canDelete"
+                            :title="!canDelete ? $t('clients.delete_blocked_tooltip') : ''"
+                            @click="confirmDeleteClient"
+                        >
+                            <icon-trash class="w-5 h-5" />
+                            {{ $t('clients.delete') }}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -108,6 +119,17 @@
                             @click="activeTab = 'canada'"
                         >
                             {{ $t('clients.canada_legal_status') }}
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            type="button"
+                            class="px-5 py-3 border-b-2 font-medium transition-colors"
+                            :class="activeTab === 'documents' ? 'border-primary text-primary' : 'border-transparent hover:text-primary'"
+                            @click="activeTab = 'documents'"
+                        >
+                            {{ $t('documents.legal_documents') }}
+                            <span v-if="legalDocs.length" class="badge badge-outline-primary ml-2">{{ legalDocs.length }}</span>
                         </button>
                     </li>
                     <li>
@@ -240,29 +262,23 @@
                             <p class="font-semibold">{{ client.arrival_date ? formatDate(client.arrival_date) : '-' }}</p>
                         </div>
                         <div>
-                            <label class="text-gray-500 text-sm">{{ $t('clients.passport_number') }}</label>
-                            <p class="font-semibold">{{ client.passport_number || '-' }}</p>
-                        </div>
-                        <div>
-                            <label class="text-gray-500 text-sm">{{ $t('clients.passport_country') }}</label>
-                            <p class="font-semibold">{{ client.passport_country || '-' }}</p>
-                        </div>
-                        <div>
-                            <label class="text-gray-500 text-sm">{{ $t('clients.passport_expiry') }}</label>
-                            <p class="font-semibold">{{ client.passport_expiry_date ? formatDate(client.passport_expiry_date) : '-' }}</p>
-                        </div>
-                        <div>
                             <label class="text-gray-500 text-sm">{{ $t('clients.iuc') }}</label>
                             <p class="font-semibold">{{ client.iuc || '-' }}</p>
                         </div>
-                        <div>
-                            <label class="text-gray-500 text-sm">{{ $t('clients.work_permit_number') }}</label>
-                            <p class="font-semibold">{{ client.work_permit_number || '-' }}</p>
+                    </div>
+
+                    <!-- Legal Documents Tab -->
+                    <div v-else-if="activeTab === 'documents'">
+                        <div v-if="isLoadingDocs" class="text-center py-10">
+                            <div class="animate-spin inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
                         </div>
-                        <div>
-                            <label class="text-gray-500 text-sm">{{ $t('clients.study_permit_number') }}</label>
-                            <p class="font-semibold">{{ client.study_permit_number || '-' }}</p>
-                        </div>
+                        <DocumentRepeater
+                            v-else
+                            v-model="legalDocs"
+                            entity-type="client"
+                            :entity-id="client!.id"
+                            :readonly="true"
+                        />
                     </div>
 
                     <!-- Companions Tab -->
@@ -328,13 +344,8 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div v-if="companion.passport_number || companion.iuc" class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                                    <p v-if="companion.passport_number" class="text-xs text-gray-500">
-                                        <span class="font-medium">{{ $t('companions.passport') }}:</span>
-                                        {{ companion.passport_number }}
-                                        <span v-if="companion.passport_country">({{ companion.passport_country }})</span>
-                                    </p>
-                                    <span v-if="companion.iuc" class="text-xs text-gray-500 dark:text-gray-400">
+                                <div v-if="companion.iuc" class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">
                                         IUC: {{ companion.iuc }}
                                     </span>
                                 </div>
@@ -443,7 +454,7 @@
                             leave-from="opacity-100 scale-100"
                             leave-to="opacity-0 scale-95"
                         >
-                            <DialogPanel class="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-900 p-6 text-left align-middle shadow-xl transition-all">
+                            <DialogPanel class="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-900 p-6 text-left align-middle shadow-xl transition-all">
                                 <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">
                                     {{ editingCompanion ? $t('companions.edit_companion') : $t('companions.add_companion') }}
                                 </DialogTitle>
@@ -528,10 +539,9 @@
                                                 class="form-input"
                                                 :max="today"
                                             /> -->
-                                            <flat-pickr
+                                            <AppDatePicker
                                                 v-model="companionForm.date_of_birth"
-                                                :config="dateConfig"
-                                                class="form-input"
+                                                :max-date="maxBirthDate.toISOString().split('T')[0]"
                                                 :placeholder="$t('clients.select_date')"
                                             />
                                         </div>
@@ -577,44 +587,6 @@
                                         </div>
                                     </div>
 
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.passport_number') }}</label>
-                                            <input
-                                                v-model="companionForm.passport_number"
-                                                type="text"
-                                                class="form-input"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.passport_country') }}</label>
-                                            <!-- <input
-                                                v-model="companionForm.passport_country"
-                                                type="text"
-                                                class="form-input"
-                                            /> -->
-                                            <CountrySelect
-                                                id="passport_country"
-                                                v-model="companionForm.passport_country"
-                                                :placeholder="$t('clients.select_nationality')"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.passport_expiry') }}</label>
-                                            <!-- <input
-                                                v-model="companionForm.passport_expiry_date"
-                                                type="date"
-                                                class="form-input"
-                                            /> -->
-                                            <flat-pickr
-                                                v-model="companionForm.passport_expiry_date"
-                                                :config="passportExpiryDateConfig"
-                                                class="form-input"
-                                                :placeholder="$t('clients.select_date')"
-                                            />
-                                        </div>
-                                    </div>
-
                                     <div>
                                         <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.notes') }}</label>
                                         <textarea
@@ -622,6 +594,16 @@
                                             rows="2"
                                             class="form-textarea"
                                         ></textarea>
+                                    </div>
+
+                                    <!-- Legal Documents -->
+                                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
+                                        <h6 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">{{ $t('documents.legal_documents') }}</h6>
+                                        <DocumentRepeater
+                                            v-model="companionDocs"
+                                            entity-type="companion"
+                                            :entity-id="editingCompanion?.id ?? 0"
+                                        />
                                     </div>
 
                                     <!-- Contact & Immigration Status -->
@@ -666,6 +648,18 @@
                                         </div>
                                     </div>
 
+                                    <!-- Arrival Date -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.arrival_date') }}</label>
+                                            <AppDatePicker
+                                                v-model="companionForm.arrival_date"
+                                                max-date="today"
+                                                :placeholder="$t('clients.select_date')"
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div class="flex justify-end gap-3 mt-6">
                                         <button
                                             type="button"
@@ -694,8 +688,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useMeta } from '@/composables/use-meta';
 import { useClientStore } from '@/stores/client';
 import { useCompanionStore } from '@/stores/companion';
@@ -705,11 +699,13 @@ import { formatDate } from '@/utils/formatters';
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue';
 import type { Client, ClientStatus } from '@/types/client';
 import type { Companion, CreateCompanionData, UpdateCompanionData, RelationshipType } from '@/types/companion';
+import type { LegalDocument } from '@/types/legal-document';
 import CountrySelect from '@/components/CountrySelect.vue';
 import PhoneInput from '@/components/PhoneInput.vue';
 import { CANADA_STATUS_OPTIONS } from '@/types/client';
-import flatPickr from 'vue-flatpickr-component';
-import 'flatpickr/dist/flatpickr.css';
+import AppDatePicker from '@/components/AppDatePicker.vue';
+import DocumentRepeater from '@/components/DocumentRepeater.vue';
+import { legalDocumentService } from '@/services/legalDocumentService';
 
 // Icons
 import IconArrowLeft from '@/components/icon/icon-arrow-left.vue';
@@ -723,6 +719,7 @@ import IconTrash from '@/components/icon/icon-trash.vue';
 useMeta({ title: 'Client Profile' });
 
 const route = useRoute();
+const router = useRouter();
 const clientStore = useClientStore();
 const companionStore = useCompanionStore();
 const { confirm: confirmDialog, success, error } = useNotification();
@@ -750,30 +747,40 @@ const companionForm = ref<CreateCompanionData>({
     gender: undefined,
     nationality: '',
     iuc: '' as string | null,
-    passport_number: '',
-    passport_country: '',
-    passport_expiry_date: '',
     notes: '',
     email: '',
     phone: '',
     phone_country_code: '+1',
     canada_status: '',
     canada_status_other: '',
+    arrival_date: '',
 });
+
+// Legal documents state
+const legalDocs = ref<LegalDocument[]>([]);
+const isLoadingDocs = ref(false);
+const docsLoaded = ref(false);
+
+// Companion document state
+const companionDocs = ref<LegalDocument[]>([]);
+const companionOriginalDocIds = ref<number[]>([]);
+
+const loadLegalDocs = async () => {
+    if (!client.value) return;
+    isLoadingDocs.value = true;
+    try {
+        legalDocs.value = await legalDocumentService.getForClient(client.value.id);
+        docsLoaded.value = true;
+    } catch (err) {
+        console.error('Failed to load legal documents:', err);
+    } finally {
+        isLoadingDocs.value = false;
+    }
+};
 
 // Date picker config
 const maxBirthDate = new Date();
 maxBirthDate.setDate(maxBirthDate.getDate() - 1);
-
-const dateConfig = {
-    dateFormat: 'Y-m-d',
-    allowInput: true,
-    maxDate: maxBirthDate.toISOString().split('T')[0],
-};
-const passportExpiryDateConfig = {
-    dateFormat: 'Y-m-d',
-    allowInput: true,
-};
 
 const getInitials = (firstName: string, lastName: string): string => {
     return ((firstName?.[0] || '') + (lastName?.[0] || '')).toUpperCase();
@@ -800,7 +807,9 @@ const getStatusAvatarClass = (status: ClientStatus): string => {
 };
 
 const formatCanadaStatus = (status: string): string => {
-    return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    const key = `clients.status_${status}`;
+    const translated = t(key);
+    return translated !== key ? translated : status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 };
 
 const getCaseBadgeClass = (status: string): string => {
@@ -865,21 +874,21 @@ const resetCompanionForm = () => {
         gender: undefined,
         nationality: '',
         iuc: '' as string | null,
-        passport_number: '',
-        passport_country: '',
-        passport_expiry_date: '',
         notes: '',
         email: '',
         phone: '',
         phone_country_code: '+1',
         canada_status: '',
         canada_status_other: '',
+        arrival_date: '',
     };
     companionErrors.value = {};
 };
 
-const openCompanionModal = (companion?: Companion) => {
+const openCompanionModal = async (companion?: Companion) => {
     resetCompanionForm();
+    companionDocs.value = [];
+    companionOriginalDocIds.value = [];
     if (companion) {
         editingCompanion.value = companion;
         companionForm.value = {
@@ -891,16 +900,21 @@ const openCompanionModal = (companion?: Companion) => {
             gender: companion.gender || undefined,
             nationality: companion.nationality || '',
             iuc: companion.iuc || '',
-            passport_number: companion.passport_number || '',
-            passport_country: companion.passport_country || '',
-            passport_expiry_date: companion.passport_expiry_date || '',
             notes: companion.notes || '',
             email: companion.email || '',
             phone: companion.phone || '',
             phone_country_code: companion.phone_country_code || '+1',
             canada_status: companion.canada_status || '',
             canada_status_other: companion.canada_status_other || '',
+            arrival_date: companion.arrival_date || '',
         };
+        try {
+            const docs = await legalDocumentService.getForCompanion(companion.id);
+            companionDocs.value = docs;
+            companionOriginalDocIds.value = docs.filter(d => d.id).map(d => d.id as number);
+        } catch {
+            // Docs load failure is non-critical
+        }
     } else {
         editingCompanion.value = null;
     }
@@ -925,12 +939,32 @@ const saveCompanion = async () => {
                 editingCompanion.value.id,
                 companionForm.value as UpdateCompanionData
             );
+            // Sync legal documents
+            const companionId = editingCompanion.value.id;
+            const currentIds = companionDocs.value.filter(d => d.id).map(d => d.id as number);
+            const deletedIds = companionOriginalDocIds.value.filter(id => !currentIds.includes(id));
+            await Promise.all([
+                ...deletedIds.map(id => legalDocumentService.remove(id)),
+                ...companionDocs.value.map(doc =>
+                    doc.id
+                        ? legalDocumentService.update(doc.id, doc)
+                        : legalDocumentService.createForCompanion(companionId, doc)
+                ),
+            ]);
             success(t('companions.updated_successfully'));
         } else {
-            await companionStore.createCompanion(
+            const newCompanion = await companionStore.createCompanion(
                 client.value.id,
                 companionForm.value as CreateCompanionData
             );
+            // Save docs for newly created companion if any
+            if (newCompanion?.id && companionDocs.value.length > 0) {
+                await Promise.all(
+                    companionDocs.value.map(doc =>
+                        legalDocumentService.createForCompanion(newCompanion.id, doc)
+                    )
+                );
+            }
             success(t('companions.created_successfully'));
         }
         companions.value = companionStore.companions;
@@ -992,10 +1026,42 @@ const confirmConvert = async () => {
     }
 };
 
+const canDelete = computed(() => {
+    if (!client.value) return false;
+    const companionCount = client.value.companions_count ?? (client.value.companions?.length ?? 0);
+    const caseCount = client.value.cases_count ?? (client.value.cases?.length ?? 0);
+    return companionCount === 0 && caseCount === 0;
+});
+
+const confirmDeleteClient = async () => {
+    if (!client.value) return;
+
+    const confirmed = await confirmDialog({
+        title: t('clients.confirm_delete', { name: `${client.value.first_name} ${client.value.last_name}` }),
+        text: t('clients.delete_warning'),
+        icon: 'warning',
+        confirmButtonText: t('clients.yes_delete'),
+        cancelButtonText: t('clients.cancel'),
+    });
+
+    if (confirmed) {
+        try {
+            await clientStore.deleteClient(client.value.id);
+            success(t('clients.deleted_successfully'));
+            router.push('/clients');
+        } catch (err: any) {
+            error(err.response?.data?.message || t('clients.delete_failed'));
+        }
+    }
+};
+
 // Load companions when tab becomes active
 watch(activeTab, (newTab) => {
     if (newTab === 'companions' && client.value && !companions.value.length) {
         loadCompanions();
+    }
+    if (newTab === 'documents' && client.value && !docsLoaded.value) {
+        loadLegalDocs();
     }
 });
 
@@ -1006,6 +1072,7 @@ onMounted(async () => {
         // Preload companions if we might show them
         if (client.value) {
             loadCompanions();
+            loadLegalDocs();
         }
     } catch (err) {
         error(t('clients.failed_to_load'));

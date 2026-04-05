@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -27,9 +28,6 @@ class Client extends Model
         'second_language',
         'date_of_birth',
         'gender',
-        'passport_number',
-        'passport_country',
-        'passport_expiry_date',
         'marital_status',
         'profession',
         'description',
@@ -51,9 +49,6 @@ class Client extends Model
         'arrival_date',
         'entry_point',
         'iuc',
-        'work_permit_number',
-        'study_permit_number',
-        'permit_expiry_date',
         'other_status_1',
         'other_status_2',
         // Status
@@ -63,10 +58,8 @@ class Client extends Model
 
     protected $casts = [
         'date_of_birth' => 'date',
-        'passport_expiry_date' => 'date',
         'status_date' => 'date',
         'arrival_date' => 'date',
-        'permit_expiry_date' => 'date',
         'is_primary_applicant' => 'boolean',
     ];
 
@@ -92,6 +85,15 @@ class Client extends Model
     public function cases(): HasMany
     {
         return $this->hasMany(ImmigrationCase::class);
+    }
+
+    /**
+     * Get the legal documents for this client.
+     */
+    public function legalDocuments(): MorphMany
+    {
+        return $this->morphMany(LegalDocument::class, 'documentable')
+                    ->orderBy('sort_order');
     }
 
     // Note: FollowUp model will be implemented in future epics
@@ -146,8 +148,17 @@ class Client extends Model
             $q->where('first_name', 'like', "%{$search}%")
                 ->orWhere('last_name', 'like', "%{$search}%")
                 ->orWhere('email', 'like', "%{$search}%")
-                ->orWhere('phone', 'like', "%{$search}%")
-                ->orWhere('passport_number', 'like', "%{$search}%");
+                ->orWhere('phone', 'like', "%{$search}%");
+        });
+    }
+
+    /**
+     * Register model event hooks.
+     */
+    protected static function booted(): void
+    {
+        static::deleting(function (Client $client) {
+            $client->legalDocuments()->each(fn ($doc) => $doc->delete());
         });
     }
 

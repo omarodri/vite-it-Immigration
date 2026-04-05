@@ -96,10 +96,9 @@
                         <!-- Date of Birth -->
                         <div>
                             <label for="date_of_birth" class="mb-2 block">{{ $t('clients.date_of_birth') }}</label>
-                            <flat-pickr
+                            <AppDatePicker
                                 v-model="form.date_of_birth"
-                                :config="dateConfig"
-                                class="form-input"
+                                :max-date="maxBirthDate.toISOString().split('T')[0]"
                                 :placeholder="$t('clients.select_date')"
                             />
                         </div>
@@ -258,39 +257,6 @@
                                 :placeholder="$t('clients.select_country')"
                             />
                         </div>
-
-                        <!-- Passport Number -->
-                        <div>
-                            <label for="passport_number" class="mb-2 block">{{ $t('clients.passport_number') }}</label>
-                            <input
-                                id="passport_number"
-                                v-model="form.passport_number"
-                                type="text"
-                                :placeholder="$t('clients.enter_passport_number')"
-                                class="form-input"
-                            />
-                        </div>
-
-                        <!-- Passport Country -->
-                        <div>
-                            <label for="passport_country" class="mb-2 block">{{ $t('clients.passport_country') }}</label>
-                            <CountrySelect
-                                id="passport_country"
-                                v-model="form.passport_country"
-                                :placeholder="$t('clients.select_passport_country')"
-                            />
-                        </div>
-
-                        <!-- Passport Expiry -->
-                        <div>
-                            <label for="passport_expiry_date" class="mb-2 block">{{ $t('clients.passport_expiry') }}</label>
-                            <flat-pickr
-                                v-model="form.passport_expiry_date"
-                                :config="passportExpiryDateConfig"
-                                class="form-input"
-                                :placeholder="$t('clients.select_date')"
-                            />
-                        </div>
                     </div>
                 </div>
 
@@ -334,10 +300,9 @@
                         <!-- Arrival Date -->
                         <div>
                             <label for="arrival_date" class="mb-2 block">{{ $t('clients.arrival_date') }}</label>
-                            <flat-pickr
+                            <AppDatePicker
                                 v-model="form.arrival_date"
-                                :config="dateConfig"
-                                class="form-input"
+                                max-date="today"
                                 :placeholder="$t('clients.select_date')"
                             />
                         </div>
@@ -353,31 +318,20 @@
                                 class="form-input"
                             />
                         </div>
-
-                        <!-- Work Permit Number -->
-                        <div>
-                            <label for="work_permit_number" class="mb-2 block">{{ $t('clients.work_permit_number') }}</label>
-                            <input
-                                id="work_permit_number"
-                                v-model="form.work_permit_number"
-                                type="text"
-                                :placeholder="$t('clients.enter_permit_number')"
-                                class="form-input"
-                            />
-                        </div>
-
-                        <!-- Study Permit Number -->
-                        <div>
-                            <label for="study_permit_number" class="mb-2 block">{{ $t('clients.study_permit_number') }}</label>
-                            <input
-                                id="study_permit_number"
-                                v-model="form.study_permit_number"
-                                type="text"
-                                :placeholder="$t('clients.enter_permit_number')"
-                                class="form-input"
-                            />
-                        </div>
                     </div>
+                </div>
+
+                <!-- Legal Documents Section -->
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
+                    <h6 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <icon-file class="w-5 h-5" />
+                        {{ $t('documents.legal_documents') }}
+                    </h6>
+                    <DocumentRepeater
+                        v-model="legalDocs"
+                        entity-type="client"
+                        :entity-id="0"
+                    />
                 </div>
 
                 <!-- Client Status Section -->
@@ -455,11 +409,14 @@ import { useMeta } from '@/composables/use-meta';
 import { useClientStore } from '@/stores/client';
 import { useNotification } from '@/composables/useNotification';
 import { useI18n } from 'vue-i18n';
-import flatPickr from 'vue-flatpickr-component';
-import 'flatpickr/dist/flatpickr.css';
+import AppDatePicker from '@/components/AppDatePicker.vue';
+import DocumentRepeater from '@/components/DocumentRepeater.vue';
+import { legalDocumentService } from '@/services/legalDocumentService';
+import type { LegalDocument } from '@/types/legal-document';
 
 // Icons
 import IconArrowLeft from '@/components/icon/icon-arrow-left.vue';
+import IconFile from '@/components/icon/icon-file.vue';
 import IconUser from '@/components/icon/icon-user.vue';
 import IconMail from '@/components/icon/icon-mail.vue';
 import IconHome from '@/components/icon/icon-home.vue';
@@ -509,8 +466,9 @@ const MaritalStatusOptions = computed(() => [
 ]);
 
 const CanadaStatusOptions = computed(() => [
+    { value: 'asylum_seeker', label: t('clients.asylum_seeker') as string },
+    { value: 'refugee', label: t('clients.refugee_claimant') as string },
     { value: 'protected_person', label: t('clients.protected_person') as string },
-    { value: 'refugee_claimant', label: t('clients.refugee_claimant') as string },
     { value: 'temporary_resident', label: t('clients.temporary_resident') as string },
     { value: 'permanent_resident', label: t('clients.permanent_resident') as string },
     { value: 'citizen', label: t('clients.citizen') as string },
@@ -529,20 +487,13 @@ const EntryPointOptions = computed(() => [
 // State
 const isSubmitting = ref(false);
 const errorMessage = ref('');
+const legalDocs = ref<LegalDocument[]>([]);
+const createdClientId = ref<number | null>(null);
 
 // Date picker config
 const maxBirthDate = new Date();
 maxBirthDate.setDate(maxBirthDate.getDate() - 1);
 
-const dateConfig = {
-    dateFormat: 'Y-m-d',
-    allowInput: true,
-    maxDate: maxBirthDate.toISOString().split('T')[0],
-};
-const passportExpiryDateConfig = {
-    dateFormat: 'Y-m-d',
-    allowInput: true,
-};
 
 // Form
 const form = reactive({
@@ -568,12 +519,7 @@ const form = reactive({
     canada_status_other: '',
     entry_point: '',
     arrival_date: '',
-    passport_number: '',
-    passport_country: '',
-    passport_expiry_date: '',
     iuc: '',
-    work_permit_number: '',
-    study_permit_number: '',
     status: 'prospect',
     is_primary_applicant: true,
     description: '',
@@ -615,7 +561,15 @@ const handleSubmit = async () => {
             data.other_status_1 = canada_status_other;
         }
 
-        await clientStore.createClient(data as any);
+        const newClient = await clientStore.createClient(data as any);
+        const clientId = (newClient as any)?.client?.id;
+
+        // Save legal documents after client is created
+        if (clientId && legalDocs.value.length > 0) {
+            await Promise.all(
+                legalDocs.value.map(doc => legalDocumentService.createForClient(clientId, doc))
+            );
+        }
 
         success(t('clients.created_successfully'));
         router.push('/clients');

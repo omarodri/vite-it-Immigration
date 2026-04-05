@@ -169,11 +169,11 @@ const saveSettings = async () => {
         });
 
         // Save show_customizer (theme setting)
-        await tenantStore.updateTheme({
+        const themeResult = await tenantStore.updateTheme({
             show_customizer: form.show_customizer,
         });
 
-        if (result.success) {
+        if (result.success && themeResult.success) {
             Swal.fire({
                 icon: 'success',
                 title: t('tenant.settings_saved'),
@@ -184,7 +184,7 @@ const saveSettings = async () => {
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: result.error || t('tenant.save_failed'),
+                text: result.error || themeResult.error || t('tenant.save_failed'),
             });
         }
     } catch (error: any) {

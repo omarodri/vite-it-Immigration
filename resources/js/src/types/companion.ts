@@ -20,9 +20,6 @@ export interface Companion {
     date_of_birth: string | null;
     age?: number | null;
     gender: Gender | null;
-    passport_number: string | null;
-    passport_country: string | null;
-    passport_expiry_date: string | null;
     nationality: string | null;
     notes: string | null;
     iuc?: string | null;
@@ -32,6 +29,7 @@ export interface Companion {
     canada_status: CanadaStatus | null;
     canada_status_other: string | null;
     canada_status_label?: string | null;
+    arrival_date: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -43,9 +41,6 @@ export interface CreateCompanionData {
     relationship_other?: string;
     date_of_birth?: string;
     gender?: Gender;
-    passport_number?: string;
-    passport_country?: string;
-    passport_expiry_date?: string;
     nationality?: string;
     notes?: string;
     iuc?: string;
@@ -54,6 +49,7 @@ export interface CreateCompanionData {
     phone_country_code?: string;
     canada_status?: string;
     canada_status_other?: string;
+    arrival_date?: string;
 }
 
 export interface UpdateCompanionData {
@@ -63,9 +59,6 @@ export interface UpdateCompanionData {
     relationship_other?: string;
     date_of_birth?: string;
     gender?: Gender;
-    passport_number?: string;
-    passport_country?: string;
-    passport_expiry_date?: string;
     nationality?: string;
     notes?: string;
     iuc?: string;
@@ -74,6 +67,7 @@ export interface UpdateCompanionData {
     phone_country_code?: string;
     canada_status?: string;
     canada_status_other?: string;
+    arrival_date?: string;
 }
 
 // Relationship type options for select dropdowns

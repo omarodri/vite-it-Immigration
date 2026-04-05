@@ -63,6 +63,7 @@ class CompanionService
     {
         $activeCasesCount = $companion->cases()
             ->withoutGlobalScopes()
+            ->whereNull('cases.deleted_at')
             ->whereNotIn('cases.status', [
                 ImmigrationCase::STATUS_CLOSED,
                 ImmigrationCase::STATUS_ARCHIVED,

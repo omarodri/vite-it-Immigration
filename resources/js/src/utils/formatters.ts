@@ -16,7 +16,19 @@ export function formatDate(
     locale = 'en-US'
 ): string {
     if (!date) return '-';
-    const d = typeof date === 'string' ? new Date(date) : date;
+    let d: Date;
+    if (typeof date === 'string') {
+        // Extract YYYY-MM-DD portion and parse as local time to avoid UTC-offset day shift
+        // Handles both "1986-03-20" and "1986-03-20T00:00:00.000000Z"
+        const match = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            d = new Date(+match[1], +match[2] - 1, +match[3]);
+        } else {
+            d = new Date(date);
+        }
+    } else {
+        d = date;
+    }
     if (isNaN(d.getTime())) return '-';
     return d.toLocaleDateString(locale, options);
 }
@@ -43,7 +55,17 @@ export function formatDateTime(
  */
 export function formatRelativeTime(date: string | Date | null | undefined, locale = 'en-US'): string {
     if (!date) return '-';
-    const d = typeof date === 'string' ? new Date(date) : date;
+    let d: Date;
+    if (typeof date === 'string') {
+        const match = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            d = new Date(+match[1], +match[2] - 1, +match[3]);
+        } else {
+            d = new Date(date);
+        }
+    } else {
+        d = date;
+    }
     if (isNaN(d.getTime())) return '-';
 
     const now = new Date();

@@ -152,12 +152,10 @@
                                         </div>
                                         <div>
                                             <label for="date_of_birth">{{ $t('profile.date_of_birth') }}</label>
-                                            <flat-pickr
+                                            <AppDatePicker
                                                 id="date_of_birth"
-                                                v-model="profileForm.date_of_birth as DateOption | DateOption[]"
-                                                class="form-input"
-                                                :config="datePickerConfig"
-                                                :value="profileForm.date_of_birth ? new Date(profileForm.date_of_birth) : null"
+                                                v-model="profileForm.date_of_birth"
+                                                max-date="today"
                                                 :placeholder="$t('profile.select_date')"
                                             />
                                         </div>
@@ -476,7 +474,7 @@
                                     <div class="space-y-5">
                                         <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-900">
                                             <p class="text-sm font-semibold mb-3">{{ $t('profile.scan_this_qr_code_with_your_authenticator_app') }}:</p>
-                                            <div class="flex justify-center mb-3" v-html="twoFactorSetup.qrCode"></div>
+                                            <div class="flex justify-center mb-3" v-html="sanitizeHtml(twoFactorSetup.qrCode)"></div>
                                             <p class="text-xs text-gray-500 text-center">{{ $t('profile.google_authenticator_authy_or_any_totp_app') }}</p>
                                         </div>
 
@@ -715,8 +713,7 @@ import { useRoute } from 'vue-router';
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '@headlessui/vue';
 import { useVuelidate } from '@vuelidate/core';
 import { required, minLength, url, sameAs, helpers } from '@vuelidate/validators';
-import flatPickr from 'vue-flatpickr-component';
-import 'flatpickr/dist/flatpickr.css';
+import AppDatePicker from '@/components/AppDatePicker.vue';
 import Swal from 'sweetalert2';
 import { useAppStore } from '@/stores/index';
 import { useProfileStore } from '@/stores/profile';
@@ -724,6 +721,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useMeta } from '@/composables/use-meta';
 import twoFactorService from '@/services/twoFactorService';
 import type { UpdateProfileData, ChangePasswordData, SocialLinks } from '@/types/user';
+import { sanitizeHtml } from '@/utils/sanitize';
 
 // Icons
 import IconUser from '@/components/icon/icon-user.vue';
@@ -822,11 +820,6 @@ const passwordRules = {
 
 const vPassword$ = useVuelidate(passwordRules, passwordForm);
 
-// Date picker configuration
-const datePickerConfig = {
-    dateFormat: 'Y-m-d',
-    maxDate: 'today',
-};
 
 // Timezones list
 const timezones = [

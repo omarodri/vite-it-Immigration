@@ -10,6 +10,7 @@ use App\Models\ImmigrationCase;
 use App\Models\Tenant;
 use App\Services\Storage\StorageProviderFactory;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class CaseFolderSyncService
 {
@@ -32,7 +33,10 @@ class CaseFolderSyncService
         $rootExternalId = $case->root_external_folder_id;
 
         if (!$rootExternalId) {
-            $rootFolderName = $case->case_number;
+            $clientSlug = $this->normalizeClientNameForFolderSegment($case->client->full_name);
+            $rootFolderName = $clientSlug !== ''
+                ? $case->case_number.'-'.$clientSlug
+                : $case->case_number;
             $baseFolderExternalId = $this->resolveBaseFolderExternalId($tenant, $provider);
 
             try {
@@ -162,6 +166,17 @@ class CaseFolderSyncService
                 // Continue syncing other children
             }
         }
+    }
+
+    /**
+     * ASCII transliteration, collapse whitespace and punctuation to single hyphens (safe cloud folder segment).
+     */
+    private function normalizeClientNameForFolderSegment(string $fullName): string
+    {
+        $ascii = Str::ascii(trim($fullName));
+        $slug = preg_replace('/[^a-zA-Z0-9]+/', '-', $ascii);
+
+        return trim((string) $slug, '-');
     }
 
     private function resolveBaseFolderExternalId(Tenant $tenant, DocumentStorageInterface $provider): ?string

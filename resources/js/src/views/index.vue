@@ -175,6 +175,46 @@
                             {{ t('dashboard.add_event') }}
                         </router-link>
                     </div>
+
+                    <!-- Expiring Documents -->
+                    <div class="panel">
+                        <div class="flex items-center justify-between mb-5">
+                            <h5 class="font-semibold text-lg dark:text-white-light">{{ t('dashboard.expiring_documents') }}</h5>
+                        </div>
+
+                        <div v-if="dashboard.isLoading && !dashboard.data" class="flex items-center justify-center py-10">
+                            <span class="animate-spin border-4 border-primary border-l-transparent rounded-full w-10 h-10 inline-block align-middle"></span>
+                        </div>
+
+                        <div v-else-if="!dashboard.expiringDocuments?.length" class="flex flex-col items-center justify-center py-6 text-gray-400 dark:text-gray-500">
+                            <icon-clock class="w-10 h-10 mb-2 opacity-50" />
+                            <p class="text-sm">{{ t('dashboard.no_expiring_documents') }}</p>
+                        </div>
+
+                        <div v-else class="space-y-3">
+                            <router-link
+                                v-for="doc in dashboard.expiringDocuments"
+                                :key="doc.id"
+                                :to="`/clients/${doc.client_id || doc.entity_id}`"
+                                class="flex items-start gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                            >
+                                <ExpirationAlertBadge
+                                    :alert-status="doc.alert_status || 'critical'"
+                                    :days-remaining="doc.days_remaining"
+                                    class="shrink-0 mt-0.5"
+                                />
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium truncate">{{ doc.entity_name }}</p>
+                                    <p class="text-xs text-gray-500 truncate">{{ doc.document_type === 'other' && doc.display_name ? doc.display_name : t(`documents.type_${doc.document_type}`) }}</p>
+                                    <p class="text-xs text-gray-400">{{ doc.expiry_date }}</p>
+                                </div>
+                            </router-link>
+                        </div>
+
+                        <router-link to="/expiration-alerts" class="btn btn-outline-warning w-full mt-5 text-center text-sm">
+                            {{ t('dashboard.view_all_alerts') }}
+                        </router-link>
+                    </div>
                 </div>
             </div>
         </div>
@@ -193,6 +233,8 @@ import IconUsers from '@/components/icon/icon-users.vue';
 import IconPlus from '@/components/icon/icon-plus.vue';
 import IconListCheck from '@/components/icon/icon-list-check.vue';
 import IconCalendar from '@/components/icon/icon-calendar.vue';
+import IconClock from '@/components/icon/icon-clock.vue';
+import ExpirationAlertBadge from '@/components/ExpirationAlertBadge.vue';
 
 import StatCircle from '@/views/dashboard/components/StatCircle.vue';
 import TaskRow from '@/views/dashboard/components/TaskRow.vue';
@@ -206,7 +248,7 @@ const store = useAppStore();
 const dashboard = useDashboardStore();
 
 onMounted(() => {
-    dashboard.fetchDashboard();
+    dashboard.fetchDashboard(true);
 });
 </script>
 

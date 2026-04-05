@@ -26,9 +26,6 @@ export interface Client {
     second_language: Language | null;
     date_of_birth: string | null;
     gender: Gender | null;
-    passport_number: string | null;
-    passport_country: string | null;
-    passport_expiry_date: string | null;
     marital_status: MaritalStatus | null;
     profession: string | null;
     description: string | null;
@@ -52,9 +49,6 @@ export interface Client {
     arrival_date: string | null;
     entry_point: EntryPoint | null;
     iuc: string | null;
-    work_permit_number: string | null;
-    study_permit_number: string | null;
-    permit_expiry_date: string | null;
     other_status_1: string | null;
     other_status_2: string | null;
 
@@ -74,7 +68,9 @@ export interface Client {
         email: string;
     };
     companions?: Client[];
+    companions_count?: number;
     cases?: any[];
+    cases_count?: number;
 }
 
 export interface CreateClientData {
@@ -89,9 +85,6 @@ export interface CreateClientData {
     second_language?: string;
     date_of_birth?: string;
     gender?: Gender;
-    passport_number?: string;
-    passport_country?: string;
-    passport_expiry_date?: string;
     marital_status?: MaritalStatus;
     profession?: string;
     description?: string;
@@ -115,9 +108,6 @@ export interface CreateClientData {
     arrival_date?: string;
     entry_point?: EntryPoint;
     iuc?: string;
-    work_permit_number?: string;
-    study_permit_number?: string;
-    permit_expiry_date?: string;
     other_status_1?: string;
     other_status_2?: string;
 
@@ -136,9 +126,6 @@ export interface UpdateClientData {
     second_language?: string;
     date_of_birth?: string;
     gender?: Gender;
-    passport_number?: string;
-    passport_country?: string;
-    passport_expiry_date?: string;
     marital_status?: MaritalStatus;
     profession?: string;
     description?: string;
@@ -162,9 +149,6 @@ export interface UpdateClientData {
     arrival_date?: string;
     entry_point?: EntryPoint;
     iuc?: string;
-    work_permit_number?: string;
-    study_permit_number?: string;
-    permit_expiry_date?: string;
     other_status_1?: string;
     other_status_2?: string;
 
@@ -221,6 +205,7 @@ export const MARITAL_STATUS_OPTIONS: Array<{ value: MaritalStatus; label: string
 export const CANADA_STATUS_OPTIONS: Array<{ value: CanadaStatus; label: string }> = [
     { value: 'asylum_seeker', label: 'Asylum Seeker' },
     { value: 'refugee', label: 'Refugee' },
+    { value: 'protected_person', label: 'Protected Person' },
     { value: 'temporary_resident', label: 'Temporary Resident' },
     { value: 'permanent_resident', label: 'Permanent Resident' },
     { value: 'citizen', label: 'Citizen' },

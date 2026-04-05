@@ -5,7 +5,7 @@
 
 import { defineStore } from 'pinia';
 import dashboardService from '@/services/dashboardService';
-import type { DashboardData, DashboardMetrics, DashboardTask, DashboardEvent, DashboardCase } from '@/types/dashboard';
+import type { DashboardData, DashboardMetrics, DashboardTask, DashboardEvent, DashboardCase, DashboardExpiringDocument } from '@/types/dashboard';
 
 const STALE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -48,6 +48,10 @@ export const useDashboardStore = defineStore('dashboard', {
 
         recentCases(state): DashboardCase[] {
             return state.data?.recent_cases ?? [];
+        },
+
+        expiringDocuments(state): DashboardExpiringDocument[] {
+            return state.data?.expiring_documents ?? [];
         },
     },
 

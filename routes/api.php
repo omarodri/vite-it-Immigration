@@ -24,6 +24,8 @@ use App\Http\Controllers\Api\ScrumBoardController;
 use App\Http\Controllers\Api\ScrumColumnController;
 use App\Http\Controllers\Api\ScrumTaskController;
 use App\Http\Controllers\Api\EventController;
+use App\Http\Controllers\Api\ExpirationAlertController;
+use App\Http\Controllers\Api\LegalDocumentController;
 use App\Http\Controllers\Api\TodoController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -155,6 +157,18 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     Route::patch('/todos/{todo}/status', [TodoController::class, 'updateStatus']);
     Route::apiResource('todos', TodoController::class);
 
+    // Legal Documents routes
+    Route::get('/clients/{client}/documents', [LegalDocumentController::class, 'indexForClient']);
+    Route::post('/clients/{client}/documents', [LegalDocumentController::class, 'storeForClient']);
+    Route::get('/companions/{companion}/documents', [LegalDocumentController::class, 'indexForCompanion']);
+    Route::post('/companions/{companion}/documents', [LegalDocumentController::class, 'storeForCompanion']);
+    Route::put('/legal-documents/{document}', [LegalDocumentController::class, 'update']);
+    Route::delete('/legal-documents/{document}', [LegalDocumentController::class, 'destroy']);
+    Route::post('/legal-documents/{document}/sync-event', [LegalDocumentController::class, 'syncToCalendar']);
+
+    // Expiration Alerts routes
+    Route::get('/expiration-alerts', [ExpirationAlertController::class, 'index']);
+
     // Role management routes
     Route::get('/roles', [RoleController::class, 'index']);
     Route::get('/roles/{role}', [RoleController::class, 'show']);
@@ -233,7 +247,7 @@ Route::prefix('admin/tenants')->middleware(['auth:sanctum', 'role:super-admin'])
 });
 
 // OAuth callback route (no auth required - called by OAuth provider redirect)
-Route::get('/oauth/{provider}/callback', [OAuthFlowController::class, 'callback'])
+Route::middleware('throttle:login')->get('/oauth/{provider}/callback', [OAuthFlowController::class, 'callback'])
     ->where('provider', 'microsoft|google');
 
 // Public tenant branding route (no auth required)

@@ -256,7 +256,13 @@
                                     </span>
                                 </div>
                                 <div>
-                                    <div class="font-semibold">{{ data.value.first_name }} {{ data.value.last_name }}</div>
+                                    <router-link
+                                        :to="`/clients/${data.value.id}`"
+                                        class="text-primary font-semibold hover:underline"
+                                        :aria-label="`View ${data.value.first_name}`"
+                                    >
+                                        <div class="font-semibold">{{ data.value.first_name }} {{ data.value.last_name }}</div>
+                                    </router-link>
                                     <div class="text-xs text-gray-500">{{ data.value.email || $t('clients.no_email') }}</div>
                                 </div>
                             </div>
@@ -593,7 +599,9 @@ const getStatusAvatarClass = (status: ClientStatus): string => {
 };
 
 const formatCanadaStatus = (status: string): string => {
-    return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    const key = `clients.status_${status}`;
+    const translated = t(key);
+    return translated !== key ? translated : status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 };
 
 const debouncedSearch = () => {

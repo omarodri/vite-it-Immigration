@@ -12,6 +12,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class GoogleDriveProvider implements DocumentStorageInterface
@@ -87,7 +88,7 @@ class GoogleDriveProvider implements DocumentStorageInterface
             200,
             [
                 'Content-Type' => $document->mime_type,
-                'Content-Disposition' => 'attachment; filename="' . $document->original_name . '"',
+                'Content-Disposition' => HeaderUtils::makeDisposition('attachment', $document->original_name),
             ]
         );
     }

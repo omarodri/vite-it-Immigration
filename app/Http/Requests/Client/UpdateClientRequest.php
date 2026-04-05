@@ -36,10 +36,7 @@ class UpdateClientRequest extends FormRequest
             'second_language' => ['nullable', 'string', 'max:10'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', Rule::in(['male', 'female', 'other'])],
-            'passport_number' => ['nullable', 'string', 'max:50'],
-            'passport_country' => ['nullable', 'string', 'max:100'],
-            'passport_expiry_date' => ['nullable', 'date'],
-            'marital_status' => ['nullable', Rule::in(['single', 'married', 'divorced', 'widowed', 'common_law', 'separated'])],
+            'marital_status' =>['nullable', Rule::in(['single', 'married', 'divorced', 'widowed', 'common_law', 'separated'])],
             'profession' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
 
@@ -72,17 +69,14 @@ class UpdateClientRequest extends FormRequest
 
             // Legal Status in Canada
             'canada_status' => ['nullable', Rule::in([
-                'asylum_seeker', 'refugee', 'temporary_resident', 'permanent_resident',
-                'citizen', 'visitor', 'student', 'worker', 'other',
+                'asylum_seeker', 'refugee', 'protected_person', 'temporary_resident',
+                'permanent_resident', 'citizen', 'visitor', 'student', 'worker', 'other',
             ])],
             'status_date' => ['nullable', 'date'],
             'arrival_date' => ['nullable', 'date'],
             'entry_point' => ['nullable', Rule::in(['airport', 'land_border', 'green_path'])],
             'iuc' => ['nullable', 'string', 'max:50'],
-            'work_permit_number' => ['nullable', 'string', 'max:50'],
-            'study_permit_number' => ['nullable', 'string', 'max:50'],
-            'permit_expiry_date' => ['nullable', 'date'],
-            'other_status_1' => ['nullable', 'string', 'max:255'],
+            'other_status_1' =>['nullable', 'string', 'max:255'],
             'other_status_2' => ['nullable', 'string', 'max:255'],
 
             // Status

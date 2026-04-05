@@ -114,7 +114,7 @@
                                         <div
                                             class="text-white-dark overflow-hidden min-w-[200px] line-clamp-1"
                                             :class="{ 'line-through': task.status === 'complete' }"
-                                            v-html="stripHtml(task.description)"
+                                            v-html="sanitizeHtml(stripHtml(task.description))"
                                         ></div>
                                     </div>
                                 </td>
@@ -397,7 +397,7 @@
                                     </div>
                                 </div>
                                 <div class="p-5">
-                                    <div class="text-base prose" v-html="selectedTask.description"></div>
+                                    <div class="text-base prose" v-html="sanitizeHtml(selectedTask.description)"></div>
                                     <div v-if="selectedTask.assigned_to" class="mt-4 flex items-center gap-2 text-sm text-white-dark">
                                         <span class="font-medium">{{ $t('todo_assignee') }}:</span>
                                         {{ selectedTask.assigned_to.name }}
@@ -442,6 +442,7 @@ import IconPencilPaper from '@/components/icon/icon-pencil-paper.vue';
 import IconCopy from '@/components/icon/icon-copy.vue';
 import IconRestore from '@/components/icon/icon-restore.vue';
 import IconX from '@/components/icon/icon-x.vue';
+import { sanitizeHtml } from '@/utils/sanitize';
 
 const props = defineProps<{
     caseId: number;

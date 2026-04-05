@@ -76,6 +76,7 @@
 </template>
 <script setup lang="ts">
     import { ref, onMounted } from 'vue';
+    import { useRouter } from 'vue-router';
     import Sidebar from '@/components/layout/Sidebar.vue';
     import Header from '@/components/layout/Header.vue';
     import Footer from '@/components/layout/Footer.vue';
@@ -84,10 +85,20 @@
 
     import { useAppStore } from '@/stores/index';
     import { useTenantStore } from '@/stores/tenant';
+    import { useInactivityTimer } from '@/composables/useInactivityTimer';
+
     const store = useAppStore();
     const tenantStore = useTenantStore();
+    const router = useRouter();
     const showTopButton = ref(false);
+
+    // Inactivity timer — redirect to login after 120 minutes of inactivity
+    const { start: startInactivityTimer } = useInactivityTimer(120, () => {
+        router.push('/auth/boxed-signin');
+    });
+
     onMounted(() => {
+        startInactivityTimer();
         window.onscroll = () => {
             if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
                 showTopButton.value = true;

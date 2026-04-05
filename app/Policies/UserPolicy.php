@@ -19,7 +19,7 @@ class UserPolicy
      */
     public function view(User $user, User $model): bool
     {
-        return $user->can('users.view');
+        return $user->tenant_id === $model->tenant_id && $user->can('users.view');
     }
 
     /**
@@ -35,7 +35,7 @@ class UserPolicy
      */
     public function update(User $user, User $model): bool
     {
-        return $user->can('users.update');
+        return $user->tenant_id === $model->tenant_id && $user->can('users.update');
     }
 
     /**
@@ -43,6 +43,10 @@ class UserPolicy
      */
     public function delete(User $user, User $model): bool
     {
+        if ($user->tenant_id !== $model->tenant_id) {
+            return false;
+        }
+
         // Prevent deleting yourself
         if ($user->id === $model->id) {
             return false;
@@ -64,7 +68,7 @@ class UserPolicy
      */
     public function restore(User $user, User $model): bool
     {
-        return $user->can('users.update');
+        return $user->tenant_id === $model->tenant_id && $user->can('users.update');
     }
 
     /**
@@ -72,6 +76,6 @@ class UserPolicy
      */
     public function forceDelete(User $user, User $model): bool
     {
-        return $user->can('users.delete');
+        return $user->tenant_id === $model->tenant_id && $user->can('users.delete');
     }
 }

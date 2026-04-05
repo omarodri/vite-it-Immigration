@@ -22,6 +22,8 @@ class EventController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Event::class);
+
         $events = Event::with(['assignedTo', 'immigrationCase'])
             ->inDateRange($request->start, $request->end)
             ->when($request->case_id, fn ($q, $id) => $q->where('case_id', $id))
@@ -37,6 +39,8 @@ class EventController extends Controller
      */
     public function store(StoreEventRequest $request): JsonResponse
     {
+        $this->authorize('create', Event::class);
+
         $data = $request->validated();
         $data['created_by'] = auth()->id();
 
@@ -62,6 +66,8 @@ class EventController extends Controller
      */
     public function show(Event $event): EventResource
     {
+        $this->authorize('view', $event);
+
         $event->load(['assignedTo', 'immigrationCase']);
 
         return new EventResource($event);
@@ -72,6 +78,8 @@ class EventController extends Controller
      */
     public function update(UpdateEventRequest $request, Event $event): EventResource
     {
+        $this->authorize('update', $event);
+
         $data = $request->validated();
 
         // Re-snapshot client name when case changes
@@ -99,6 +107,8 @@ class EventController extends Controller
      */
     public function destroy(Event $event): \Illuminate\Http\Response
     {
+        $this->authorize('delete', $event);
+
         $event->delete();
 
         return response()->noContent();
@@ -111,6 +121,8 @@ class EventController extends Controller
      */
     public function reschedule(RescheduleEventRequest $request, Event $event): EventResource
     {
+        $this->authorize('update', $event);
+
         $event->update($request->validated());
         $event->load(['assignedTo', 'immigrationCase']);
 
@@ -123,6 +135,8 @@ class EventController extends Controller
      */
     public function clone(Event $event): JsonResponse
     {
+        $this->authorize('create', Event::class);
+
         $clone = $event->replicate();
         $clone->title        = $event->title . ' (copia)';
         $clone->created_by   = auth()->id();

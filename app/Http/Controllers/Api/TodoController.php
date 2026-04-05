@@ -20,6 +20,8 @@ class TodoController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', Todo::class);
+
         $query = Todo::with(['assignedTo.profile', 'immigrationCase.client'])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when(! $request->filled('status'), fn ($q) => $q->where('status', '!=', 'trash'))
@@ -39,6 +41,8 @@ class TodoController extends Controller
      */
     public function store(StoreTodoRequest $request): JsonResponse
     {
+        $this->authorize('create', Todo::class);
+
         $todo = Todo::create(array_merge($request->validated(), [
             'tenant_id' => auth()->user()->tenant_id,
         ]));
@@ -55,6 +59,8 @@ class TodoController extends Controller
      */
     public function show(Todo $todo): TodoResource
     {
+        $this->authorize('view', $todo);
+
         $todo->load(['assignedTo.profile', 'immigrationCase.client']);
 
         return new TodoResource($todo);
@@ -65,6 +71,8 @@ class TodoController extends Controller
      */
     public function update(UpdateTodoRequest $request, Todo $todo): TodoResource
     {
+        $this->authorize('update', $todo);
+
         $todo->update($request->validated());
         $todo->load(['assignedTo.profile', 'immigrationCase.client']);
 
@@ -76,6 +84,8 @@ class TodoController extends Controller
      */
     public function destroy(Todo $todo): \Illuminate\Http\Response
     {
+        $this->authorize('delete', $todo);
+
         $todo->delete();
 
         return response()->noContent();
@@ -86,6 +96,8 @@ class TodoController extends Controller
      */
     public function updateStatus(UpdateTodoStatusRequest $request, Todo $todo): TodoResource
     {
+        $this->authorize('update', $todo);
+
         $todo->update(['status' => $request->status]);
         $todo->load(['assignedTo.profile', 'immigrationCase.client']);
 
@@ -97,7 +109,10 @@ class TodoController extends Controller
      */
     public function bulkDestroy(BulkDeleteTodoRequest $request): \Illuminate\Http\Response
     {
-        Todo::whereIn('id', $request->ids)->delete();
+        $this->authorize('delete', Todo::class);
+
+        $tenantId = auth()->user()->tenant_id;
+        Todo::where('tenant_id', $tenantId)->whereIn('id', $request->ids)->delete();
 
         return response()->noContent();
     }

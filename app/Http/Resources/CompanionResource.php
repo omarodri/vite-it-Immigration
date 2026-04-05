@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\LegalDocumentResource;
 
 class CompanionResource extends JsonResource
 {
@@ -26,9 +27,6 @@ class CompanionResource extends JsonResource
             'date_of_birth' => $this->date_of_birth?->format('Y-m-d'),
             'age' => $this->age,
             'gender' => $this->gender,
-            'passport_number' => $this->passport_number,
-            'passport_country' => $this->passport_country,
-            'passport_expiry_date' => $this->passport_expiry_date?->format('Y-m-d'),
             'nationality' => $this->nationality,
             'notes' => $this->notes,
             'iuc' => $this->iuc,
@@ -38,8 +36,10 @@ class CompanionResource extends JsonResource
             'canada_status'        => $this->canada_status,
             'canada_status_other'  => $this->canada_status_other,
             'canada_status_label'  => $this->canada_status_label,
+            'arrival_date'         => $this->arrival_date?->format('Y-m-d'),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
+            'legal_documents' => LegalDocumentResource::collection($this->whenLoaded('legalDocuments')),
         ];
     }
 }
