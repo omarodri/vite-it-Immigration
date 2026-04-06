@@ -1365,6 +1365,7 @@
     "sidebar.company": "Compañía",
     "sidebar.branding": "Marca",
     "sidebar.integrations": "Integraciones",
+    "sidebar.backups": "Respaldos BD",
     "tenant.settings_title": "Configuración de la Compañía",
     "tenant.settings_description": "Configure los ajustes generales de su organización",
     "tenant.branding_title": "Marca y Apariencia",

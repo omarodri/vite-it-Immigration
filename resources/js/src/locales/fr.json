@@ -970,6 +970,7 @@
     "sidebar.company": "Entreprise",
     "sidebar.branding": "Image de marque",
     "sidebar.integrations": "Intégrations",
+    "sidebar.backups": "Sauvegardes BD",
     "tenant.settings_title": "Paramètres de l'Entreprise",
     "tenant.settings_description": "Configurez les paramètres généraux de votre organisation",
     "tenant.branding_title": "Image de Marque et Apparence",

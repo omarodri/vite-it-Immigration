@@ -82,6 +82,16 @@
                                             </div>
                                         </router-link>
                                     </li>
+                                    <li v-if="canUpdateSettings" class="nav-item">
+                                        <router-link to="/admin/tenant/backups" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-archive class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('sidebar.backups') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
                                 </ul>
                             </li>
                         </template>
@@ -906,6 +916,7 @@
     import IconUsers from '@/components/icon/icon-users.vue';
     import IconLockDots from '@/components/icon/icon-lock-dots.vue';
     import IconSettings from '@/components/icon/icon-settings.vue';
+    import IconArchive from '@/components/icon/icon-archive.vue';
     import IconClock from '@/components/icon/icon-clock.vue';
     import TenantLogo from '@/components/layout/TenantLogo.vue';
 

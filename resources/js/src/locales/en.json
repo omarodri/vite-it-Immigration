@@ -1255,6 +1255,7 @@
     "sidebar.company": "Company",
     "sidebar.branding": "Branding",
     "sidebar.integrations": "Integrations",
+    "sidebar.backups": "Database Backups",
     "tenant.settings_title": "Company Settings",
     "tenant.settings_description": "Configure general settings for your organization",
     "tenant.branding_title": "Branding & Appearance",

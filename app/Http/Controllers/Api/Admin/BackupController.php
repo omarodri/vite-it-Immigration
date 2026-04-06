@@ -35,7 +35,7 @@ class BackupController extends Controller
             'started_at'     => now(),
         ]);
 
-        GenerateTenantBackupJob::dispatch(
+        GenerateTenantBackupJob::dispatchSync(
             $tenant->id,
             $request->user()?->id,
             'ui',
@@ -43,7 +43,7 @@ class BackupController extends Controller
         );
 
         return response()->json([
-            'message' => "Backup queued for tenant [{$tenant->slug}]. Check backup logs for status.",
+            'message' => "Backup completed for tenant [{$tenant->slug}].",
             'log_id'  => $log->id,
         ], 202);
     }
@@ -68,10 +68,19 @@ class BackupController extends Controller
             return response()->json(['message' => 'Tenant not found.'], 404);
         }
 
-        GenerateTenantBackupJob::dispatch($tenant->id, null, 'cron');
+        $log = \App\Models\BackupLog::create([
+            'tenant_id'      => $tenant->id,
+            'triggered_by'   => null,
+            'trigger_source' => 'cron',
+            'status'         => 'pending',
+            'started_at'     => now(),
+        ]);
+
+        GenerateTenantBackupJob::dispatchSync($tenant->id, null, 'cron', $log->id);
 
         return response()->json([
-            'message' => "Backup queued for tenant [{$tenant->slug}].",
+            'message' => "Backup completed for tenant [{$tenant->slug}].",
+            'log_id'  => $log->id,
         ], 202);
     }
 
