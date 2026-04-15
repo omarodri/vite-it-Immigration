@@ -110,6 +110,12 @@ class RolePermissionSeeder extends Seeder
 
             // Invitation Codes
             ['name' => 'invitation-codes.manage', 'display_name' => 'Manage Invitation Codes'],
+
+            // Trash / Recycle Bin
+            ['name' => 'trash.view', 'display_name' => 'View Trash'],
+            ['name' => 'trash.restore', 'display_name' => 'Restore from Trash'],
+            ['name' => 'trash.force-delete', 'display_name' => 'Permanently Delete from Trash'],
+            ['name' => 'trash.purge', 'display_name' => 'Purge Trash'],
         ];
 
         foreach ($permissions as $permission) {
@@ -144,6 +150,7 @@ class RolePermissionSeeder extends Seeder
                     'scrum.view', 'scrum.create', 'scrum.edit', 'scrum.delete',
                     'todos.view', 'todos.create', 'todos.edit', 'todos.delete',
                     'invitation-codes.manage',
+                    'trash.view', 'trash.restore', 'trash.force-delete', 'trash.purge',
                 ],
             ],
             'consultor' => [
@@ -160,6 +167,7 @@ class RolePermissionSeeder extends Seeder
                     'reports.view',
                     'scrum.view', 'scrum.create', 'scrum.edit',
                     'todos.view', 'todos.create', 'todos.edit', 'todos.delete',
+                    'trash.view', 'trash.restore',
                 ],
             ],
             'apoyo' => [

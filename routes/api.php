@@ -28,7 +28,9 @@ use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\ExpirationAlertController;
 use App\Http\Controllers\Api\LegalDocumentController;
 use App\Http\Controllers\Api\TodoController;
+use App\Http\Controllers\Api\TrashController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\GlobalSearchController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -67,6 +69,9 @@ Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 've
 
 // Protected routes (authentication required) with API rate limiting and tenant scope
 Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function () {
+    // Global Search
+    Route::get('/search', GlobalSearchController::class)->middleware('throttle:60,1');
+
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
@@ -234,6 +239,20 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     Route::get('/oauth/status', [OAuthFlowController::class, 'status']);
     Route::delete('/oauth/{provider}/disconnect', [OAuthFlowController::class, 'disconnect'])
         ->where('provider', 'microsoft|google');
+
+    // Trash / Recycle Bin
+    Route::prefix('trash')->group(function () {
+        Route::get('/', [TrashController::class, 'summary']);
+        Route::get('/{type}', [TrashController::class, 'index'])
+            ->where('type', 'clients|cases|companions|documents');
+        Route::patch('/{type}/{id}/restore-with-parents', [TrashController::class, 'restoreWithParents'])
+            ->where('type', 'clients|cases|companions|documents');
+        Route::patch('/{type}/{id}/restore', [TrashController::class, 'restore'])
+            ->where('type', 'clients|cases|companions|documents');
+        Route::delete('/purge', [TrashController::class, 'purge']);
+        Route::delete('/{type}/{id}', [TrashController::class, 'forceDelete'])
+            ->where('type', 'clients|cases|companions|documents');
+    });
 });
 
 // Super-admin tenant management routes

@@ -6,6 +6,7 @@
 import { defineStore } from 'pinia';
 import companionService from '@/services/companionService';
 import type { Companion, CreateCompanionData, UpdateCompanionData, RelationshipType } from '@/types/companion';
+import { RELATIONSHIP_TYPE_OPTIONS } from '@/types/companion';
 
 interface CompanionState {
     companions: Companion[];
@@ -54,13 +55,7 @@ export const useCompanionStore = defineStore('companion', {
         },
 
         relationshipOptions: (): Array<{ value: RelationshipType; label: string }> => {
-            return [
-                { value: 'spouse', label: 'Cónyuge' },
-                { value: 'child', label: 'Hijo/a' },
-                { value: 'parent', label: 'Padre/Madre' },
-                { value: 'sibling', label: 'Hermano/a' },
-                { value: 'other', label: 'Otro' },
-            ];
+            return RELATIONSHIP_TYPE_OPTIONS;
         },
     },
 

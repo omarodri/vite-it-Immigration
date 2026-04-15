@@ -2,10 +2,8 @@
 
 namespace App\Services\Companion;
 
-use App\Exceptions\CompanionHasActiveCasesException;
 use App\Models\Client;
 use App\Models\Companion;
-use App\Models\ImmigrationCase;
 use App\Repositories\Contracts\CompanionRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -61,20 +59,7 @@ class CompanionService
 
     public function deleteCompanion(Companion $companion): void
     {
-        $activeCasesCount = $companion->cases()
-            ->withoutGlobalScopes()
-            ->whereNull('cases.deleted_at')
-            ->whereNotIn('cases.status', [
-                ImmigrationCase::STATUS_CLOSED,
-                ImmigrationCase::STATUS_ARCHIVED,
-            ])
-            ->count();
-
-        if ($activeCasesCount > 0) {
-            throw CompanionHasActiveCasesException::forCompanion($companion, $activeCasesCount);
-        }
-
-        $fullName = $companion->full_name;
+        $fullName   = $companion->full_name;
         $clientName = $companion->client->full_name;
 
         activity()

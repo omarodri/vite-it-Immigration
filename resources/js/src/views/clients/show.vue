@@ -429,261 +429,13 @@
         </div>
 
         <!-- Companion Modal -->
-        <TransitionRoot appear :show="showCompanionModal" as="template">
-            <Dialog as="div" class="relative z-50" @close="closeCompanionModal">
-                <TransitionChild
-                    as="template"
-                    enter="duration-300 ease-out"
-                    enter-from="opacity-0"
-                    enter-to="opacity-100"
-                    leave="duration-200 ease-in"
-                    leave-from="opacity-100"
-                    leave-to="opacity-0"
-                >
-                    <div class="fixed inset-0 bg-black/50" />
-                </TransitionChild>
-
-                <div class="fixed inset-0 overflow-y-auto">
-                    <div class="flex min-h-full items-center justify-center p-4">
-                        <TransitionChild
-                            as="template"
-                            enter="duration-300 ease-out"
-                            enter-from="opacity-0 scale-95"
-                            enter-to="opacity-100 scale-100"
-                            leave="duration-200 ease-in"
-                            leave-from="opacity-100 scale-100"
-                            leave-to="opacity-0 scale-95"
-                        >
-                            <DialogPanel class="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-900 p-6 text-left align-middle shadow-xl transition-all">
-                                <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">
-                                    {{ editingCompanion ? $t('companions.edit_companion') : $t('companions.add_companion') }}
-                                </DialogTitle>
-
-                                <form @submit.prevent="saveCompanion" class="space-y-4">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <!-- First Name -->
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.first_name') }} *</label>
-                                            <input
-                                                v-model="companionForm.first_name"
-                                                type="text"
-                                                class="form-input"
-                                                :class="{ 'border-danger': companionErrors.first_name }"
-                                                required
-                                            />
-                                            <p v-if="companionErrors.first_name" class="text-danger text-xs mt-1">{{ companionErrors.first_name[0] }}</p>
-                                        </div>
-                                        <!-- Last Name -->
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.last_name') }} *</label>
-                                            <input
-                                                v-model="companionForm.last_name"
-                                                type="text"
-                                                class="form-input"
-                                                :class="{ 'border-danger': companionErrors.last_name }"
-                                                required
-                                            />
-                                            <p v-if="companionErrors.last_name" class="text-danger text-xs mt-1">{{ companionErrors.last_name[0] }}</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <!-- Relationship -->
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.relationship') }} *</label>
-                                            <select
-                                                v-model="companionForm.relationship"
-                                                class="form-select"
-                                                :class="{ 'border-danger': companionErrors.relationship }"
-                                                required
-                                            >
-                                                <option value="">{{ $t('companions.select_relationship') }}</option>
-                                                <option value="spouse">{{ $t('companions.spouse') }}</option>
-                                                <option value="common-law partner">{{ $t('companions.common-law partner') }}</option>
-                                                <option value="child">{{ $t('companions.child') }}</option>
-                                                <option value="dependent child">{{ $t('companions.dependent child') }}</option>
-                                                <option value="parent">{{ $t('companions.parent') }}</option>
-                                                <option value="sibling">{{ $t('companions.sibling') }}</option>
-                                                <option value="half-sibling">{{ $t('companions.half-sibling') }}</option>
-                                                <option value="step-sibling">{{ $t('companions.step-sibling') }}</option>
-                                                <option value="grandchild">{{ $t('companions.grandchild') }}</option>
-                                                <option value="grandparent">{{ $t('companions.grandparent') }}</option>
-                                                <option value="aunt / uncle">{{ $t('companions.aunt / uncle') }}</option>
-                                                <option value="niece / nephew">{{ $t('companions.niece / nephew') }}</option>
-                                                <option value="cousin">{{ $t('companions.cousin') }}</option>
-                                                <option value="child-in-law">{{ $t('companions.child-in-law') }}</option>
-                                                <option value="parent-in-law">{{ $t('companions.parent-in-law') }}</option>
-                                                <option value="other">{{ $t('companions.other') }}</option>
-                                            </select>
-                                            <p v-if="companionErrors.relationship" class="text-danger text-xs mt-1">{{ companionErrors.relationship[0] }}</p>
-                                        </div>
-                                        <!-- Relationship Other -->
-                                        <div v-if="companionForm.relationship === 'other'">
-                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.specify_relationship') }} *</label>
-                                            <input
-                                                v-model="companionForm.relationship_other"
-                                                type="text"
-                                                class="form-input"
-                                                :class="{ 'border-danger': companionErrors.relationship_other }"
-                                            />
-                                            <p v-if="companionErrors.relationship_other" class="text-danger text-xs mt-1">{{ companionErrors.relationship_other[0] }}</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.date_of_birth') }}</label>
-                                            <!-- <input
-                                                v-model="companionForm.date_of_birth"
-                                                type="date"
-                                                class="form-input"
-                                                :max="today"
-                                            /> -->
-                                            <AppDatePicker
-                                                v-model="companionForm.date_of_birth"
-                                                :max-date="maxBirthDate.toISOString().split('T')[0]"
-                                                :placeholder="$t('clients.select_date')"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.gender') }}</label>
-                                            <select v-model="companionForm.gender" class="form-select">
-                                                <option value="">{{ $t('companions.select_gender') }}</option>
-                                                <option value="male">{{ $t('companions.male') }}</option>
-                                                <option value="female">{{ $t('companions.female') }}</option>
-                                                <option value="other">{{ $t('companions.gender_other') }}</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.nationality') }}</label>
-                                            <!-- <input
-                                                v-model="companionForm.nationality"
-                                                type="text"
-                                                class="form-input"
-                                            /> -->
-                                            <!-- Nationality -->
-                                            <CountrySelect
-                                                id="nationality"
-                                                v-model="companionForm.nationality"
-                                                :placeholder="$t('clients.select_nationality')"
-                                                class="dark:bg-gray-900 dark:text-white "
-                                            />
-                                        </div>
-                                        <!-- IUC -->
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 dark:text-white">
-                                                {{ $t('companions.iuc') }}
-                                            </label>
-                                            <input
-                                                v-model="companionForm.iuc"
-                                                type="text"
-                                                class="form-input"
-                                                maxlength="20"
-                                                :placeholder="$t('companions.iuc_placeholder')"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.notes') }}</label>
-                                        <textarea
-                                            v-model="companionForm.notes"
-                                            rows="2"
-                                            class="form-textarea"
-                                        ></textarea>
-                                    </div>
-
-                                    <!-- Legal Documents -->
-                                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
-                                        <h6 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">{{ $t('documents.legal_documents') }}</h6>
-                                        <DocumentRepeater
-                                            v-model="companionDocs"
-                                            entity-type="companion"
-                                            :entity-id="editingCompanion?.id ?? 0"
-                                        />
-                                    </div>
-
-                                    <!-- Contact & Immigration Status -->
-                                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
-                                        <h6 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">{{ $t('clients.contact_information') }}</h6>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.email') }}</label>
-                                                <input
-                                                    v-model="companionForm.email"
-                                                    type="email"
-                                                    class="form-input"
-                                                    :placeholder="$t('clients.email')"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.phone') }}</label>
-                                                <PhoneInput
-                                                    v-model="companionForm.phone as string"
-                                                    v-model:country-code="companionForm.phone_country_code as string"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.canada_status') }}</label>
-                                                <select v-model="companionForm.canada_status" class="form-select">
-                                                    <option value="">{{ $t('clients.select_status') }}</option>
-                                                    <option v-for="option in CANADA_STATUS_OPTIONS" :key="option.value" :value="option.value">
-                                                        {{ $t(`clients.status_${option.value}`) }}
-                                                    </option>
-                                                </select>
-                                            </div>
-                                            <div v-if="companionForm.canada_status === 'other'">
-                                                <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.canada_status_other') }}</label>
-                                                <input
-                                                    v-model="companionForm.canada_status_other"
-                                                    type="text"
-                                                    class="form-input"
-                                                    :placeholder="$t('clients.canada_status_other_placeholder')"
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Arrival Date -->
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('clients.arrival_date') }}</label>
-                                            <AppDatePicker
-                                                v-model="companionForm.arrival_date"
-                                                max-date="today"
-                                                :placeholder="$t('clients.select_date')"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div class="flex justify-end gap-3 mt-6">
-                                        <button
-                                            type="button"
-                                            class="btn btn-outline-secondary"
-                                            @click="closeCompanionModal"
-                                        >
-                                            {{ $t('companions.cancel') }}
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            class="btn btn-primary"
-                                            :disabled="isSavingCompanion"
-                                        >
-                                            <span v-if="isSavingCompanion" class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 mr-2 inline-block"></span>
-                                            {{ editingCompanion ? $t('companions.update') : $t('companions.save') }}
-                                        </button>
-                                    </div>
-                                </form>
-                            </DialogPanel>
-                        </TransitionChild>
-                    </div>
-                </div>
-            </Dialog>
-        </TransitionRoot>
+        <CompanionFormModal
+            v-model:show="showCompanionModal"
+            :client-id="client?.id ?? 0"
+            :companion="editingCompanion"
+            @saved="onCompanionSaved"
+            @close="editingCompanion = null"
+        />
     </div>
 </template>
 
@@ -696,14 +448,9 @@ import { useCompanionStore } from '@/stores/companion';
 import { useNotification } from '@/composables/useNotification';
 import { useI18n } from 'vue-i18n';
 import { formatDate } from '@/utils/formatters';
-import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue';
 import type { Client, ClientStatus } from '@/types/client';
-import type { Companion, CreateCompanionData, UpdateCompanionData, RelationshipType } from '@/types/companion';
+import type { Companion } from '@/types/companion';
 import type { LegalDocument } from '@/types/legal-document';
-import CountrySelect from '@/components/CountrySelect.vue';
-import PhoneInput from '@/components/PhoneInput.vue';
-import { CANADA_STATUS_OPTIONS } from '@/types/client';
-import AppDatePicker from '@/components/AppDatePicker.vue';
 import DocumentRepeater from '@/components/DocumentRepeater.vue';
 import { legalDocumentService } from '@/services/legalDocumentService';
 
@@ -715,6 +462,7 @@ import IconUsers from '@/components/icon/icon-users.vue';
 import IconFolder from '@/components/icon/icon-folder.vue';
 import IconPlus from '@/components/icon/icon-plus.vue';
 import IconTrash from '@/components/icon/icon-trash.vue';
+import CompanionFormModal from '@/components/companions/CompanionFormModal.vue';
 
 useMeta({ title: 'Client Profile' });
 
@@ -734,36 +482,11 @@ const companions = ref<Companion[]>([]);
 const isLoadingCompanions = ref(false);
 const showCompanionModal = ref(false);
 const editingCompanion = ref<Companion | null>(null);
-const isSavingCompanion = ref(false);
-const companionErrors = ref<Record<string, string[]>>({});
-const today = new Date().toISOString().split('T')[0];
-
-const companionForm = ref<CreateCompanionData>({
-    first_name: '',
-    last_name: '',
-    relationship: '' as RelationshipType,
-    relationship_other: '',
-    date_of_birth: '',
-    gender: undefined,
-    nationality: '',
-    iuc: '' as string | null,
-    notes: '',
-    email: '',
-    phone: '',
-    phone_country_code: '+1',
-    canada_status: '',
-    canada_status_other: '',
-    arrival_date: '',
-});
 
 // Legal documents state
 const legalDocs = ref<LegalDocument[]>([]);
 const isLoadingDocs = ref(false);
 const docsLoaded = ref(false);
-
-// Companion document state
-const companionDocs = ref<LegalDocument[]>([]);
-const companionOriginalDocIds = ref<number[]>([]);
 
 const loadLegalDocs = async () => {
     if (!client.value) return;
@@ -777,10 +500,6 @@ const loadLegalDocs = async () => {
         isLoadingDocs.value = false;
     }
 };
-
-// Date picker config
-const maxBirthDate = new Date();
-maxBirthDate.setDate(maxBirthDate.getDate() - 1);
 
 const getInitials = (firstName: string, lastName: string): string => {
     return ((firstName?.[0] || '') + (lastName?.[0] || '')).toUpperCase();
@@ -864,120 +583,15 @@ const loadCompanions = async () => {
     }
 };
 
-const resetCompanionForm = () => {
-    companionForm.value = {
-        first_name: '',
-        last_name: '',
-        relationship: '' as RelationshipType,
-        relationship_other: '',
-        date_of_birth: '',
-        gender: undefined,
-        nationality: '',
-        iuc: '' as string | null,
-        notes: '',
-        email: '',
-        phone: '',
-        phone_country_code: '+1',
-        canada_status: '',
-        canada_status_other: '',
-        arrival_date: '',
-    };
-    companionErrors.value = {};
-};
-
-const openCompanionModal = async (companion?: Companion) => {
-    resetCompanionForm();
-    companionDocs.value = [];
-    companionOriginalDocIds.value = [];
-    if (companion) {
-        editingCompanion.value = companion;
-        companionForm.value = {
-            first_name: companion.first_name,
-            last_name: companion.last_name,
-            relationship: companion.relationship,
-            relationship_other: companion.relationship_other || '',
-            date_of_birth: companion.date_of_birth || '',
-            gender: companion.gender || undefined,
-            nationality: companion.nationality || '',
-            iuc: companion.iuc || '',
-            notes: companion.notes || '',
-            email: companion.email || '',
-            phone: companion.phone || '',
-            phone_country_code: companion.phone_country_code || '+1',
-            canada_status: companion.canada_status || '',
-            canada_status_other: companion.canada_status_other || '',
-            arrival_date: companion.arrival_date || '',
-        };
-        try {
-            const docs = await legalDocumentService.getForCompanion(companion.id);
-            companionDocs.value = docs;
-            companionOriginalDocIds.value = docs.filter(d => d.id).map(d => d.id as number);
-        } catch {
-            // Docs load failure is non-critical
-        }
-    } else {
-        editingCompanion.value = null;
-    }
+const openCompanionModal = (companion?: Companion) => {
+    editingCompanion.value = companion ?? null;
     showCompanionModal.value = true;
 };
 
-const closeCompanionModal = () => {
+const onCompanionSaved = async () => {
     showCompanionModal.value = false;
     editingCompanion.value = null;
-    resetCompanionForm();
-};
-
-const saveCompanion = async () => {
-    if (!client.value) return;
-    isSavingCompanion.value = true;
-    companionErrors.value = {};
-
-    try {
-        if (editingCompanion.value) {
-            await companionStore.updateCompanion(
-                client.value.id,
-                editingCompanion.value.id,
-                companionForm.value as UpdateCompanionData
-            );
-            // Sync legal documents
-            const companionId = editingCompanion.value.id;
-            const currentIds = companionDocs.value.filter(d => d.id).map(d => d.id as number);
-            const deletedIds = companionOriginalDocIds.value.filter(id => !currentIds.includes(id));
-            await Promise.all([
-                ...deletedIds.map(id => legalDocumentService.remove(id)),
-                ...companionDocs.value.map(doc =>
-                    doc.id
-                        ? legalDocumentService.update(doc.id, doc)
-                        : legalDocumentService.createForCompanion(companionId, doc)
-                ),
-            ]);
-            success(t('companions.updated_successfully'));
-        } else {
-            const newCompanion = await companionStore.createCompanion(
-                client.value.id,
-                companionForm.value as CreateCompanionData
-            );
-            // Save docs for newly created companion if any
-            if (newCompanion?.id && companionDocs.value.length > 0) {
-                await Promise.all(
-                    companionDocs.value.map(doc =>
-                        legalDocumentService.createForCompanion(newCompanion.id, doc)
-                    )
-                );
-            }
-            success(t('companions.created_successfully'));
-        }
-        companions.value = companionStore.companions;
-        closeCompanionModal();
-    } catch (err: any) {
-        if (err.response?.status === 422 && err.response?.data?.errors) {
-            companionErrors.value = err.response.data.errors;
-        } else {
-            error(err.response?.data?.message || t('companions.save_failed'));
-        }
-    } finally {
-        isSavingCompanion.value = false;
-    }
+    await loadCompanions();
 };
 
 const confirmDeleteCompanion = async (companion: Companion) => {
@@ -1036,9 +650,15 @@ const canDelete = computed(() => {
 const confirmDeleteClient = async () => {
     if (!client.value) return;
 
+    const companions = client.value.companions_count ?? 0;
+    const cases = client.value.cases_count ?? 0;
+    const warningText = (companions > 0 || cases > 0)
+        ? t('clients.delete_warning_cascade', { companions, cases })
+        : t('clients.delete_warning');
+
     const confirmed = await confirmDialog({
         title: t('clients.confirm_delete', { name: `${client.value.first_name} ${client.value.last_name}` }),
-        text: t('clients.delete_warning'),
+        text: warningText,
         icon: 'warning',
         confirmButtonText: t('clients.yes_delete'),
         cancelButtonText: t('clients.cancel'),
@@ -1047,7 +667,7 @@ const confirmDeleteClient = async () => {
     if (confirmed) {
         try {
             await clientStore.deleteClient(client.value.id);
-            success(t('clients.deleted_successfully'));
+            success(t('clients.moved_to_trash'));
             router.push('/clients');
         } catch (err: any) {
             error(err.response?.data?.message || t('clients.delete_failed'));

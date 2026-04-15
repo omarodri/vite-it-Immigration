@@ -27,6 +27,7 @@ class CompanionResource extends JsonResource
             'date_of_birth' => $this->date_of_birth?->format('Y-m-d'),
             'age' => $this->age,
             'gender' => $this->gender,
+            'marital_status' => $this->marital_status,
             'nationality' => $this->nationality,
             'notes' => $this->notes,
             'iuc' => $this->iuc,

@@ -684,9 +684,15 @@ const fetchClients = async () => {
 };
 
 const confirmDelete = async (client: Client) => {
+    const companions = client.companions_count ?? 0;
+    const cases = client.cases_count ?? 0;
+    const warningText = (companions > 0 || cases > 0)
+        ? t('clients.delete_warning_cascade', { companions, cases })
+        : t('clients.delete_warning');
+
     const confirmed = await confirmDialog({
         title: t('clients.confirm_delete', { name: `${client.first_name} ${client.last_name}` }),
-        text: t('clients.delete_warning'),
+        text: warningText,
         icon: 'warning',
         confirmButtonText: t('clients.yes_delete'),
         cancelButtonText: t('clients.cancel'),
@@ -695,7 +701,7 @@ const confirmDelete = async (client: Client) => {
     if (confirmed) {
         try {
             await clientStore.deleteClient(client.id);
-            success(t('clients.deleted_successfully'));
+            success(t('clients.moved_to_trash'));
             selectedClients.value = selectedClients.value.filter(c => c.id !== client.id);
         } catch (err: any) {
             error(err.response?.data?.message || t('clients.delete_failed'));
@@ -718,7 +724,7 @@ const confirmBulkDelete = async () => {
         try {
             const ids = selectedClients.value.map(c => c.id);
             await clientStore.bulkDeleteClients(ids);
-            success(t('clients.bulk_deleted_successfully', { count: ids.length }));
+            success(t('clients.moved_to_trash'));
             clearSelection();
         } catch (err: any) {
             error(err.response?.data?.message || t('clients.delete_failed'));

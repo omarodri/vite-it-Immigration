@@ -2,7 +2,7 @@
     <header class="z-40" :class="{ dark: store.semidark && store.menu === 'horizontal' }">
         <div class="shadow-sm">
             <div class="relative bg-white flex w-full items-center px-5 py-2.5 dark:bg-[#0e1726]">
-                <div class="horizontal-logo flex lg:hidden justify-between items-center ltr:mr-2 rtl:ml-2">
+                <div class="horizontal-logo flex lg:hidden justify-between items-center ltr:mr-2 rtl:ml-2 shrink-0">
                     <router-link to="/" class="main-logo flex items-center shrink-0">
                         <img class="w-8 ltr:-ml-1 rtl:-mr-1 inline" src="/assets/images/logo.svg" alt="" />
                         <span
@@ -20,7 +20,7 @@
                     </a>
                 </div>
                 <!-- Calendar -->
-                <div class="ltr:mr-2 rtl:ml-2 hidden sm:block">
+                <div class="header-quick-actions ltr:mr-2 rtl:ml-2 hidden lg:block">
                     <ul class="flex items-center space-x-2 rtl:space-x-reverse dark:text-[#d0d2d6]">
                         <li>
                             <router-link
@@ -54,29 +54,12 @@
                 >
                     <!-- Search -->
                     <div class="sm:ltr:mr-auto sm:rtl:ml-auto">
-                        <form
-                            class="sm:relative absolute inset-x-0 sm:top-0 top-1/2 sm:translate-y-0 -translate-y-1/2 sm:mx-0 mx-4 z-10 sm:block hidden"
-                            :class="{ '!block': search }"
-                            @submit.prevent="search = false"
+                        <div
+                            class="sm:relative absolute inset-x-0 sm:top-0 top-1/2 sm:translate-y-0 -translate-y-1/2 sm:mx-0 mx-4 z-10 sm:block"
+                            :class="{ '!block': search, 'hidden': !search }"
                         >
-                            <div class="relative">
-                                <input
-                                    type="text"
-                                    class="form-input ltr:pl-9 rtl:pr-9 ltr:sm:pr-4 rtl:sm:pl-4 ltr:pr-9 rtl:pl-9 peer sm:bg-transparent bg-gray-100 placeholder:tracking-widest"
-                                    :placeholder="$t('search') + '...'"
-                                />
-                                <button type="button" class="absolute w-9 h-9 inset-0 ltr:right-auto rtl:left-auto appearance-none peer-focus:text-primary">
-                                    <icon-search class="mx-auto" />
-                                </button>
-                                <button
-                                    type="button"
-                                    class="hover:opacity-80 sm:hidden block absolute top-1/2 -translate-y-1/2 ltr:right-2 rtl:left-2"
-                                    @click="search = false"
-                                >
-                                    <icon-x-circle />
-                                </button>
-                            </div>
-                        </form>
+                            <GlobalSearch />
+                        </div>
 
                         <button
                             type="button"
@@ -892,6 +875,7 @@
     import IconEdit from '@/components/icon/icon-edit.vue';
     import IconChatNotification from '@/components/icon/icon-chat-notification.vue';
     import IconSearch from '@/components/icon/icon-search.vue';
+    import GlobalSearch from '@/components/layout/GlobalSearch.vue';
     import IconXCircle from '@/components/icon/icon-x-circle.vue';
     import IconSun from '@/components/icon/icon-sun.vue';
     import IconMoon from '@/components/icon/icon-moon.vue';

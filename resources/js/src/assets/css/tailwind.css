@@ -183,6 +183,12 @@ hover:text-primary hover:before:!bg-primary ltr:before:mr-2 rtl:before:ml-2 dark
     .vertical.toggle-sidebar .collapse-icon {
         @apply flex;
     }
+    .vertical.toggle-sidebar .header-quick-actions {
+        @apply hidden;
+    }
+    .collapsible-vertical .header-inner {
+        @apply lg:ltr:pl-[120px] lg:rtl:pr-[90px];
+    }
     .vertical.toggle-sidebar .main-container .main-content {
         @apply ltr:ml-0 rtl:mr-0;
     }

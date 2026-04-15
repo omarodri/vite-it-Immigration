@@ -1,7 +1,7 @@
 <template>
     <div :class="{ 'dark text-white-dark': store.semidark }">
         <nav class="sidebar fixed min-h-screen h-full top-0 bottom-0 w-[260px] shadow-[5px_0_25px_0_rgba(94,92,154,0.1)] z-50 transition-all duration-300" aria-label="Main navigation">
-            <div class="bg-white dark:bg-[#0e1726] h-full">
+            <div class="bg-white dark:bg-[#0e1726] h-full relative">
                 <div class="flex justify-between items-center px-4 py-3">
                     <TenantLogo />
                     <a
@@ -18,7 +18,8 @@
                         swipeEasing: true,
                         wheelPropagation: false,
                     }"
-                    class="h-[calc(100vh-80px)] relative"
+                    :class="canViewTrash ? 'h-[calc(100vh-128px)]' : 'h-[calc(100vh-80px)]'"
+                    class="relative"
                 >
 
                     <ul class="relative font-semibold space-y-0.5 p-4 py-0">
@@ -876,6 +877,25 @@
                         </template>
                     </ul>
                 </perfect-scrollbar>
+
+                <!-- Papelera — fija al fondo, fuera del scroll, visible para roles con permiso trash.view -->
+                <div
+                    v-if="canViewTrash"
+                    class="absolute bottom-0 left-0 right-0 bg-white dark:bg-[#0e1726] border-t border-gray-200 dark:border-gray-700/60 px-4 py-2"
+                >
+                    <router-link to="/trash" class="group flex items-center py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-[#1b2e4b] px-2 transition-colors" @click="toggleMobileMenu">
+                        <icon-trash class="w-5 h-5 shrink-0 text-gray-400 group-hover:text-primary transition-colors" />
+                        <span class="ltr:pl-3 rtl:pr-3 text-sm font-semibold text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                            {{ $t('trash.sidebar_label') }}
+                        </span>
+                        <span
+                            v-if="trashStore.totalCount > 0"
+                            class="badge badge-outline-danger ltr:ml-auto rtl:mr-auto text-xs px-1.5 py-0"
+                        >
+                            {{ trashStore.totalCount }}
+                        </span>
+                    </router-link>
+                </div>
             </div>
         </nav>
     </div>
@@ -886,6 +906,7 @@
 
     import { useAppStore } from '@/stores/index';
     import { useAuthStore } from '@/stores/auth';
+    import { useTrashStore } from '@/stores/trash';
     import VueCollapsible from 'vue-height-collapsible/vue3';
 
     import IconCaretsDown from '@/components/icon/icon-carets-down.vue';
@@ -918,15 +939,19 @@
     import IconSettings from '@/components/icon/icon-settings.vue';
     import IconArchive from '@/components/icon/icon-archive.vue';
     import IconClock from '@/components/icon/icon-clock.vue';
+    import IconTrash from '@/components/icon/icon-trash.vue';
     import TenantLogo from '@/components/layout/TenantLogo.vue';
 
     const store = useAppStore();
     const authStore = useAuthStore();
+    const trashStore = useTrashStore();
     const activeDropdown: any = ref('');
     const subActive: any = ref('');
     const canViewEvents = computed(() => authStore.hasPermission('calendar.view'));
     const canViewTodos = computed(() => authStore.hasPermission('todolist.view'));
     const canViewScrumboard = computed(() => authStore.hasPermission('scrumboard.view'));
+
+    const canViewTrash = computed(() => authStore.hasPermission('trash.view'));
 
     // Check if user has permission to view admin sections
     const canViewUsers = computed(() => authStore.hasPermission('users.view'));
@@ -938,7 +963,12 @@
     const canCreateClients = computed(() => authStore.hasPermission('clients.create'));
     const canViewCases = computed(() => authStore.hasPermission('cases.view'));
 
-    onMounted(() => {
+    onMounted(async () => {
+        // Load trash summary for the badge count (only if user has permission)
+        if (authStore.hasPermission('trash.view')) {
+            trashStore.fetchSummary().catch(() => {});
+        }
+
         const selector = document.querySelector('.sidebar ul a[href="' + window.location.pathname + '"]');
         if (selector) {
             selector.classList.add('active');

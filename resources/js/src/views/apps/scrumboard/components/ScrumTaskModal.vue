@@ -1,6 +1,6 @@
 <template>
     <TransitionRoot appear :show="isOpen" as="template">
-        <Dialog as="div" @close="close" class="relative z-[51]">
+        <Dialog as="div" @close="guardClose" class="relative z-[51]">
             <TransitionChild
                 as="template"
                 enter="duration-300 ease-out"
@@ -28,7 +28,7 @@
                             <button
                                 type="button"
                                 class="absolute top-4 ltr:right-4 rtl:left-4 text-gray-400 hover:text-gray-800 dark:hover:text-gray-600 outline-none"
-                                @click="close"
+                                @click="guardClose"
                             >
                                 <icon-x />
                             </button>
@@ -99,7 +99,7 @@
                                     </div>
 
                                     <div class="flex justify-end items-center mt-8">
-                                        <button type="button" class="btn btn-outline-danger" @click="close">{{ $t('cancel') }}</button>
+                                        <button type="button" class="btn btn-outline-danger" @click="guardClose">{{ $t('cancel') }}</button>
                                         <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4" :disabled="loading">
                                             <span v-if="loading" class="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4 inline-block align-middle ltr:mr-2 rtl:ml-2"></span>
                                             {{ $t('save') }}
@@ -118,7 +118,9 @@
 <script lang="ts" setup>
 import { ref, computed, watch } from 'vue';
 import { TransitionRoot, TransitionChild, Dialog, DialogPanel, DialogOverlay } from '@headlessui/vue';
+import { useI18n } from 'vue-i18n';
 import IconX from '@/components/icon/icon-x.vue';
+import { useModalGuard } from '@/composables/useModalGuard';
 import { useScrumStore } from '@/stores/scrum';
 import scrumService from '@/services/scrumService';
 import api from '@/services/api';
@@ -142,6 +144,7 @@ const emit = defineEmits<{
 }>();
 
 const store = useScrumStore();
+const { t: _t } = useI18n();
 const loading = ref(false);
 const cases = ref<CaseOption[]>([]);
 
@@ -154,6 +157,11 @@ const form = ref({
     case_id: null as number | null,
 });
 const tagsInput = ref('');
+
+const { captureSnapshot, handleClose: guardClose, forceClose } = useModalGuard(
+    () => ({ ...form.value }),
+    () => emit('close'),
+);
 
 async function loadCases() {
     if (cases.value.length > 0) return;
@@ -200,6 +208,7 @@ watch(
                 form.value = { title: '', description: '', category: '', due_date: '', assigned_to_id: null, case_id: null };
                 tagsInput.value = '';
             }
+            captureSnapshot();
         }
     }
 );
@@ -231,7 +240,7 @@ async function submit() {
         }
 
         if (savedTask) emit('saved', savedTask);
-        close();
+        forceClose();
     } finally {
         loading.value = false;
     }

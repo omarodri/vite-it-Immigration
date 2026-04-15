@@ -561,6 +561,14 @@ const routes: RouteRecordRaw[] = [
         meta: { permission: 'settings.update' },
     },
 
+    // Trash / Recycle Bin
+    {
+        path: '/trash',
+        name: 'trash',
+        component: () => import('../views/trash/TrashView.vue'),
+        meta: { permission: 'trash.view' },
+    },
+
     // Client Management
     {
         path: '/clients',

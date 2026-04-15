@@ -2,8 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\Client;
+use App\Models\Companion;
 use App\Models\ImmigrationCase;
 use App\Observers\CaseObserver;
+use App\Observers\ClientObserver;
+use App\Observers\CompanionObserver;
+use App\Observers\ImmigrationCaseObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -24,7 +29,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Client::observe(ClientObserver::class);
+        Companion::observe(CompanionObserver::class);
         ImmigrationCase::observe(CaseObserver::class);
+        ImmigrationCase::observe(ImmigrationCaseObserver::class);
 
         $this->configureRateLimiting();
     }

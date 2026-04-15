@@ -81,25 +81,22 @@ class ClientService
         });
     }
 
-    public function deleteClient(Client $client): void
+    public function deleteClient(Client $client): array
     {
-        $companionCount = $client->companions()->count();
-        if ($companionCount > 0) {
-            throw new ClientHasDependentsException('companions', $companionCount);
-        }
-
-        $caseCount = $client->cases()->count();
-        if ($caseCount > 0) {
-            throw new ClientHasDependentsException('cases', $caseCount);
-        }
+        $cascade = [
+            'companions' => $client->companions()->count(),
+            'cases'      => $client->cases()->count(),
+        ];
 
         activity()
             ->causedBy(Auth::user())
             ->performedOn($client)
-            ->withProperties(['deleted_client' => $client->email ?? $client->full_name])
-            ->log('Deleted client: '.$client->full_name);
+            ->withProperties(['deleted_client' => $client->email ?? $client->full_name, 'cascade' => $cascade])
+            ->log('Moved client to trash: '.$client->full_name);
 
-        $this->clientRepository->delete($client);
+        $this->clientRepository->delete($client); // ClientObserver handles cascade soft-delete
+
+        return $cascade;
     }
 
     public function bulkDeleteClients(array $ids): int

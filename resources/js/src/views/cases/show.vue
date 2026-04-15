@@ -578,7 +578,7 @@ const confirmDelete = async () => {
     if (confirmed) {
         try {
             await caseStore.deleteCase(currentCase.value.id);
-            success(t('cases.deleted_successfully'));
+            success(t('cases.moved_to_trash'));
             router.push('/cases');
         } catch (err: any) {
             error(err.response?.data?.message || t('cases.delete_failed'));

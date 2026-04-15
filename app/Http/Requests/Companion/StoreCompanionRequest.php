@@ -22,6 +22,7 @@ class StoreCompanionRequest extends FormRequest
             'relationship_other' => ['nullable', 'string', 'max:255', 'required_if:relationship,other'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', Rule::in(['male', 'female', 'other'])],
+            'marital_status' => ['nullable', Rule::in(['single', 'married', 'divorced', 'widowed', 'common_law', 'separated', 'legally_separated', 'annulled_marriage', 'unknown'])],
             'nationality' =>['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'email'              => ['nullable', 'email', 'max:255'],

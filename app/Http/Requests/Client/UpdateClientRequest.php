@@ -36,7 +36,7 @@ class UpdateClientRequest extends FormRequest
             'second_language' => ['nullable', 'string', 'max:10'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', Rule::in(['male', 'female', 'other'])],
-            'marital_status' =>['nullable', Rule::in(['single', 'married', 'divorced', 'widowed', 'common_law', 'separated'])],
+            'marital_status' => ['nullable', Rule::in(['single', 'married', 'divorced', 'widowed', 'common_law', 'separated', 'legally_separated', 'annulled_marriage', 'unknown'])],
             'profession' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
 
@@ -47,7 +47,7 @@ class UpdateClientRequest extends FormRequest
                 'max:255',
                 Rule::unique('clients')->where(function ($query) use ($tenantId) {
                     return $query->where('tenant_id', $tenantId);
-                })->ignore($clientId),
+                })->whereNull('deleted_at')->ignore($clientId),
             ],
             'residential_address' => ['nullable', 'string', 'max:500'],
             'mailing_address' => ['nullable', 'string', 'max:500'],
@@ -61,7 +61,7 @@ class UpdateClientRequest extends FormRequest
                 'max:30',
                 Rule::unique('clients')->where(function ($query) use ($tenantId) {
                     return $query->where('tenant_id', $tenantId);
-                })->ignore($clientId),
+                })->whereNull('deleted_at')->ignore($clientId),
             ],
             'secondary_phone' => ['nullable', 'string', 'max:30'],
             'phone_country_code'           => ['nullable', 'string', 'max:6'],

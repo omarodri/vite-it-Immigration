@@ -157,9 +157,7 @@ class Client extends Model
      */
     protected static function booted(): void
     {
-        static::deleting(function (Client $client) {
-            $client->legalDocuments()->each(fn ($doc) => $doc->delete());
-        });
+        // Cascade logic moved to ClientObserver (handles both soft and hard delete)
     }
 
     /**

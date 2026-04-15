@@ -85,15 +85,18 @@
 
     import { useAppStore } from '@/stores/index';
     import { useTenantStore } from '@/stores/tenant';
+    import { useAuthStore } from '@/stores/auth';
     import { useInactivityTimer } from '@/composables/useInactivityTimer';
 
     const store = useAppStore();
     const tenantStore = useTenantStore();
+    const authStore = useAuthStore();
     const router = useRouter();
     const showTopButton = ref(false);
 
-    // Inactivity timer — redirect to login after 120 minutes of inactivity
-    const { start: startInactivityTimer } = useInactivityTimer(120, () => {
+    // Inactivity timer — logout and redirect to login after 120 minutes of inactivity
+    const { start: startInactivityTimer } = useInactivityTimer(120, async () => {
+        await authStore.logout();
         router.push('/auth/boxed-signin');
     });
 

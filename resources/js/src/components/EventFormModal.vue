@@ -1,6 +1,6 @@
 <template>
     <TransitionRoot appear :show="show" as="template">
-        <Dialog as="div" @close="emit('update:show', false)" class="relative z-[51]">
+        <Dialog as="div" @close="handleClose" class="relative z-[51]">
             <TransitionChild
                 as="template"
                 enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100"
@@ -20,7 +20,7 @@
                             <button
                                 type="button"
                                 class="absolute top-4 ltr:right-4 rtl:left-4 text-gray-400 hover:text-gray-800 dark:hover:text-gray-600 outline-none"
-                                @click="emit('update:show', false)"
+                                @click="handleClose"
                             >
                                 <icon-x />
                             </button>
@@ -223,7 +223,7 @@
                                             {{ $t('calendar.delete') }}
                                         </button>
                                         <div class="flex gap-3 ltr:ml-auto rtl:mr-auto">
-                                            <button type="button" class="btn btn-outline-secondary" @click="emit('update:show', false)">
+                                            <button type="button" class="btn btn-outline-secondary" @click="handleClose">
                                                 {{ $t('calendar.cancel') }}
                                             </button>
                                             <button type="submit" class="btn btn-primary" :disabled="isSaving">
@@ -251,6 +251,7 @@ import '@suadelabs/vue3-multiselect/dist/vue3-multiselect.css';
 import Swal from 'sweetalert2';
 
 import api from '@/services/api';
+import { useModalGuard } from '@/composables/useModalGuard';
 import IconX from '@/components/icon/icon-x.vue';
 import IconLink from '@/components/icon/icon-link.vue';
 
@@ -344,6 +345,11 @@ const defaultParams: FormParams = {
 
 const params = ref<FormParams>({ ...defaultParams });
 
+const { captureSnapshot, handleClose, forceClose } = useModalGuard(
+    () => ({ ...params.value }),
+    () => emit('update:show', false),
+);
+
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
@@ -351,7 +357,10 @@ onMounted(async () => {
 });
 
 watch(() => props.show, (visible) => {
-    if (visible) populateForm();
+    if (visible) {
+        populateForm();
+        captureSnapshot();
+    }
 });
 
 // ─── Form Population ──────────────────────────────────────────────────────────
@@ -507,8 +516,8 @@ async function saveEvent() {
         }
 
         showMessage(t('calendar.event_saved'));
-        emit('update:show', false);
         emit('saved');
+        forceClose();
     } catch (err: any) {
         const msg = err.response?.data?.message ?? t('calendar.save_failed');
         showMessage(msg, 'error');
@@ -534,8 +543,8 @@ async function deleteEvent() {
     try {
         await api.delete(`/events/${params.value.id}`);
         showMessage(t('calendar.event_deleted'));
-        emit('update:show', false);
         emit('deleted');
+        forceClose();
     } catch {
         showMessage(t('calendar.save_failed'), 'error');
     }

@@ -25,6 +25,7 @@ class Companion extends Model
         'relationship_other',
         'date_of_birth',
         'gender',
+        'marital_status',
         'nationality',
         'notes',
         'iuc',
@@ -123,9 +124,7 @@ class Companion extends Model
      */
     protected static function booted(): void
     {
-        static::deleting(function (Companion $companion) {
-            $companion->legalDocuments()->each(fn ($doc) => $doc->delete());
-        });
+        // Cascade logic moved to CompanionObserver (handles both soft and hard delete)
     }
 
     /**

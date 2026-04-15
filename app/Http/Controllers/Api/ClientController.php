@@ -211,7 +211,7 @@ class ClientController extends Controller
     )]
     public function bulkDestroy(Request $request): JsonResponse
     {
-        $this->authorize('delete', Client::class);
+        $this->authorize('deleteAny', Client::class);
 
         $request->validate([
             'ids' => ['required', 'array'],

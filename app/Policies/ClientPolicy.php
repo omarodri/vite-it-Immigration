@@ -48,6 +48,14 @@ class ClientPolicy
     }
 
     /**
+     * Determine whether the user can bulk-delete clients (class-level check).
+     */
+    public function deleteAny(User $user): bool
+    {
+        return $user->can('clients.delete');
+    }
+
+    /**
      * Determine whether the user can restore the model.
      */
     public function restore(User $user, Client $client): bool

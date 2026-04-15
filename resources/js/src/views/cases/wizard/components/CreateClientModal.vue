@@ -1,6 +1,6 @@
 <template>
     <TransitionRoot appear :show="open" as="template">
-        <Dialog as="div" class="relative z-50" @close="close">
+        <Dialog as="div" class="relative z-50" @close="guardClose">
             <TransitionChild
                 as="template"
                 enter="duration-300 ease-out"
@@ -128,7 +128,7 @@
 
                                 <!-- Buttons -->
                                 <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                                    <button type="button" class="btn btn-outline-secondary" @click="close">
+                                    <button type="button" class="btn btn-outline-secondary" @click="guardClose">
                                         {{ $t('common.cancel') }}
                                     </button>
                                     <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
@@ -151,6 +151,7 @@ import { useI18n } from 'vue-i18n';
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue';
 import clientService from '@/services/clientService';
 import { useNotification } from '@/composables/useNotification';
+import { useModalGuard } from '@/composables/useModalGuard';
 import type { Client, CreateClientData } from '@/types/client';
 import IconLoader from '@/components/icon/icon-loader.vue';
 import CountrySelect from '@/components/CountrySelect.vue';
@@ -174,6 +175,11 @@ const notification = useNotification();
 const isSubmitting = ref(false);
 const errors = ref<Record<string, string[]>>({});
 
+const { captureSnapshot, handleClose: guardClose, forceClose } = useModalGuard(
+    () => ({ ...form }),
+    () => emit('update:open', false),
+);
+
 const form = reactive<CreateClientData>({
     first_name: '',
     last_name: '',
@@ -190,6 +196,7 @@ watch(
     (isOpen) => {
         if (isOpen) {
             resetForm();
+            captureSnapshot();
         }
     }
 );
@@ -217,7 +224,7 @@ async function submit() {
         const response = await clientService.createClient(form);
         notification.success(t('wizard.success.client_created'));
         emit('created', response.client);
-        close();
+        forceClose();
     } catch (error: any) {
         if (error.response?.data?.errors) {
             errors.value = error.response.data.errors;

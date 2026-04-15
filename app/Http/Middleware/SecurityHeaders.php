@@ -46,7 +46,7 @@ class SecurityHeaders
             "default-src 'self'",
             "script-src 'self'" . $viteDevServer,
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com" . $viteDevServer,
-            "font-src 'self' https://fonts.gstatic.com",
+            "font-src 'self' data: https://fonts.gstatic.com",
             "img-src 'self' data: blob: https:",
             "connect-src 'self' https://graph.microsoft.com https://www.googleapis.com https://login.microsoftonline.com wss://vite-it-immigration.test:5173" . $viteDevServer,
             "frame-src 'none'",

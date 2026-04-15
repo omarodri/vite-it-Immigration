@@ -1,4 +1,4 @@
-{ 
+{
   "permissions": {
     "allow": [
       "Bash(composer require:*)",
@@ -64,7 +64,8 @@
       "Bash(python3 -c \"import sys,json; routes=[r for r in json.load\\(sys.stdin\\) if ''''backup'''' in r.get\\(''''uri'''',''''''''\\)]; [print\\(r\\) for r in routes]\")",
       "Bash(sed -i '' 's/\"\"sidebar.integrations\"\": \"\"Integrations\"\",/\"\"sidebar.integrations\"\": \"\"Integrations\"\",\\\\n    \"\"sidebar.backups\"\": \"\"Database Backups\"\",/' /Users/omar/Herd/vite-it-Immigration/resources/js/src/locales/en.json)",
       "Bash(sed -i '' 's/\"\"sidebar.integrations\"\": \"\"Integraciones\"\",/\"\"sidebar.integrations\"\": \"\"Integraciones\"\",\\\\n    \"\"sidebar.backups\"\": \"\"Respaldos BD\"\",/' /Users/omar/Herd/vite-it-Immigration/resources/js/src/locales/es.json)",
-      "Bash(sed -i '' 's/\"\"sidebar.integrations\"\": \"\"Intégrations\"\",/\"\"sidebar.integrations\"\": \"\"Intégrations\"\",\\\\n    \"\"sidebar.backups\"\": \"\"Sauvegardes BD\"\",/' /Users/omar/Herd/vite-it-Immigration/resources/js/src/locales/fr.json)"
+      "Bash(sed -i '' 's/\"\"sidebar.integrations\"\": \"\"Intégrations\"\",/\"\"sidebar.integrations\"\": \"\"Intégrations\"\",\\\\n    \"\"sidebar.backups\"\": \"\"Sauvegardes BD\"\",/' /Users/omar/Herd/vite-it-Immigration/resources/js/src/locales/fr.json)",
+      "Bash(node_modules/.bin/vite build:*)"
     ]
   }
 }

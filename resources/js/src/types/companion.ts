@@ -20,6 +20,7 @@ export interface Companion {
     date_of_birth: string | null;
     age?: number | null;
     gender: Gender | null;
+    marital_status?: string | null;
     nationality: string | null;
     notes: string | null;
     iuc?: string | null;
@@ -41,6 +42,7 @@ export interface CreateCompanionData {
     relationship_other?: string;
     date_of_birth?: string;
     gender?: Gender;
+    marital_status?: string;
     nationality?: string;
     notes?: string;
     iuc?: string;
@@ -59,6 +61,7 @@ export interface UpdateCompanionData {
     relationship_other?: string;
     date_of_birth?: string;
     gender?: Gender;
+    marital_status?: string;
     nationality?: string;
     notes?: string;
     iuc?: string;
@@ -76,6 +79,8 @@ export const RELATIONSHIP_TYPE_OPTIONS: Array<{ value: RelationshipType; label: 
     { value: 'child', label: 'Child' },
     { value: 'parent', label: 'Parent' },
     { value: 'sibling', label: 'Sibling' },
+    { value: 'half-sibling', label: 'Half-sibling' },
+    { value: 'step-sibling', label: 'Step-sibling' },
     { value: 'common-law partner', label: 'Common-law partner' },
     { value: 'dependent child', label: 'Dependent child' },
     { value: 'grandchild', label: 'Grandchild' },
@@ -94,6 +99,8 @@ export const RELATIONSHIP_TYPE_LABELS_ES: Record<RelationshipType, string> = {
     child: 'Hijo/a',
     parent: 'Padre/Madre',
     sibling: 'Hermano/a',
+    'half-sibling': 'Medio hermano/a',
+    'step-sibling': 'Hermanastro/a',
     other: 'Otro',
     'common-law partner': 'Pareja de hecho',
     'dependent child': 'Hijo/a dependiente',

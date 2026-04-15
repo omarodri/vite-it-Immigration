@@ -457,7 +457,7 @@
 
             <!-- Add/Edit Task Modal -->
             <TransitionRoot appear :show="addTaskModal" as="template">
-                <Dialog as="div" @close="addTaskModal = false" class="relative z-[51]">
+                <Dialog as="div" @close="handleTodoClose" class="relative z-[51]">
                     <TransitionChild
                         as="template"
                         enter="duration-300 ease-out"
@@ -485,7 +485,7 @@
                                     <button
                                         type="button"
                                         class="absolute top-4 ltr:right-4 rtl:left-4 text-gray-400 hover:text-gray-800 dark:hover:text-gray-600 outline-none"
-                                        @click="addTaskModal = false"
+                                        @click="handleTodoClose"
                                     >
                                         <icon-x />
                                     </button>
@@ -551,7 +551,7 @@
                                                 ></quillEditor>
                                             </div>
                                             <div class="ltr:text-right rtl:text-left flex justify-end items-center mt-8">
-                                                <button type="button" class="btn btn-outline-danger" @click="addTaskModal = false">{{ $t('todo_cancel') }}</button>
+                                                <button type="button" class="btn btn-outline-danger" @click="handleTodoClose">{{ $t('todo_cancel') }}</button>
                                                 <button type="submit" class="btn btn-primary ltr:ml-4 rtl:mr-4" :disabled="isSaving">
                                                     <span v-if="isSaving" class="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4 inline-block align-middle ltr:mr-2 rtl:ml-2"></span>
                                                     {{ params.id ? $t('todo_update') : $t('add') }}
@@ -658,7 +658,8 @@
     </div>
 </template>
 <script lang="ts" setup>
-    import { ref, computed, onMounted } from 'vue';
+    import { ref, computed, onMounted, nextTick } from 'vue';
+    import { useModalGuard } from '@/composables/useModalGuard';
     import { useI18n } from 'vue-i18n';
     import { TransitionRoot, TransitionChild, Dialog, DialogPanel, DialogOverlay } from '@headlessui/vue';
     import { quillEditor } from 'vue3-quill';
@@ -710,6 +711,11 @@
     const addTaskModal = ref(false);
     const viewTaskModal = ref(false);
     const isSaving = ref(false);
+
+    const { captureSnapshot: captureTodoSnapshot, handleClose: handleTodoClose, forceClose: forceTodoClose } = useModalGuard(
+        () => ({ ...params.value }),
+        () => { addTaskModal.value = false; },
+    );
 
     const params = ref({ ...defaultParams });
     const searchTask = ref('');
@@ -884,6 +890,7 @@
         }
 
         addTaskModal.value = true;
+        nextTick(() => captureTodoSnapshot());
     }
 
     async function saveTask() {
@@ -911,7 +918,7 @@
                 await todoStore.createTodo({ ...data, status: 'pending' } as CreateTodoData);
                 showMessage(t('todo_task_created'));
             }
-            addTaskModal.value = false;
+            forceTodoClose();
             await refreshTodos();
         } catch {
             showMessage(t('todo_save_failed'), 'error');
