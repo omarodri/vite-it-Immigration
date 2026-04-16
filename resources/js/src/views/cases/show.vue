@@ -50,7 +50,7 @@
                             <li v-if="currentCase.case_type" class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-x-4 py-0"
                             >
                                 <span class="text-gray-500 shrink-0 sm:w-30 dark:text-white-light">{{ $t('cases.case_type') }}:</span>
-                                <span class="text-gray-500 min-w-0 sm:flex-1">{{ currentCase.case_type.name }}</span>
+                                <span class="text-gray-500 min-w-0 sm:flex-1">{{ $t(`case_types.${currentCase.case_type.name}`) }}</span>
                             </li>
                             <li
                                 v-if="currentCase.created_at" class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-x-4 py-0"
@@ -73,7 +73,7 @@
                             <!-- Language -->
                             <li v-if="currentCase.language" class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-x-4 py-0">
                                 <span class="text-gray-500 shrink-0 sm:w-30 dark:text-white-light">{{ $t('cases.language') }}:</span>
-                                <span class="text-gray-500 min-w-0 sm:flex-1">{{ currentCase.language?.toUpperCase() || '-' }}</span>
+                                <span class="text-gray-500 min-w-0 sm:flex-1">{{ $t(`clients.${currentCase.language}`) || '-' }}</span>
                             </li>
                         </ul>
                     </div>
@@ -292,6 +292,14 @@
                                                 </span>
                                             </div>
                                         </div>
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-outline-info p-1.5 shrink-0"
+                                            :title="$t('companions.view_companion')"
+                                            @click="openCompanionView(companion)"
+                                        >
+                                            <icon-eye class="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -441,6 +449,14 @@
             <h3 class="text-lg font-semibold text-gray-600 mb-2">{{ $t('cases.not_found') }}</h3>
             <router-link to="/cases" class="btn btn-primary mt-4">{{ $t('cases.back_to_list') }}</router-link>
         </div>
+
+        <!-- Companion View Modal -->
+        <CompanionViewModal
+            :show="showCompanionView"
+            :companion="viewingCompanion"
+            :can-edit="false"
+            @close="showCompanionView = false; viewingCompanion = null"
+        />
     </div>
 </template>
 
@@ -469,6 +485,9 @@ import IconFolder from '@/components/icon/icon-folder.vue';
 import IconPencil from '@/components/icon/icon-pencil.vue';
 import IconTrashLines from '@/components/icon/icon-trash-lines.vue';
 import IconUserPlus from '@/components/icon/icon-user-plus.vue';
+import IconEye from '@/components/icon/icon-eye.vue';
+import CompanionViewModal from '@/components/companions/CompanionViewModal.vue';
+import type { Companion } from '@/types/companion';
 
 useMeta({ title: 'Case Details' });
 
@@ -480,6 +499,15 @@ const { confirm: confirmDialog, success, error } = useNotification();
 
 const isLoading = ref(true);
 const activeTab = ref('info');
+
+// Companion view modal state
+const showCompanionView = ref(false);
+const viewingCompanion = ref<Companion | null>(null);
+
+const openCompanionView = (companion: Companion) => {
+    viewingCompanion.value = companion;
+    showCompanionView.value = true;
+};
 
 const tabs = computed(() => [
     { id: 'info', label: 'cases.tab_information' },

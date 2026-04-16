@@ -13,7 +13,7 @@ export function formatDate(
         month: 'short',
         day: 'numeric',
     },
-    locale = 'en-US'
+    locale = 'es-ES'
 ): string {
     if (!date) return '-';
     let d: Date;
@@ -45,7 +45,7 @@ export function formatDateTime(
         hour: '2-digit',
         minute: '2-digit',
     },
-    locale = 'en-US'
+    locale = 'es-ES'
 ): string {
     return formatDate(date, options, locale);
 }

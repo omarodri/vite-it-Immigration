@@ -172,7 +172,9 @@
                     <select v-model="perPage" class="form-select" aria-label="Results per page" @change="changePerPage">
                         <option :value="10">10 {{ $t('cases.per_page') }}</option>
                         <option :value="20">20 {{ $t('cases.per_page') }}</option>
+                        <option :value="30">30 {{ $t('cases.per_page') }}</option>
                         <option :value="50">50 {{ $t('cases.per_page') }}</option>
+                        <option :value="100">100 {{ $t('cases.per_page') }}</option>
                     </select>
                 </div>
             </div>
@@ -265,7 +267,7 @@
                         <!-- Case Type Column -->
                         <template #case_type="data">
                             <span v-if="data.value.case_type" class="badge badge-outline-primary">
-                                {{ data.value.case_type.name }}
+                                {{ $t(`case_types.${data.value.case_type.name}`) }}
                             </span>
                             <span v-else class="text-gray-400">-</span>
                         </template>
@@ -401,7 +403,7 @@
                                 <router-link :to="`/cases/${caseItem.id}`" class="text-primary font-semibold hover:underline">
                                     {{ caseItem.case_number }}
                                 </router-link>
-                                <p v-if="caseItem.case_type" class="text-sm text-gray-500">{{ caseItem.case_type.name }}</p>
+                                <p v-if="caseItem.case_type" class="text-sm text-gray-500">{{ $t(`case_types.${caseItem.case_type.name}`) }}</p>
                             </div>
                             <div class="flex gap-1">
                                 <span class="badge" :class="getStatusBadgeClass(caseItem.status)">

@@ -24,6 +24,9 @@ function getCsrfTokenFromCookie(): string | null {
 // Flag to prevent multiple simultaneous CSRF fetches
 let csrfFetchPromise: Promise<void> | null = null;
 
+// Flag to prevent multiple simultaneous 401 redirects
+let isRedirectingToLogin = false;
+
 // Ensure CSRF cookie exists
 async function ensureCsrfCookie(): Promise<void> {
     if (getCsrfTokenFromCookie()) {
@@ -98,10 +101,22 @@ api.interceptors.response.use(
         switch (status) {
             case 401:
                 // Unauthorized - session expired or not authenticated
-                // Redirect to login; reject so fetchUser() and the router guard can complete
-                if (router.currentRoute.value.name !== 'boxed-signin' &&
-                    router.currentRoute.value.name !== 'cover-login') {
-                    router.push({ name: 'boxed-signin' });
+                if (!isRedirectingToLogin) {
+                    const currentRoute = router.currentRoute.value.name;
+                    if (currentRoute !== 'boxed-signin' && currentRoute !== 'cover-login') {
+                        isRedirectingToLogin = true;
+                        // Clear auth state FIRST so the router guest-guard
+                        // doesn't bounce us back to home (isAuthenticated && to.meta.guest)
+                        const { useAuthStore } = await import('@/stores/auth');
+                        const authStore = useAuthStore();
+                        authStore.$patch({ user: null, isAuthenticated: false });
+
+                        notification.warning(t('api_errors.session_expired'));
+
+                        router.push({ name: 'boxed-signin' }).finally(() => {
+                            isRedirectingToLogin = false;
+                        });
+                    }
                 }
                 return Promise.reject(error);
 

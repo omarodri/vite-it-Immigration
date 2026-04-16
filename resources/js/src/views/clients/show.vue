@@ -118,7 +118,7 @@
                             :class="activeTab === 'canada' ? 'border-primary text-primary' : 'border-transparent hover:text-primary'"
                             @click="activeTab = 'canada'"
                         >
-                            {{ $t('clients.canada_legal_status') }}
+                            {{ $t('clients.canada_legal_status1') }}
                         </button>
                     </li>
                     <li>
@@ -182,7 +182,7 @@
                         </div>
                         <div>
                             <label class="text-gray-500 text-sm">{{ $t('clients.marital_status') }}</label>
-                            <p class="font-semibold capitalize">{{ client.marital_status?.replace('_', ' ') || '-' }}</p>
+                            <p class="font-semibold capitalize">{{ $t(`clients.${client.marital_status}`) || '-'}}</p>
                         </div>
                         <div>
                             <label class="text-gray-500 text-sm">{{ $t('clients.profession') }}</label>
@@ -190,7 +190,7 @@
                         </div>
                         <div>
                             <label class="text-gray-500 text-sm">{{ $t('clients.language') }}</label>
-                            <p class="font-semibold">{{ client.language || '-' }}</p>
+                            <p class="font-semibold">{{ $t(`clients.${client.language}`) || '-' }}</p>
                         </div>
                         <div class="md:col-span-2 lg:col-span-3">
                             <label class="text-gray-500 text-sm">{{ $t('clients.notes') }}</label>
@@ -255,7 +255,7 @@
                         </div>
                         <div>
                             <label class="text-gray-500 text-sm">{{ $t('clients.entry_point') }}</label>
-                            <p class="font-semibold capitalize">{{ client.entry_point?.replace('_', ' ') || '-' }}</p>
+                            <p class="font-semibold capitalize">{{ $t(`clients.${client.entry_point}`) || '-' }}</p>
                         </div>
                         <div>
                             <label class="text-gray-500 text-sm">{{ $t('clients.arrival_date') }}</label>
@@ -319,13 +319,21 @@
                                         </div>
                                         <div>
                                             <h6 class="font-semibold">{{ companion.full_name }}</h6>
-                                            <p class="text-sm text-gray-500">{{ companion.relationship_label || formatRelationship(companion.relationship) }}</p>
+                                            <p class="text-sm text-gray-500">{{ formatRelationship(companion.relationship) }}</p>
                                             <p v-if="companion.age" class="text-xs text-gray-400">{{ companion.age }} {{ $t('companions.years_old') }}</p>
                                             <p v-if="companion.email" class="text-xs text-gray-400">{{ companion.email }}</p>
                                             <p v-if="companion.canada_status_label" class="text-xs text-gray-400">{{ companion.canada_status_label }}</p>
                                         </div>
                                     </div>
                                     <div class="flex gap-1">
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-outline-info p-1"
+                                            :title="$t('companions.view_companion')"
+                                            @click="openViewModal(companion)"
+                                        >
+                                            <icon-eye class="w-4 h-4" />
+                                        </button>
                                         <button
                                             v-can="'clients.update'"
                                             type="button"
@@ -382,7 +390,7 @@
                                 <div class="flex items-center justify-between">
                                     <div>
                                         <h5 class="font-semibold text-primary">{{ caseItem.case_number }}</h5>
-                                        <p class="text-sm text-gray-500">{{ caseItem.case_type?.name || '-' }}</p>
+                                        <p class="text-sm text-gray-500">{{ $t(`case_types.${caseItem.case_type?.name}`) || '-' }}</p>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <span class="badge" :class="getCaseBadgeClass(caseItem.status)">
@@ -428,13 +436,21 @@
             </router-link>
         </div>
 
-        <!-- Companion Modal -->
+        <!-- Companion Edit Modal -->
         <CompanionFormModal
             v-model:show="showCompanionModal"
             :client-id="client?.id ?? 0"
             :companion="editingCompanion"
             @saved="onCompanionSaved"
             @close="editingCompanion = null"
+        />
+
+        <!-- Companion View Modal -->
+        <CompanionViewModal
+            :show="showViewModal"
+            :companion="viewingCompanion"
+            @close="showViewModal = false; viewingCompanion = null"
+            @edit="openCompanionModalFromView"
         />
     </div>
 </template>
@@ -462,7 +478,9 @@ import IconUsers from '@/components/icon/icon-users.vue';
 import IconFolder from '@/components/icon/icon-folder.vue';
 import IconPlus from '@/components/icon/icon-plus.vue';
 import IconTrash from '@/components/icon/icon-trash.vue';
+import IconEye from '@/components/icon/icon-eye.vue';
 import CompanionFormModal from '@/components/companions/CompanionFormModal.vue';
+import CompanionViewModal from '@/components/companions/CompanionViewModal.vue';
 
 useMeta({ title: 'Client Profile' });
 
@@ -482,6 +500,8 @@ const companions = ref<Companion[]>([]);
 const isLoadingCompanions = ref(false);
 const showCompanionModal = ref(false);
 const editingCompanion = ref<Companion | null>(null);
+const showViewModal = ref(false);
+const viewingCompanion = ref<Companion | null>(null);
 
 // Legal documents state
 const legalDocs = ref<LegalDocument[]>([]);
@@ -586,6 +606,20 @@ const loadCompanions = async () => {
 const openCompanionModal = (companion?: Companion) => {
     editingCompanion.value = companion ?? null;
     showCompanionModal.value = true;
+};
+
+const openViewModal = (companion: Companion) => {
+    viewingCompanion.value = companion;
+    showViewModal.value = true;
+};
+
+const openCompanionModalFromView = (companion: Companion | null) => {
+    showViewModal.value = false;
+    viewingCompanion.value = null;
+    if (companion) {
+        editingCompanion.value = companion;
+        showCompanionModal.value = true;
+    }
 };
 
 const onCompanionSaved = async () => {
