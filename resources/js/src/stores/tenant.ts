@@ -19,6 +19,7 @@ interface TenantPreferences {
     timezone: string;
     date_format: string;
     language: string;
+    name_format: 'first_last' | 'last_first';
 }
 
 interface TenantIntegrations {
@@ -85,7 +86,11 @@ export const useTenantStore = defineStore('tenant', {
             timezone: 'America/Toronto',
             date_format: 'Y-m-d',
             language: 'es',
+            name_format: 'first_last',
         },
+
+        nameFormat: (state): 'first_last' | 'last_first' =>
+            state.tenant?.preferences?.name_format ?? 'first_last',
 
         theme: (state): TenantTheme | null => state.tenant?.theme ?? null,
 
@@ -119,7 +124,7 @@ export const useTenantStore = defineStore('tenant', {
             }
         },
 
-        async updateSettings(settings: Partial<TenantCompany & TenantPreferences & { name: string }>) {
+        async updateSettings(settings: Partial<TenantCompany & TenantPreferences & { name: string; name_format: 'first_last' | 'last_first' }>) {
             this.loading = true;
             this.error = null;
 

@@ -85,6 +85,16 @@
                         {{ selectedClients.length }} {{ $t('clients.selected') }}
                     </span>
 
+                    <button
+                        v-if="hasActiveFilters"
+                        type="button"
+                        class="btn btn-outline-secondary gap-2"
+                        @click="clearFilters"
+                    >
+                        <icon-x class="w-4 h-4" />
+                        {{ $t('clients.clear_filters') }}
+                    </button>
+
                     <router-link
                         v-can="'clients.create'"
                         to="/clients/create"
@@ -252,16 +262,16 @@
                             <div class="flex items-center gap-3">
                                 <div class="w-9 h-9 rounded-full flex items-center justify-center" :class="getStatusAvatarClass(data.value.status)">
                                     <span class="font-semibold text-sm">
-                                        {{ getInitials(data.value.first_name, data.value.last_name) }}
+                                        {{ data.value.initials || getInitials(data.value.first_name, data.value.last_name) }}
                                     </span>
                                 </div>
                                 <div>
                                     <router-link
                                         :to="`/clients/${data.value.id}`"
                                         class="text-primary font-semibold hover:underline"
-                                        :aria-label="`View ${data.value.first_name}`"
+                                        :aria-label="`View ${data.value.full_name}`"
                                     >
-                                        <div class="font-semibold">{{ data.value.first_name }} {{ data.value.last_name }}</div>
+                                        <div class="font-semibold">{{ data.value.full_name }}</div>
                                     </router-link>
                                     <div class="text-xs text-gray-500">{{ data.value.email || $t('clients.no_email') }}</div>
                                 </div>
@@ -385,11 +395,11 @@
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full flex items-center justify-center" :class="getStatusAvatarClass(client.status)">
                                     <span class="font-semibold text-sm">
-                                        {{ getInitials(client.first_name, client.last_name) }}
+                                        {{ client.initials || getInitials(client.first_name, client.last_name) }}
                                     </span>
                                 </div>
                                 <div>
-                                    <div class="font-semibold dark:text-white-light">{{ client.first_name }} {{ client.last_name }}</div>
+                                    <div class="font-semibold dark:text-white-light">{{ client.full_name }}</div>
                                     <div class="text-xs text-gray-500">{{ client.email || $t('clients.no_email') }}</div>
                                 </div>
                             </div>
@@ -501,7 +511,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Vue3Datatable from '@bhplugin/vue3-datatable';
 import { useMeta } from '@/composables/use-meta';
@@ -510,6 +520,7 @@ import { useNotification } from '@/composables/useNotification';
 import { useDebounce } from '@/composables/useDebounce';
 import { useClientColumnChooser } from '@/composables/useClientColumnChooser';
 import { formatDate } from '@/utils/formatters';
+import { useListPersistence } from '@/composables/useListPersistence';
 import type { Client, ClientStatus } from '@/types/client';
 
 // Icons
@@ -543,6 +554,16 @@ const perPage = ref(10);
 const currentPage = ref(1);
 const sortColumn = ref('created_at');
 const sortDirection = ref<'asc' | 'desc'>('desc');
+
+const { restore: restoreFilters, persist: persistFilters, clear: clearPersistedFilters } = useListPersistence('clients', {
+    searchQuery,
+    statusFilter,
+    sortColumn,
+    sortDirection,
+    currentPage,
+    perPage,
+});
+
 const selectedClients = ref<Client[]>([]);
 const initialLoading = ref(true);
 const tableKey = ref(0);
@@ -613,6 +634,7 @@ const debouncedSearch = () => {
 };
 
 const clearFilters = () => {
+    clearPersistedFilters();
     searchQuery.value = '';
     statusFilter.value = '';
     currentPage.value = 1;
@@ -678,6 +700,18 @@ const fetchClients = async () => {
             per_page: perPage.value,
             page: currentPage.value,
         });
+        // If restored page has no results but total > 0, reset to page 1
+        if (clientStore.clients.length === 0 && clientStore.totalClients > 0 && currentPage.value > 1) {
+            currentPage.value = 1;
+            await clientStore.fetchClients({
+                search: searchQuery.value || undefined,
+                status: (statusFilter.value as ClientStatus) || undefined,
+                sort_by: sortColumn.value,
+                sort_direction: sortDirection.value,
+                per_page: perPage.value,
+                page: 1,
+            });
+        }
     } catch (err) {
         error(t('clients.failed_to_load'));
     }
@@ -691,7 +725,7 @@ const confirmDelete = async (client: Client) => {
         : t('clients.delete_warning');
 
     const confirmed = await confirmDialog({
-        title: t('clients.confirm_delete', { name: `${client.first_name} ${client.last_name}` }),
+        title: t('clients.confirm_delete', { name: client.full_name }),
         text: warningText,
         icon: 'warning',
         confirmButtonText: t('clients.yes_delete'),
@@ -734,7 +768,7 @@ const confirmBulkDelete = async () => {
 
 const confirmConvert = async (client: Client) => {
     const confirmed = await confirmDialog({
-        title: t('clients.confirm_convert', { name: `${client.first_name} ${client.last_name}` }),
+        title: t('clients.confirm_convert', { name: client.full_name }),
         text: t('clients.convert_description'),
         icon: 'info',
         confirmButtonText: t('clients.yes_convert'),
@@ -770,6 +804,8 @@ onUnmounted(() => {
 // Initialize
 onMounted(async () => {
     document.addEventListener('click', handleClickOutside);
+    restoreFilters();
+    watchEffect(() => persistFilters());
     try {
         await Promise.all([
             fetchClients(),

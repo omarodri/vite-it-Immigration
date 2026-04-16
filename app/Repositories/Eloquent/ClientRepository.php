@@ -77,9 +77,10 @@ class ClientRepository implements ClientRepositoryInterface
             $query->where('is_primary_applicant', $filters['is_primary_applicant']);
         }
 
-        // Sorting
-        $sortBy = $filters['sort_by'] ?? 'created_at';
-        $sortDirection = $filters['sort_direction'] ?? 'desc';
+        // Sorting — only allow real DB columns
+        $allowedSortFields = ['first_name', 'last_name', 'email', 'status', 'created_at', 'arrival_date'];
+        $sortBy = in_array($filters['sort_by'] ?? '', $allowedSortFields) ? $filters['sort_by'] : 'created_at';
+        $sortDirection = ($filters['sort_direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sortBy, $sortDirection);
 
         return $query->paginate($perPage);

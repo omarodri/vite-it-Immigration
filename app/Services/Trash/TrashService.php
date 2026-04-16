@@ -83,7 +83,7 @@ class TrashService
             'clients' => [
                 'id'               => $model->id,
                 'type'             => 'clients',
-                'display_name'     => trim("{$model->first_name} {$model->last_name}"),
+                'display_name'     => $model->full_name,
                 'subtitle'         => $model->email,
                 'deleted_at'       => $model->deleted_at->toIso8601String(),
                 'days_until_purge' => $daysUntil,
@@ -102,14 +102,14 @@ class TrashService
                 'parent'           => $model->client ? [
                     'type' => 'clients',
                     'id'   => $model->client->id,
-                    'name' => trim("{$model->client->first_name} {$model->client->last_name}"),
+                    'name' => $model->client->full_name,
                 ] : null,
                 'can_restore'      => ! ($model->client?->trashed() ?? false),
             ],
             'companions' => [
                 'id'               => $model->id,
                 'type'             => 'companions',
-                'display_name'     => trim("{$model->first_name} {$model->last_name}"),
+                'display_name'     => $model->full_name,
                 'subtitle'         => $model->relationship,
                 'deleted_at'       => $model->deleted_at->toIso8601String(),
                 'days_until_purge' => $daysUntil,
@@ -117,7 +117,7 @@ class TrashService
                 'parent'           => $model->client ? [
                     'type' => 'clients',
                     'id'   => $model->client->id,
-                    'name' => trim("{$model->client->first_name} {$model->client->last_name}"),
+                    'name' => $model->client->full_name,
                 ] : null,
                 'can_restore'      => ! ($model->client?->trashed() ?? false),
             ],
@@ -261,7 +261,7 @@ class TrashService
             };
 
             $parentName = match ($parentType) {
-                'client' => "{$parent->first_name} {$parent->last_name}",
+                'client' => $parent->full_name,
                 'case'   => $parent->case_number,
                 default  => "#{$parent->id}",
             };

@@ -75,11 +75,11 @@
                 <div v-if="selectedClient" class="flex items-center gap-4">
                     <div
                         class="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold text-lg">
-                        {{ getInitials(selectedClient.first_name, selectedClient.last_name) }}
+                        {{ selectedClient.initials || getInitials(selectedClient.first_name, selectedClient.last_name) }}
                     </div>
                     <div>
                         <p class="font-medium text-gray-900 dark:text-white">
-                            {{ selectedClient.full_name || `${selectedClient.first_name} ${selectedClient.last_name}` }}
+                            {{ selectedClient.full_name }}
                         </p>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
                             {{ selectedClient.email || selectedClient.phone || '' }}
@@ -110,9 +110,9 @@
                         class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full"
                     >
                         <span class="w-6 h-6 rounded-full bg-secondary/20 text-secondary text-xs flex items-center justify-center font-medium">
-                            {{ getInitials(companion.first_name, companion.last_name) }}
+                            {{ companion.initials || getInitials(companion.first_name, companion.last_name) }}
                         </span>
-                        <span class="text-sm">{{ companion.full_name || `${companion.first_name} ${companion.last_name}` }}</span>
+                        <span class="text-sm">{{ companion.full_name }}</span>
                         <span class="text-xs text-gray-500">({{ companion.relationship_label || companion.relationship }})</span>
                     </span>
                 </div>

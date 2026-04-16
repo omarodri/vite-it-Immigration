@@ -7,7 +7,7 @@
             </li>
             <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
                 <router-link :to="`/clients/${clientId}`" class="text-primary hover:underline">
-                    {{ form.first_name }} {{ form.last_name }}
+                    {{ formatName(form.first_name, form.last_name) }}
                 </router-link>
             </li>
             <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
@@ -365,6 +365,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useVuelidate } from '@vuelidate/core';
 import { required, email, helpers } from '@vuelidate/validators';
 import { useMeta } from '@/composables/use-meta';
+import { useFormatName } from '@/composables/useFormatName';
 import { useClientStore } from '@/stores/client';
 import { useNotification } from '@/composables/useNotification';
 import { useI18n } from 'vue-i18n';
@@ -396,6 +397,7 @@ import 'easymde/dist/easymde.min.css';
 
 useMeta({ title: 'Edit Client' });
 
+const { formatName } = useFormatName();
 const route = useRoute();
 const router = useRouter();
 const clientStore = useClientStore();

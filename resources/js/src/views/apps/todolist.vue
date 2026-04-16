@@ -658,7 +658,7 @@
     </div>
 </template>
 <script lang="ts" setup>
-    import { ref, computed, onMounted, nextTick } from 'vue';
+    import { ref, computed, onMounted, nextTick, watchEffect } from 'vue';
     import { useModalGuard } from '@/composables/useModalGuard';
     import { useI18n } from 'vue-i18n';
     import { TransitionRoot, TransitionChild, Dialog, DialogPanel, DialogOverlay } from '@headlessui/vue';
@@ -669,6 +669,7 @@
     import { useAppStore } from '@/stores/index';
     import { useTodoStore } from '@/stores/todo';
     import { useMeta } from '@/composables/use-meta';
+    import { useListPersistence } from '@/composables/useListPersistence';
     import type { Todo, CreateTodoData, UpdateTodoData } from '@/types/todo';
     import { sanitizeHtml } from '@/utils/sanitize';
 
@@ -725,6 +726,13 @@
     const filterAssigneeId = ref<number | null>(null);
     const filterCaseId = ref<number | null>(null);
 
+    const { restore: restoreFilters, persist: persistFilters } = useListPersistence('todos', {
+        selectedTab,
+        searchTask,
+        filterAssigneeId,
+        filterCaseId,
+    });
+
     let searchDebounce: ReturnType<typeof setTimeout> | null = null;
 
     const editorOptions = ref({
@@ -751,8 +759,10 @@
 
     // Lifecycle
     onMounted(async () => {
+        restoreFilters();
+        watchEffect(() => persistFilters());
         await Promise.all([
-            todoStore.fetchTodos(),
+            refreshTodos(),
             todoStore.fetchAssignees(),
             todoStore.fetchCases(),
         ]);

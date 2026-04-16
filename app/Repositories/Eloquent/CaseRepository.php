@@ -26,7 +26,7 @@ class CaseRepository implements CaseRepositoryInterface
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         $query = ImmigrationCase::with([
-            'client:id,first_name,last_name,email,phone',
+            'client:id,tenant_id,first_name,last_name,email,phone',
             'caseType:id,name,code,category',
             'assignedTo:id,name,email',
             'importantDates',
@@ -209,7 +209,7 @@ class CaseRepository implements CaseRepositoryInterface
      */
     public function getUpcomingDeadlines(int $days = 30): Collection
     {
-        return ImmigrationCase::with(['client:id,first_name,last_name', 'caseType:id,name,code', 'importantDates'])
+        return ImmigrationCase::with(['client:id,tenant_id,first_name,last_name', 'caseType:id,name,code', 'importantDates'])
             ->upcoming($days)
             ->orderBy('created_at')
             ->get();

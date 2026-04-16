@@ -56,11 +56,11 @@
                         <div
                             class="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold"
                         >
-                            {{ getInitials(client.first_name, client.last_name) }}
+                            {{ client.initials || getInitials(client.first_name, client.last_name) }}
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="font-medium text-gray-900 dark:text-white truncate">
-                                {{ client.full_name || `${client.first_name} ${client.last_name}` }}
+                                {{ client.full_name }}
                             </p>
                             <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
                                 {{ client.email || client.phone || '' }}

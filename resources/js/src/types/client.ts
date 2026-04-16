@@ -18,8 +18,9 @@ export interface Client {
     // Personal Information
     first_name: string;
     last_name: string;
-    full_name?: string;
-    initials?: string;
+    full_name: string;
+    sort_name: string;
+    initials: string;
     nationality: string | null;
     second_nationality: string | null;
     language: Language | null;

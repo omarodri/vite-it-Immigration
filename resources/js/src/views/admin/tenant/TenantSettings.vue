@@ -63,6 +63,64 @@
                     </select>
                 </div>
 
+                <!-- Name Display Format -->
+                <div>
+                    <label class="block text-sm font-medium mb-1">{{ $t('tenant.name_format') }}</label>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">{{ $t('tenant.name_format_description') }}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label
+                            class="flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all duration-200"
+                            :class="form.name_format === 'first_last'
+                                ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                                : 'border-gray-200 dark:border-gray-700 hover:border-primary/50'"
+                        >
+                            <input
+                                type="radio"
+                                v-model="form.name_format"
+                                value="first_last"
+                                class="form-radio text-primary mt-0.5"
+                            />
+                            <div>
+                                <div class="font-medium text-sm text-gray-900 dark:text-white">{{ $t('tenant.name_format_first_last') }}</div>
+                                <div
+                                    v-if="form.name_format === 'first_last'"
+                                    class="mt-2 text-xs text-primary font-semibold flex items-center gap-1"
+                                >
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    {{ $t('tenant.name_format_preview') }}
+                                </div>
+                            </div>
+                        </label>
+                        <label
+                            class="flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all duration-200"
+                            :class="form.name_format === 'last_first'
+                                ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                                : 'border-gray-200 dark:border-gray-700 hover:border-primary/50'"
+                        >
+                            <input
+                                type="radio"
+                                v-model="form.name_format"
+                                value="last_first"
+                                class="form-radio text-primary mt-0.5"
+                            />
+                            <div>
+                                <div class="font-medium text-sm text-gray-900 dark:text-white">{{ $t('tenant.name_format_last_first') }}</div>
+                                <div
+                                    v-if="form.name_format === 'last_first'"
+                                    class="mt-2 text-xs text-primary font-semibold flex items-center gap-1"
+                                >
+                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    {{ $t('tenant.name_format_preview') }}
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
                 <!-- Show Theme Customizer -->
                 <div>
                     <label class="block text-sm font-medium mb-2">{{ $t('tenant.show_customizer') }}</label>
@@ -134,6 +192,7 @@ const form = reactive({
     timezone: 'America/Toronto',
     date_format: 'Y-m-d',
     language: 'es',
+    name_format: 'first_last' as 'first_last' | 'last_first',
     show_customizer: true,
 });
 
@@ -147,6 +206,7 @@ const loadData = async () => {
             form.timezone = tenantStore.tenant.preferences?.timezone ?? 'America/Toronto';
             form.date_format = tenantStore.tenant.preferences?.date_format ?? 'Y-m-d';
             form.language = tenantStore.tenant.preferences?.language ?? 'es';
+            form.name_format = (tenantStore.tenant.preferences?.name_format ?? 'first_last') as 'first_last' | 'last_first';
             form.show_customizer = tenantStore.tenant.theme?.show_customizer !== false;
         }
     } catch (error) {
@@ -166,6 +226,7 @@ const saveSettings = async () => {
             timezone: form.timezone,
             date_format: form.date_format,
             language: form.language,
+            name_format: form.name_format,
         });
 
         // Save show_customizer (theme setting)

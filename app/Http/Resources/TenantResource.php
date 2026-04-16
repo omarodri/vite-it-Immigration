@@ -43,6 +43,7 @@ class TenantResource extends JsonResource
                 'timezone' => $settings['timezone'] ?? 'America/Toronto',
                 'date_format' => $settings['date_format'] ?? 'Y-m-d',
                 'language' => $settings['language'] ?? 'es',
+                'name_format' => $settings['name_format'] ?? 'first_last',
             ],
 
             // Theme

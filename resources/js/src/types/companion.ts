@@ -13,7 +13,9 @@ export interface Companion {
     tenant_id: number;
     first_name: string;
     last_name: string;
-    full_name?: string;
+    full_name: string;
+    sort_name: string;
+    initials: string;
     relationship: RelationshipType;
     relationship_other: string | null;
     relationship_label?: string;

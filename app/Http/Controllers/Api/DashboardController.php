@@ -76,7 +76,7 @@ class DashboardController extends Controller
 
             if ($recentCaseIds->isNotEmpty()) {
                 $recentCases = ImmigrationCase::with([
-                        'client:id,first_name,last_name',
+                        'client:id,tenant_id,first_name,last_name',
                         'caseType:id,name,code',
                         'importantDates' => fn ($q) => $q
                             ->whereNotNull('due_date')

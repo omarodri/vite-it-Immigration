@@ -18,13 +18,13 @@
         <div
             class="w-10 h-10 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-semibold"
         >
-            {{ getInitials(companion.first_name, companion.last_name) }}
+            {{ companion.initials || getInitials(companion.first_name, companion.last_name) }}
         </div>
 
         <!-- Info -->
         <div class="flex-1 min-w-0">
             <p class="font-medium text-gray-900 dark:text-white">
-                {{ companion.full_name || `${companion.first_name} ${companion.last_name}` }}
+                {{ companion.full_name }}
             </p>
             <div class="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
                 <span class="inline-flex items-center gap-1">

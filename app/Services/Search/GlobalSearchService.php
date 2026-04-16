@@ -39,13 +39,13 @@ class GlobalSearchService
                           ->orWhere('email', 'LIKE', "%{$query}%");
                     })
                     ->limit($limit)
-                    ->get(['id', 'first_name', 'last_name', 'email', 'status']);
+                    ->get(['id', 'tenant_id', 'first_name', 'last_name', 'email', 'status']);
             });
 
             $results['clients'] = $clients->map(fn ($c) => new SearchResultDTO(
                 id: $c->id,
                 type: 'client',
-                label: "{$c->first_name} {$c->last_name}",
+                label: $c->full_name,
                 description: "{$c->email} · {$c->status}",
                 route: "/clients/{$c->id}",
             ))->map(fn (SearchResultDTO $dto) => $dto->toArray())->values()->all();
@@ -87,13 +87,13 @@ class GlobalSearchService
                           ->orWhere('last_name', 'LIKE', "%{$query}%");
                     })
                     ->limit($limit)
-                    ->get(['id', 'first_name', 'last_name', 'relationship', 'client_id']);
+                    ->get(['id', 'tenant_id', 'first_name', 'last_name', 'relationship', 'client_id']);
             });
 
             $results['companions'] = $companions->map(fn ($c) => new SearchResultDTO(
                 id: $c->id,
                 type: 'companion',
-                label: "{$c->first_name} {$c->last_name}",
+                label: $c->full_name,
                 description: (string) $c->relationship,
                 route: "/clients/{$c->client_id}",
             ))->map(fn (SearchResultDTO $dto) => $dto->toArray())->values()->all();
@@ -158,14 +158,14 @@ class GlobalSearchService
                           ->orWhere('email', 'LIKE', "%{$query}%");
                     })
                     ->limit($limit)
-                    ->get(['id', 'first_name', 'last_name']);
+                    ->get(['id', 'tenant_id', 'first_name', 'last_name']);
             });
 
             foreach ($trashedClients as $c) {
                 $trashResults->push(new SearchResultDTO(
                     id: $c->id,
                     type: 'trash',
-                    label: "{$c->first_name} {$c->last_name}",
+                    label: $c->full_name,
                     description: 'En papelera',
                     route: '/trash',
                 ));
@@ -200,14 +200,14 @@ class GlobalSearchService
                           ->orWhere('last_name', 'LIKE', "%{$query}%");
                     })
                     ->limit($limit)
-                    ->get(['id', 'first_name', 'last_name']);
+                    ->get(['id', 'tenant_id', 'first_name', 'last_name']);
             });
 
             foreach ($trashedCompanions as $c) {
                 $trashResults->push(new SearchResultDTO(
                     id: $c->id,
                     type: 'trash',
-                    label: "{$c->first_name} {$c->last_name}",
+                    label: $c->full_name,
                     description: 'En papelera',
                     route: '/trash',
                 ));

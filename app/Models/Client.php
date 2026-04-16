@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -55,6 +56,8 @@ class Client extends Model
         'status',
         'is_primary_applicant',
     ];
+
+    protected $appends = ['full_name', 'sort_name', 'initials'];
 
     protected $casts = [
         'date_of_birth' => 'date',
@@ -106,11 +109,35 @@ class Client extends Model
     // }
 
     /**
-     * Get the client's full name.
+     * Get the client's full name, respecting the tenant's name format preference.
      */
     public function getFullNameAttribute(): string
     {
-        return "{$this->first_name} {$this->last_name}";
+        $format = $this->getNameFormat();
+
+        return $format === 'last_first'
+            ? "{$this->last_name}, {$this->first_name}"
+            : "{$this->first_name} {$this->last_name}";
+    }
+
+    /**
+     * Get the client's name in "Last, First" format (always, for sorting).
+     */
+    public function getSortNameAttribute(): string
+    {
+        return "{$this->last_name}, {$this->first_name}";
+    }
+
+    /**
+     * Resolve the tenant's name format preference (cached).
+     */
+    protected function getNameFormat(): string
+    {
+        return Cache::remember(
+            "tenant:{$this->tenant_id}:name_format",
+            300,
+            fn () => optional(Tenant::find($this->tenant_id))->getSetting('name_format', 'first_last') ?? 'first_last'
+        );
     }
 
     /**

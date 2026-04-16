@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Tenant;
+use Illuminate\Support\Facades\Cache;
 
 class TenantService
 {
@@ -23,6 +24,7 @@ class TenantService
             'timezone' => $data['timezone'] ?? $settings['timezone'] ?? 'America/Toronto',
             'date_format' => $data['date_format'] ?? $settings['date_format'] ?? 'Y-m-d',
             'language' => $data['language'] ?? $settings['language'] ?? 'es',
+            'name_format' => $data['name_format'] ?? $settings['name_format'] ?? 'first_last',
         ]);
 
         $tenant->settings = $settings;
@@ -33,6 +35,9 @@ class TenantService
         }
 
         $tenant->save();
+
+        // Invalidate name format cache so accessors pick up the new value immediately
+        Cache::forget("tenant:{$tenant->id}:name_format");
 
         return $tenant->fresh();
     }

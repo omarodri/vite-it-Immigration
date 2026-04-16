@@ -133,7 +133,7 @@ async function confirmDeleteCompanion(id: number) {
 
     const confirmed = await confirmDialog({
         title: t('companions.confirm_delete'),
-        text: t('companions.delete_warning', { name: `${companion.first_name} ${companion.last_name}` }),
+        text: t('companions.delete_warning', { name: companion.full_name }),
         icon: 'warning',
         confirmButtonText: t('companions.yes_delete'),
         cancelButtonText: t('companions.cancel'),

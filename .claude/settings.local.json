@@ -65,7 +65,8 @@
       "Bash(sed -i '' 's/\"\"sidebar.integrations\"\": \"\"Integrations\"\",/\"\"sidebar.integrations\"\": \"\"Integrations\"\",\\\\n    \"\"sidebar.backups\"\": \"\"Database Backups\"\",/' /Users/omar/Herd/vite-it-Immigration/resources/js/src/locales/en.json)",
       "Bash(sed -i '' 's/\"\"sidebar.integrations\"\": \"\"Integraciones\"\",/\"\"sidebar.integrations\"\": \"\"Integraciones\"\",\\\\n    \"\"sidebar.backups\"\": \"\"Respaldos BD\"\",/' /Users/omar/Herd/vite-it-Immigration/resources/js/src/locales/es.json)",
       "Bash(sed -i '' 's/\"\"sidebar.integrations\"\": \"\"Intégrations\"\",/\"\"sidebar.integrations\"\": \"\"Intégrations\"\",\\\\n    \"\"sidebar.backups\"\": \"\"Sauvegardes BD\"\",/' /Users/omar/Herd/vite-it-Immigration/resources/js/src/locales/fr.json)",
-      "Bash(node_modules/.bin/vite build:*)"
+      "Bash(node_modules/.bin/vite build:*)",
+      "Bash(composer --version)"
     ]
   }
 }

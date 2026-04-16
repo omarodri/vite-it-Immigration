@@ -5,14 +5,14 @@
             <div
                 class="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold text-lg"
             >
-                {{ getInitials(client.first_name, client.last_name) }}
+                {{ client.initials || getInitials(client.first_name, client.last_name) }}
             </div>
 
             <!-- Info -->
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
                     <h4 class="font-semibold text-gray-900 dark:text-white truncate">
-                        {{ client.full_name || `${client.first_name} ${client.last_name}` }}
+                        {{ client.full_name }}
                     </h4>
                     <span
                         :class="[

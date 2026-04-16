@@ -6,7 +6,7 @@
                 <router-link to="/clients" class="text-primary hover:underline">{{ $t('clients.clients') }}</router-link>
             </li>
             <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-                <span>{{ client?.first_name }} {{ client?.last_name }}</span>
+                <span>{{ client?.full_name }}</span>
             </li>
         </ul>
 
@@ -30,11 +30,11 @@
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div class="flex items-center gap-4">
                         <div class="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold" :class="getStatusAvatarClass(client.status)">
-                            {{ getInitials(client.first_name, client.last_name) }}
+                            {{ client.initials || getInitials(client.first_name, client.last_name) }}
                         </div>
                         <div>
                             <h4 class="text-xl font-bold dark:text-white-light">
-                                {{ client.first_name }} {{ client.last_name }}
+                                {{ client.full_name }}
                             </h4>
                             <p class="text-gray-500">{{ client.profession || $t('clients.no_profession') }}</p>
                             <div class="flex items-center gap-2 mt-2">
@@ -315,10 +315,10 @@
                                 <div class="flex items-start justify-between">
                                     <div class="flex items-center gap-3">
                                         <div class="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold bg-primary/10 text-primary">
-                                            {{ getInitials(companion.first_name, companion.last_name) }}
+                                            {{ companion.initials || getInitials(companion.first_name, companion.last_name) }}
                                         </div>
                                         <div>
-                                            <h6 class="font-semibold">{{ companion.first_name }} {{ companion.last_name }}</h6>
+                                            <h6 class="font-semibold">{{ companion.full_name }}</h6>
                                             <p class="text-sm text-gray-500">{{ companion.relationship_label || formatRelationship(companion.relationship) }}</p>
                                             <p v-if="companion.age" class="text-xs text-gray-400">{{ companion.age }} {{ $t('companions.years_old') }}</p>
                                             <p v-if="companion.email" class="text-xs text-gray-400">{{ companion.email }}</p>
@@ -359,7 +359,7 @@
                             <h5 class="text-lg font-semibold">{{ $t('clients.assigned_cases') }}</h5>
                             <router-link
                                 v-can="'cases.create'"
-                                :to="`/cases/wizard?client_id=${client.id}&client_name=${encodeURIComponent(client.full_name ?? client.first_name + ' ' + client.last_name)}`"
+                                :to="`/cases/wizard?client_id=${client.id}&client_name=${encodeURIComponent(client.full_name)}`"
                                 class="btn btn-primary btn-sm gap-2"
                             >
                                 <icon-plus class="w-4 h-4" />
@@ -599,7 +599,7 @@ const confirmDeleteCompanion = async (companion: Companion) => {
 
     const confirmed = await confirmDialog({
         title: t('companions.confirm_delete'),
-        text: t('companions.delete_warning', { name: `${companion.first_name} ${companion.last_name}` }),
+        text: t('companions.delete_warning', { name: companion.full_name }),
         icon: 'warning',
         confirmButtonText: t('companions.yes_delete'),
         cancelButtonText: t('companions.cancel'),
@@ -620,7 +620,7 @@ const confirmConvert = async () => {
     if (!client.value) return;
 
     const confirmed = await confirmDialog({
-        title: t('clients.confirm_convert', { name: `${client.value.first_name} ${client.value.last_name}` }),
+        title: t('clients.confirm_convert', { name: client.value.full_name }),
         text: t('clients.convert_description'),
         icon: 'info',
         confirmButtonText: t('clients.yes_convert'),
@@ -657,7 +657,7 @@ const confirmDeleteClient = async () => {
         : t('clients.delete_warning');
 
     const confirmed = await confirmDialog({
-        title: t('clients.confirm_delete', { name: `${client.value.first_name} ${client.value.last_name}` }),
+        title: t('clients.confirm_delete', { name: client.value.full_name }),
         text: warningText,
         icon: 'warning',
         confirmButtonText: t('clients.yes_delete'),

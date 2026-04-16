@@ -29,14 +29,14 @@
                         <div class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg mt-4">
                             <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                                 <span class="text-lg font-semibold text-primary">
-                                    {{ getInitials(currentCase.client.first_name, currentCase.client.last_name) }}
+                                    {{ currentCase.client.initials || getInitials(currentCase.client.first_name, currentCase.client.last_name) }}
                                 </span>
                             </div>
                             <div class="flex-1">
                                 <div class="font-semibold">
-                                    <router-link :to="`/clients/${currentCase.client.id}`" 
+                                    <router-link :to="`/clients/${currentCase.client.id}`"
                                     class="text-primary font-semibold hover:underline text-xl">
-                                    {{ currentCase.client.full_name || `${currentCase.client.first_name} ${currentCase.client.last_name}` }}
+                                    {{ currentCase.client.full_name }}
                                     </router-link>
                                 </div>
                                 <div class="text-sm text-gray-500">{{ currentCase.client.email }}</div>
@@ -238,11 +238,11 @@
                                 <div class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                                     <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                                         <span class="text-lg font-semibold text-primary">
-                                            {{ getInitials(currentCase.client.first_name, currentCase.client.last_name) }}
+                                            {{ currentCase.client.initials || getInitials(currentCase.client.first_name, currentCase.client.last_name) }}
                                         </span>
                                     </div>
                                     <div class="flex-1">
-                                        <div class="font-semibold">{{ currentCase.client.full_name || `${currentCase.client.first_name} ${currentCase.client.last_name}` }}</div>
+                                        <div class="font-semibold">{{ currentCase.client.full_name }}</div>
                                         <div class="text-sm text-gray-500">{{ currentCase.client.email }}</div>
                                         <div v-if="currentCase.client.phone" class="text-sm text-gray-500">{{ currentCase.client.phone }}</div>
                                     </div>
@@ -278,7 +278,7 @@
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <div class="font-semibold truncate">
-                                                {{ companion.full_name || `${companion.first_name} ${companion.last_name}` }}
+                                                {{ companion.full_name }}
                                             </div>
                                             <div class="flex flex-wrap items-center gap-2 mt-1">
                                                 <span class="badge badge-outline-secondary text-xs">

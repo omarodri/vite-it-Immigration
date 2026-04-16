@@ -52,16 +52,26 @@
 
         <div class="panel">
             <!-- Header -->
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
+            <div class="flex flex-wrap items-center gap-4 mb-5">
                 <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.case_management') }}</h5>
-                <router-link
-                    v-can="'cases.create'"
-                    to="/cases/wizard"
-                    class="btn btn-primary gap-2"
-                >
-                    <icon-plus class="w-5 h-5" />
-                    {{ $t('cases.add_case') }}
-                </router-link>
+                <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
+                    <button
+                        v-if="hasActiveFilters"
+                        type="button"
+                        class="btn btn-outline-secondary gap-2"
+                        @click="clearFilters"
+                    >
+                        <icon-x class="w-4 h-4" />
+                        {{ $t('cases.clear_filters') }}
+                    </button>                    <router-link
+                        v-can="'cases.create'"
+                        to="/cases/wizard"
+                        class="btn btn-primary gap-2"
+                    >
+                        <icon-plus class="w-5 h-5" />
+                        {{ $t('cases.add_case') }}
+                    </router-link>
+                </div>
             </div>
 
             <!-- Filters -->
@@ -239,12 +249,12 @@
                             <div v-if="data.value.client" class="flex items-center gap-2">
                                 <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                                     <span class="text-xs font-semibold text-primary">
-                                        {{ getInitials(data.value.client.first_name, data.value.client.last_name) }}
+                                        {{ data.value.client.initials || getInitials(data.value.client.first_name, data.value.client.last_name) }}
                                     </span>
                                 </div>
                                 <div>
                                     <router-link :to="`/clients/${data.value.client.id}`" class="text-primary font-semibold hover:underline">
-                                        {{ data.value.client.full_name || `${data.value.client.first_name} ${data.value.client.last_name}` }}
+                                        {{ data.value.client.full_name }}
                                     </router-link>
                                     <div class="text-xs text-gray-500">{{ data.value.client.email }}</div>
                                 </div>
@@ -406,13 +416,13 @@
                         <div v-if="caseItem.client" class="flex items-center gap-2">
                             <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                                 <span class="text-xs font-semibold text-primary">
-                                    {{ getInitials(caseItem.client.first_name, caseItem.client.last_name) }}
+                                    {{ caseItem.client.initials || getInitials(caseItem.client.first_name, caseItem.client.last_name) }}
                                 </span>
                             </div>
                             <div>
                                 <div class="font-medium text-sm">
                                    <router-link :to="`/clients/${caseItem.client.id}`" class="text-primary font-semibold hover:underline"> 
-                                        {{ caseItem.client.full_name || `${caseItem.client.first_name} ${caseItem.client.last_name}` }} 
+                                        {{ caseItem.client.full_name }}
                                    </router-link>
                                 </div>
                                 <div class="text-xs text-gray-500">{{ caseItem.client.email }}</div>
@@ -496,7 +506,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Vue3Datatable from '@bhplugin/vue3-datatable';
 import { useMeta } from '@/composables/use-meta';
@@ -504,6 +514,7 @@ import { useCaseStore } from '@/stores/case';
 import { useNotification } from '@/composables/useNotification';
 import { useDebounce } from '@/composables/useDebounce';
 import { formatDate } from '@/utils/formatters';
+import { useListPersistence } from '@/composables/useListPersistence';
 import type { ImmigrationCase, CaseStatus, CasePriority, CaseStage, ImportantDate } from '@/types/case';
 import { CASE_STAGE_OPTIONS } from '@/types/case';
 import { useCaseColumnChooser } from '@/composables/useCaseColumnChooser';
@@ -542,6 +553,19 @@ const perPage = ref(10);
 const currentPage = ref(1);
 const sortColumn = ref('priority');
 const sortDirection = ref<'asc' | 'desc'>('asc');
+
+const { restore: restoreFilters, persist: persistFilters, clear: clearPersistedFilters } = useListPersistence('cases', {
+    searchQuery,
+    statusFilter,
+    priorityFilter,
+    stageFilter,
+    caseTypeFilter,
+    sortColumn,
+    sortDirection,
+    currentPage,
+    perPage,
+});
+
 const initialLoading = ref(true);
 
 // Computed
@@ -627,6 +651,7 @@ const applyFilters = () => {
 };
 
 const clearFilters = () => {
+    clearPersistedFilters();
     searchQuery.value = '';
     statusFilter.value = '';
     priorityFilter.value = '';
@@ -676,6 +701,21 @@ const fetchCases = async () => {
             per_page: perPage.value,
             page: currentPage.value,
         });
+        // If restored page has no results but total > 0, reset to page 1
+        if (caseStore.cases.length === 0 && caseStore.totalCases > 0 && currentPage.value > 1) {
+            currentPage.value = 1;
+            await caseStore.fetchCases({
+                search: searchQuery.value || undefined,
+                status: (statusFilter.value as CaseStatus) || undefined,
+                priority: (priorityFilter.value as CasePriority) || undefined,
+                stage: (stageFilter.value as CaseStage) || undefined,
+                case_type_id: caseTypeFilter.value || undefined,
+                sort_by: sortColumn.value,
+                sort_direction: sortDirection.value,
+                per_page: perPage.value,
+                page: 1,
+            });
+        }
     } catch (err) {
         error(t('cases.failed_to_load'));
     }
@@ -715,6 +755,8 @@ onUnmounted(() => {
 // Initialize
 onMounted(async () => {
     document.addEventListener('click', handleClickOutside);
+    restoreFilters();
+    watchEffect(() => persistFilters());
     try {
         await Promise.all([
             caseStore.fetchCaseTypes(),

@@ -27,7 +27,7 @@
                             <select id="client_id" v-model="form.client_id" class="form-select" :class="{ 'border-danger': errors.client_id }" required>
                                 <option value="">{{ $t('cases.select_client') }}</option>
                                 <option v-for="client in clients" :key="client.id" :value="client.id">
-                                    {{ client.first_name }} {{ client.last_name }} - {{ client.email }}
+                                    {{ client.full_name }} - {{ client.email }}
                                 </option>
                             </select>
                             <p v-if="errors.client_id" class="text-danger text-xs mt-1">{{ errors.client_id }}</p>
