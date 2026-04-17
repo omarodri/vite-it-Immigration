@@ -25,4 +25,13 @@ export const PHONE_CODES: PhoneCode[] = [
     { code: '+234', country: 'NG', label: 'Nigeria (+234)' },
     { code: '+212', country: 'MA', label: 'Morocco (+212)' },
     { code: '+213', country: 'DZ', label: 'Algeria (+213)' },
+    { code: '+237', country: 'CM', label: 'Cameroon (+237)' },
+    { code: '+233', country: 'GH', label: 'Ghana (+233)' },
+    { code: '+229', country: 'BJ', label: 'Benin (+229)' },
+    { code: '+225', country: 'CI', label: 'Côte d\'Ivoire (+225)' },
+    { code: '+236', country: 'CF', label: 'Central African Republic (+236)' },
+    { code: '+235', country: 'TD', label: 'Chad (+235)' },
+    { code: '+237', country: 'CM', label: 'Cameroon (+237)' },
+    { code: '+233', country: 'GH', label: 'Ghana (+233)' },
+    { code: '+234', country: 'NG', label: 'Nigeria (+234)' },
 ];
