@@ -307,12 +307,16 @@
                 </div>
             </div>
         </div>
+
+        <!-- Calendar Connections -->
+        <CalendarConnections />
     </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted } from 'vue';
 import { useProfileStore } from '@/stores/profile';
+import CalendarConnections from './profile/CalendarConnections.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useMeta } from '@/composables/use-meta';
 import { formatDate } from '@/utils/formatters';

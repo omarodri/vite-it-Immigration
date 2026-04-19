@@ -28,12 +28,18 @@ class Event extends Model
         'all_day',
         'location',
         'category',
+        'sync_source',
+        'external_id',
+        'last_synced_at',
+        'external_etag',
+        'synced_by_user_id',
     ];
 
     protected $casts = [
-        'start_date' => 'datetime',
-        'end_date'   => 'datetime',
-        'all_day'    => 'boolean',
+        'start_date'     => 'datetime',
+        'end_date'       => 'datetime',
+        'all_day'        => 'boolean',
+        'last_synced_at' => 'datetime',
     ];
 
     public static array $categories = [
@@ -61,6 +67,25 @@ class Event extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function syncedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'synced_by_user_id');
+    }
+
+    public function isExternal(): bool
+    {
+        return $this->sync_source !== null && $this->sync_source !== 'local';
+    }
+
+    public function getSyncSourceLabel(): string
+    {
+        return match ($this->sync_source) {
+            'google'  => 'Google Calendar',
+            'outlook' => 'Microsoft Outlook',
+            default   => 'VITE-IT',
+        };
     }
 
     public function participants(): BelongsToMany

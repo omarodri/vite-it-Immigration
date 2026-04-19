@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\TodoController;
 use App\Http\Controllers\Api\TrashController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\GlobalSearchController;
+use App\Http\Controllers\Api\UserCalendarOAuthController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -233,12 +234,21 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     Route::delete('/tenant/oauth/microsoft', [TenantOAuthController::class, 'removeMicrosoft']);
     Route::delete('/tenant/oauth/google', [TenantOAuthController::class, 'removeGoogle']);
 
-    // User-level OAuth flow routes
+    // User-level OAuth flow routes (storage)
     Route::get('/oauth/{provider}/redirect', [OAuthFlowController::class, 'redirect'])
         ->where('provider', 'microsoft|google');
     Route::get('/oauth/status', [OAuthFlowController::class, 'status']);
     Route::delete('/oauth/{provider}/disconnect', [OAuthFlowController::class, 'disconnect'])
         ->where('provider', 'microsoft|google');
+
+    // User-level Calendar OAuth routes
+    Route::prefix('calendar-oauth')->group(function () {
+        Route::get('/status', [UserCalendarOAuthController::class, 'status']);
+        Route::get('/{provider}/redirect', [UserCalendarOAuthController::class, 'redirect'])
+            ->whereIn('provider', ['google', 'microsoft']);
+        Route::post('/{provider}/disconnect', [UserCalendarOAuthController::class, 'disconnect'])
+            ->whereIn('provider', ['google', 'microsoft']);
+    });
 
     // Trash / Recycle Bin
     Route::prefix('trash')->group(function () {
@@ -281,6 +291,10 @@ Route::post('/admin/backup/run', [AdminBackupController::class, 'runExternal'])
 // OAuth callback route (no auth required - called by OAuth provider redirect)
 Route::middleware('throttle:login')->get('/oauth/{provider}/callback', [OAuthFlowController::class, 'callback'])
     ->where('provider', 'microsoft|google');
+
+// Calendar OAuth callback (no auth - called by OAuth provider)
+Route::middleware('throttle:login')->get('/calendar-oauth/{provider}/callback', [UserCalendarOAuthController::class, 'callback'])
+    ->whereIn('provider', ['google', 'microsoft']);
 
 // Public tenant branding route (no auth required)
 Route::get('/tenant/{slug}/branding', [TenantController::class, 'branding']);

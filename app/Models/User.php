@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -103,6 +104,19 @@ class User extends Authenticatable implements MustVerifyEmail
     public function belongsToTenant(int $tenantId): bool
     {
         return $this->tenant_id === $tenantId;
+    }
+
+    public function calendarSyncStatus(): HasMany
+    {
+        return $this->hasMany(CalendarSyncStatus::class);
+    }
+
+    public function hasCalendarConnected(string $provider): bool
+    {
+        return $this->calendarSyncStatus()
+            ->where('provider', $provider)
+            ->where('status', '!=', 'error')
+            ->exists();
     }
 
     /**

@@ -18,6 +18,22 @@
                                 <span class="text-sm">{{ $t(cat.i18nKey) }}</span>
                             </div>
                         </div>
+                        <!-- Leyenda de fuentes de sincronizacion -->
+                        <div class="flex items-center mt-1 flex-wrap sm:justify-start justify-center gap-3 text-xs text-gray-500">
+                            <span>{{ $t('calendar.source') }}:</span>
+                            <span class="flex items-center gap-1">
+                                <span class="font-bold text-gray-600 dark:text-gray-400">V</span>
+                                <span>{{ $t('calendar.source_local') }}</span>
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <span class="font-bold text-danger">G</span>
+                                <span>{{ $t('calendar.source_google') }}</span>
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <span class="font-bold text-info">O</span>
+                                <span>{{ $t('calendar.source_outlook') }}</span>
+                            </span>
+                        </div>
                         <!-- Filtro "Asignado a" -->
                         <div class="mt-3">
                             <select
@@ -46,6 +62,16 @@
                     <FullCalendar ref="calendarRef" :options="calendarOptions">
                         <template v-slot:eventContent="arg">
                             <div class="fc-event-main-frame flex items-center px-1 py-0.5 text-white">
+                                <span
+                                    v-if="arg.event.extendedProps.sync_source === 'google'"
+                                    class="mr-0.5 text-[10px] font-bold opacity-80 shrink-0"
+                                    :title="$t('calendar.source_google')"
+                                >G</span>
+                                <span
+                                    v-else-if="arg.event.extendedProps.sync_source === 'outlook'"
+                                    class="mr-0.5 text-[10px] font-bold opacity-80 shrink-0"
+                                    :title="$t('calendar.source_outlook')"
+                                >O</span>
                                 <div class="fc-event-time font-semibold px-0.5">{{ arg.timeText }}</div>
                                 <div class="fc-event-title-container">
                                     <div class="fc-event-title fc-sticky !font-medium px-0.5">{{ arg.event.title }}</div>
@@ -137,6 +163,10 @@ const calendarOptions = computed(() => ({
     select:      (e: any) => editDate(e),
     eventDrop:   (info: any) => handleReschedule(info),
     eventResize: (info: any) => handleReschedule(info),
+    eventAllow:  (_dropInfo: any, draggedEvent: any) => {
+        const source = draggedEvent.extendedProps?.sync_source;
+        return !source || source === 'local';
+    },
 }));
 
 // ─── API ──────────────────────────────────────────────────────────────────────

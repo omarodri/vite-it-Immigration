@@ -4,10 +4,12 @@ namespace App\Providers;
 
 use App\Models\Client;
 use App\Models\Companion;
+use App\Models\Event;
 use App\Models\ImmigrationCase;
 use App\Observers\CaseObserver;
 use App\Observers\ClientObserver;
 use App\Observers\CompanionObserver;
+use App\Observers\EventSyncObserver;
 use App\Observers\ImmigrationCaseObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -31,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Client::observe(ClientObserver::class);
         Companion::observe(CompanionObserver::class);
+        Event::observe(EventSyncObserver::class);
         ImmigrationCase::observe(CaseObserver::class);
         ImmigrationCase::observe(ImmigrationCaseObserver::class);
 

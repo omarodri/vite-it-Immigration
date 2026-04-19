@@ -220,6 +220,75 @@ class OAuthTokenService
     }
 
     /**
+     * Store or update OAuth calendar tokens at user level (purpose='calendar').
+     */
+    public function storeUserCalendarToken(User $user, string $provider, array $tokenData): OauthToken
+    {
+        return OauthToken::updateOrCreate(
+            [
+                'user_id'  => $user->id,
+                'provider' => $provider,
+                'purpose'  => 'calendar',
+            ],
+            [
+                'tenant_id'     => $user->tenant_id,
+                'access_token'  => $tokenData['access_token'],
+                'refresh_token' => $tokenData['refresh_token'] ?? null,
+                'expires_at'    => now()->addSeconds((int) ($tokenData['expires_in'] ?? 3600)),
+                'scopes'        => $tokenData['scopes'] ?? null,
+            ]
+        );
+    }
+
+    /**
+     * Get a valid calendar access token for a user and provider.
+     */
+    public function getValidUserCalendarToken(User $user, string $provider): ?string
+    {
+        $token = OauthToken::where('user_id', $user->id)
+            ->where('provider', $provider)
+            ->where('purpose', 'calendar')
+            ->first();
+
+        if (!$token) {
+            return null;
+        }
+
+        if ($token->isExpiringSoon()) {
+            $token = $this->refreshToken($token);
+            if (!$token) {
+                return null;
+            }
+        }
+
+        return $token->access_token;
+    }
+
+    /**
+     * Revoke a user's calendar OAuth token for a provider.
+     */
+    public function revokeUserCalendarToken(User $user, string $provider): bool
+    {
+        return OauthToken::where('user_id', $user->id)
+            ->where('provider', $provider)
+            ->where('purpose', 'calendar')
+            ->delete() > 0;
+    }
+
+    /**
+     * Check if a user has a valid calendar token for a provider.
+     */
+    public function hasUserCalendarToken(User $user, string $provider): bool
+    {
+        $token = OauthToken::where('user_id', $user->id)
+            ->where('provider', $provider)
+            ->where('purpose', 'calendar')
+            ->first();
+
+        return $token !== null && !$token->isExpired();
+    }
+
+    /**
      * Get credentials for a provider using OAuthCredentialService.
      */
     private function getCredentialsForProvider(string $provider, $tenant): ?array
@@ -236,14 +305,19 @@ class OAuthTokenService
      */
     private function refreshMicrosoftToken(OauthToken $token, array $credentials): ?array
     {
+        $scope = match ($token->purpose ?? 'storage') {
+            'calendar' => 'Calendars.ReadWrite offline_access User.Read',
+            default    => 'Files.ReadWrite.All Sites.ReadWrite.All offline_access',
+        };
+
         $response = Http::timeout(30)->asForm()->post(
             'https://login.microsoftonline.com/common/oauth2/v2.0/token',
             [
-                'grant_type' => 'refresh_token',
-                'client_id' => $credentials['client_id'],
+                'grant_type'    => 'refresh_token',
+                'client_id'     => $credentials['client_id'],
                 'client_secret' => $credentials['client_secret'],
                 'refresh_token' => $token->refresh_token,
-                'scope' => 'Files.ReadWrite.All Sites.ReadWrite.All offline_access',
+                'scope'         => $scope,
             ]
         );
 

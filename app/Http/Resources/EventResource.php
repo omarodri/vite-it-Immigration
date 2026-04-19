@@ -41,6 +41,9 @@ class EventResource extends JsonResource
                     fn () => $this->immigrationCase?->case_number
                 ),
                 'client_name'  => $this->client_name_snapshot,
+                'sync_source'  => $this->sync_source ?? 'local',
+                'external_id'  => $this->external_id,
+                'is_external'  => $this->resource->isExternal(),
             ],
         ];
     }

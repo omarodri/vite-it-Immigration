@@ -20,3 +20,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('trash:purge --days=30')->daily()->at('03:00');
+Schedule::job(new \App\Jobs\PullCalendarEventsJob)->everyFifteenMinutes();

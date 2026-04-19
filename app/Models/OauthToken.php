@@ -16,6 +16,7 @@ class OauthToken extends Model
         'tenant_id',
         'user_id',
         'provider',
+        'purpose',
         'access_token',
         'refresh_token',
         'expires_at',
