@@ -27,16 +27,21 @@ class UserCalendarOAuthController extends Controller
 
     /**
      * Generate and return the OAuth authorization URL for calendar access.
+     *
+     * For Microsoft, calendar sync runs via application permissions (no per-user
+     * OAuth needed): we auto-create the CalendarSyncStatus record and return
+     * auto_connected=true so the frontend skips the redirect.
+     * For Google, the standard per-user OAuth redirect is returned.
      */
     public function redirect(string $provider): JsonResponse
     {
-        $user = Auth::user();
+        $user   = Auth::user();
         $tenant = $user->tenant;
 
         $credentials = match ($provider) {
             'microsoft' => $this->credentialService->getMicrosoftCredentials($tenant),
-            'google' => $this->credentialService->getGoogleCredentials($tenant),
-            default => null,
+            'google'    => $this->credentialService->getGoogleCredentials($tenant),
+            default     => null,
         };
 
         if (!$credentials) {
@@ -45,16 +50,21 @@ class UserCalendarOAuthController extends Controller
             ], 422);
         }
 
+        // Microsoft uses application permissions — no per-user OAuth flow needed.
+        if ($provider === 'microsoft') {
+            CalendarSyncStatus::updateOrCreate(
+                ['user_id' => $user->id, 'provider' => 'microsoft'],
+                ['tenant_id' => $user->tenant_id, 'status' => 'active', 'error_count' => 0, 'last_error' => null]
+            );
+
+            return response()->json(['auto_connected' => true]);
+        }
+
         $state = Str::random(40);
         Cache::put("calendar_oauth_state:{$state}", $user->id, now()->addMinutes(10));
 
-        $authUrl = match ($provider) {
-            'microsoft' => $this->buildMicrosoftAuthUrl($credentials, $state),
-            'google' => $this->buildGoogleAuthUrl($credentials, $state),
-        };
-
         return response()->json([
-            'url' => $authUrl,
+            'url' => $this->buildGoogleAuthUrl($credentials, $state),
         ]);
     }
 
@@ -143,15 +153,17 @@ class UserCalendarOAuthController extends Controller
 
     /**
      * Return the calendar OAuth connection status for the current user.
+     *
+     * Microsoft connection state is derived from CalendarSyncStatus (no user token needed).
+     * Google connection state is derived from the per-user OAuth token.
      */
     public function status(): JsonResponse
     {
-        $user = Auth::user();
+        $user   = Auth::user();
         $tenant = $user->tenant;
 
-        $microsoftToken = OauthToken::where('user_id', $user->id)
+        $microsoftSync = CalendarSyncStatus::where('user_id', $user->id)
             ->where('provider', 'microsoft')
-            ->where('purpose', 'calendar')
             ->first();
 
         $googleToken = OauthToken::where('user_id', $user->id)
@@ -159,55 +171,68 @@ class UserCalendarOAuthController extends Controller
             ->where('purpose', 'calendar')
             ->first();
 
-        $microsoftSync = CalendarSyncStatus::where('user_id', $user->id)
-            ->where('provider', 'microsoft')
-            ->first();
-
         $googleSync = CalendarSyncStatus::where('user_id', $user->id)
             ->where('provider', 'google')
             ->first();
 
+        $msCredentials = $this->credentialService->getMicrosoftCredentials($tenant);
+
         return response()->json([
             'microsoft' => [
-                'credentials_configured' => $this->credentialService->getMicrosoftCredentials($tenant) !== null,
-                'connected' => $microsoftToken !== null,
-                'expires_at' => $microsoftToken?->expires_at?->toIso8601String(),
-                'is_expired' => $microsoftToken?->isExpired() ?? false,
-                'sync_status' => $microsoftSync?->status,
-                'last_pull_at' => $microsoftSync?->last_pull_at?->toIso8601String(),
-                'last_push_at' => $microsoftSync?->last_push_at?->toIso8601String(),
-                'last_error' => $microsoftSync?->last_error,
+                'credentials_configured' => $msCredentials !== null,
+                'connected'              => $microsoftSync?->status === 'active',
+                'sync_status'            => $microsoftSync?->status,
+                'last_pull_at'           => $microsoftSync?->last_pull_at?->toIso8601String(),
+                'last_push_at'           => $microsoftSync?->last_push_at?->toIso8601String(),
+                'last_error'             => $microsoftSync?->last_error,
             ],
             'google' => [
                 'credentials_configured' => $this->credentialService->getGoogleCredentials($tenant) !== null,
-                'connected' => $googleToken !== null,
-                'expires_at' => $googleToken?->expires_at?->toIso8601String(),
-                'is_expired' => $googleToken?->isExpired() ?? false,
-                'sync_status' => $googleSync?->status,
-                'last_pull_at' => $googleSync?->last_pull_at?->toIso8601String(),
-                'last_push_at' => $googleSync?->last_push_at?->toIso8601String(),
-                'last_error' => $googleSync?->last_error,
+                'connected'              => $googleToken !== null,
+                'expires_at'             => $googleToken?->expires_at?->toIso8601String(),
+                'is_expired'             => $googleToken?->isExpired() ?? false,
+                'sync_status'            => $googleSync?->status,
+                'last_pull_at'           => $googleSync?->last_pull_at?->toIso8601String(),
+                'last_push_at'           => $googleSync?->last_push_at?->toIso8601String(),
+                'last_error'             => $googleSync?->last_error,
             ],
         ]);
     }
 
     /**
-     * Disconnect calendar OAuth for a provider.
+     * Disconnect calendar for a provider.
+     *
+     * Microsoft: sets CalendarSyncStatus to 'paused' (no user token to revoke).
+     *            The auto-provisioner in PullCalendarEventsJob won't recreate it
+     *            because the record still exists.
+     * Google:    revokes the per-user OAuth token and deletes the sync record.
      */
     public function disconnect(string $provider): JsonResponse
     {
         $user = Auth::user();
 
-        $tokenRevoked = $this->tokenService->revokeUserCalendarToken($user, $provider);
+        if ($provider === 'microsoft') {
+            $updated = CalendarSyncStatus::where('user_id', $user->id)
+                ->where('provider', 'microsoft')
+                ->update(['status' => 'paused']);
 
-        CalendarSyncStatus::where('user_id', $user->id)
-            ->where('provider', $provider)
-            ->delete();
+            if (!$updated) {
+                return response()->json([
+                    'message' => 'No Microsoft calendar connection found to disconnect.',
+                ], 404);
+            }
+        } else {
+            $tokenRevoked = $this->tokenService->revokeUserCalendarToken($user, $provider);
 
-        if (!$tokenRevoked) {
-            return response()->json([
-                'message' => "No {$provider} calendar connection found to disconnect.",
-            ], 404);
+            CalendarSyncStatus::where('user_id', $user->id)
+                ->where('provider', $provider)
+                ->delete();
+
+            if (!$tokenRevoked) {
+                return response()->json([
+                    'message' => "No {$provider} calendar connection found to disconnect.",
+                ], 404);
+            }
         }
 
         return response()->json([

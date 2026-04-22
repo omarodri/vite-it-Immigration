@@ -33,7 +33,7 @@ class TwoFactorService
     public function generateQrCodeSvg(User $user, string $secret): string
     {
         $qrCodeUrl = $this->google2fa->getQRCodeUrl(
-            'VristoPOC',
+            config('app.name'),
             $user->email,
             $secret
         );

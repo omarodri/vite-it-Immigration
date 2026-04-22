@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**VITE-IT Immigration** is a full-stack sales admin dashboard combining Laravel 12 backend with Vue 3.5 + TypeScript frontend. It follows a **Single Page Application (SPA)** architecture where Laravel serves the initial HTML and acts as an API server, while Vue handles all client-side routing and UI rendering.
+**VITE-IT Immigration** is a **SaaS multi-tenant system** for immigration case management. It allows law firms to manage clients, companions, immigration cases, documents (with cloud storage), a shared event calendar (with bidirectional Google/Outlook sync), a Scrum board, to-do lists, and expiration alerts. It uses a **Single Page Application (SPA)** architecture: Laravel 12 serves the initial HTML and acts as an API server; Vue 3.5 handles all client-side routing and UI.
 
 ## Common Commands
 
@@ -14,9 +14,13 @@ npm run dev              # Start Vite dev server (hot reload)
 npm run build            # Production build
 php artisan serve        # Start Laravel dev server (if not using Herd)
 
+# Queue & Scheduler (required for calendar sync, backups, folder sync)
+php artisan queue:work   # Process queued jobs
+php artisan schedule:run # Run scheduled tasks (cron: * * * * *)
+
 # Database
 php artisan migrate      # Run database migrations
-php artisan migrate:fresh --seed  # Reset and seed database
+php artisan migrate:fresh --seed  # Reset and seed database (dev only)
 
 # Testing
 ./vendor/bin/phpunit                    # Run all PHP tests
@@ -27,7 +31,6 @@ php artisan migrate:fresh --seed  # Reset and seed database
 # Cache & Optimization
 php artisan config:cache    # Cache configuration
 php artisan route:cache     # Cache routes
-php artisan view:cache      # Cache views
 php artisan optimize        # Optimize for production
 ```
 
@@ -38,139 +41,314 @@ php artisan optimize        # Optimize for production
 Browser Request (any URL)
     │
     ▼
-routes/web.php
-    Route::get('/{any}', [AppController::class, 'index'])->where('any', '.*')
+routes/web.php  →  AppController::index()  →  resources/views/app.blade.php
     │
     ▼
-AppController::index()
-    return view('app')
-    │
-    ▼
-resources/views/app.blade.php
-    @vite(['resources/js/src/main.ts'])
-    <div id="app"></div>
-    │
-    ▼
-Vue 3 SPA mounts on #app
-    Vue Router handles all navigation (no page reloads)
+Vue 3 SPA mounts on #app  →  Vue Router handles all navigation
+
+API calls:
+Browser  →  /api/*  →  TenantMiddleware (resolves tenant)
+                    →  auth:sanctum (Sanctum SPA cookie auth)
+                    →  Controller  →  Service  →  Model (with TenantScope)
+                                              →  Resource (JSON response)
 ```
 
-### Architectural Pattern
-- **Backend (Laravel):** Serves static files, provides API endpoints, handles authentication
-- **Frontend (Vue SPA):** Manages all UI, routing, and state
-- **Communication:** REST API (future), Laravel Sanctum for auth tokens
+### Backend Layer Architecture
+```
+HTTP Layer
+  Controllers (app/Http/Controllers/Api/) — 31 controllers
+      ↕ Resources (app/Http/Resources/) — 19 resources, map models to JSON
+  Middleware:
+      TenantMiddleware    — resolves active tenant from request
+      ValidateBackupApiKey — protects external backup endpoint
+      SecurityHeaders     — CSP / security response headers
+
+Domain / Service Layer (app/Services/)
+  Auth/     — AuthService, PasswordResetService
+  Case/     — CaseService, CaseTaskService, CaseInvoiceService
+  Client/   — ClientService
+  Companion/ — CompanionService
+  Document/ — DocumentService, FolderService, CloudDocumentSyncService,
+               CaseFolderSyncService, DocumentAuditService, StorageQuotaService
+  Storage/  — StorageProviderFactory, LocalStorageProvider, OneDriveProvider,
+               GoogleDriveProvider, SharePointProvider, MicrosoftGraphBaseProvider,
+               ResilientStorageProvider (circuit breaker), CircuitBreaker
+  Calendar/ — CalendarSyncService, GoogleCalendarService, MicrosoftCalendarService,
+               CalendarProviderInterface
+  Backup/   — TenantBackupService
+  Search/   — GlobalSearchService
+  Trash/    — TrashService
+  User/     — UserService
+  Root:     — TenantService, OAuthTokenService, OAuthCredentialService,
+               LegalDocumentService, TwoFactorService
+
+Data Layer (app/Models/) — 23 models
+  Core:    User, Tenant, UserProfile
+  Domain:  Client, Companion, ImmigrationCase, CaseTask, CaseInvoice,
+           CaseType, CaseImportantDate, Document, DocumentFolder,
+           LegalDocument, Event, CalendarSyncStatus
+  System:  OauthToken, Activity, BackupLog, LoginAttempt, InvitationCode
+  Kanban:  ScrumColumn, ScrumTask, Todo
+
+Cross-cutting
+  Observers (app/Observers/) — 5 observers
+      ClientObserver, CompanionObserver, CaseObserver — cascade soft-delete
+      ImmigrationCaseObserver — cascade soft-delete for case children
+      EventSyncObserver       — triggers SyncEventToCalendarJob on save/delete
+  Jobs (app/Jobs/) — 5 jobs
+      SyncEventToCalendarJob  — push local event to Google/Outlook
+      PullCalendarEventsJob   — pull events from all connected calendars (every 15 min)
+      SyncCaseFolderStructure — sync folder tree to cloud storage
+      GenerateTenantBackupJob — backup tenant data
+      ScanDocumentForVirus    — antivirus scan on upload
+  Scheduler (routes/console.php):
+      trash:purge --days=30   → daily at 03:00
+      PullCalendarEventsJob   → every 15 minutes
+```
+
+### Frontend Layer Architecture
+```
+State (resources/js/src/stores/) — 15 Pinia stores
+  useAppStore       — theme, locale, layout, sidebar, RTL
+  useAuthStore      — login/logout flow
+  useUserStore      — authenticated user + loaded permissions
+  usePermissionStore — flat map { 'cases.create': true, ... }
+  useCaseStore, useClientStore, useCompanionStore
+  useDocumentStore, useDashboardStore, useTenantStore
+  useRoleStore, useProfileStore, useScrumStore
+  useTodoStore, useTrashStore, useListFilters
+
+Services (resources/js/src/services/) — 20 services
+  api.ts              — axios instance; 401 → logout+clear state;
+                        419 (CSRF expired) → auto-refresh + retry
+  authService, twoFactorService, userService, profileService
+  clientService, companionService, caseService
+  documentService, legalDocumentService
+  tenantService, roleService, oauthService
+  scrumService, todoService, trashService
+  searchService, dashboardService, backupService
+  calendarSyncService — getStatus, getRedirectUrl, disconnect
+
+Routing (resources/js/src/router/index.ts) — 60+ routes
+  Route meta guards: requiresAuth, requiresVerified, permission, role, guest
+  Layouts: app-layout (sidebar+header) | auth-layout (minimal)
+
+Composables (resources/js/src/composables/)
+  usePermissions() — powers v-can / v-role directives
+  useMeta()        — sets <title> and meta tags per page
+  useDebounce()    — debounced search inputs
+
+i18n (resources/js/src/locales/) — 16 language FLAT JSON files
+  CRITICAL: keys are FLAT strings — "calendar_sync.title": "..."
+            NOT nested objects — {"calendar_sync": {"title": ...}}
+  Arabic (ae) automatically enables RTL via useAppStore
+```
+
+---
+
+## Multi-Tenancy
+
+Every business model uses `BelongsToTenant` trait, which registers a global Eloquent scope (`TenantScope`) that automatically filters all queries by the active tenant.
+
+**Rule: Every new business model must:**
+1. Use `use BelongsToTenant;`
+2. Have a `tenant_id` FK in its migration
+3. Set `tenant_id` from the active tenant in `store()` before saving
+
+`TenantMiddleware` resolves the tenant from the request (subdomain or header) and binds it to the container. The `tenant` middleware alias is applied to all authenticated API routes.
+
+**Why Global Scope instead of RLS or separate DBs:** MySQL doesn't support RLS natively. Separate DBs would make migrations, backups, and connection pooling complex at this scale. Eloquent global scope gives sufficient isolation without infrastructure changes.
+
+---
+
+## Authentication & Permissions
+
+### Auth: Laravel Sanctum SPA (cookie-based)
+- Auth via HttpOnly cookies + CSRF token. **Not Bearer tokens.**
+- `api.ts` calls `/sanctum/csrf-cookie` before login.
+- On 419 (CSRF expired): interceptor auto-refreshes cookie and retries the request.
+- On 401: clears `useUserStore` + `usePermissionStore`, then `router.push('/auth/login')`.
+- **Never store auth tokens in Pinia or localStorage.**
+
+### Permissions: Spatie Laravel-Permission
+- Format: `resource.action` (e.g. `cases.create`, `documents.delete`)
+- Roles: `super-admin`, `admin`, `attorney`, `paralegal`, `client`
+- Permissions are seeded via dedicated migrations (not just seeders) so they survive `migrate:fresh` in production.
+- On login, permissions are loaded and cached in `usePermissionStore` (flat boolean map).
+- `v-can="'cases.create'"` and `v-role="'admin'"` directives: **UX only — hide buttons, not security.**
+- **Real authorization:** `$this->authorize()` or `Gate::allows()` in controllers.
+
+### Adding a new permission
+1. Create a migration that calls `Permission::firstOrCreate(['name' => 'resource.action'])`
+2. Assign to appropriate roles in the same migration
+3. Frontend: add guard in route meta `permission: 'resource.action'` and use `v-can` in template
+
+---
+
+## Storage Strategy Pattern
+
+`StorageService` is a façade that delegates to a provider based on tenant configuration:
+
+```
+StorageService
+  → StorageProviderFactory → selects: LocalStorageProvider
+                                    | OneDriveProvider
+                                    | GoogleDriveProvider
+                                    | SharePointProvider
+                             (all extend MicrosoftGraphBaseProvider for MS providers)
+  → ResilientStorageProvider wraps any provider (circuit breaker)
+  → CircuitBreaker: tracks failures; opens after threshold, resets after timeout
+```
+
+- Tenant-level OAuth tokens: `OauthToken` with `purpose='storage'`
+- `OAuthTokenService` handles token refresh; scope depends on `purpose` field
+- `OAuthCredentialService` manages tenant-level client_id/client_secret for each provider
+- Tenant chooses storage type in Settings → Storage; DocumentService transparently uses the active provider
+
+---
+
+## Calendar Sync (Bidirectional)
+
+Two separate OAuth token types for the same providers (Google, Microsoft):
+- `purpose='storage'` → tenant-level, files
+- `purpose='calendar'` → user-level, calendar events
+
+### Push (local → external)
+`EventSyncObserver` (registered in `AppServiceProvider`) intercepts Event created/updated/deleted.
+→ Dispatches `SyncEventToCalendarJob` (queue, 3 retries with backoff).
+→ Job calls `CalendarSyncService::pushEvent()` for each connected user.
+
+### Pull (external → local)
+`PullCalendarEventsJob` runs every 15 minutes via scheduler.
+→ Iterates all `CalendarSyncStatus` records with `status='active'`.
+→ Calls `CalendarSyncService::pullEvents()` → `GoogleCalendarService` or `MicrosoftCalendarService`.
+→ Creates/updates events with `sync_source='google'|'outlook'`, soft-deletes cancelled ones.
+→ Uses `updateQuietly()` to avoid re-triggering the observer.
+
+### Anti-loop guard
+`CalendarSyncService::$isPulling = true` is set during pull operations.
+`EventSyncObserver::shouldSync()` returns false when this flag is set.
+**Why static:** The flag lives in the job worker process. `PullCalendarEventsJob` is `ShouldBeUnique`, so only one pull runs per process at a time.
+
+### Circuit breaker
+After 5 consecutive errors, `calendar_sync_status.status` is set to `'error'`.
+The pull job skips records in `'error'` state (user must reconnect to reset).
+
+### OAuth flow
+`UserCalendarOAuthController`: redirect → callback → creates `CalendarSyncStatus` record.
+State key: `calendar_oauth_state:{state}` (distinct from storage: `oauth_state:{state}`).
+On success: redirects to `/users/profile?calendar_connected={provider}`.
+
+---
+
+## Known Gotchas & Anti-patterns
+
+### G1. New model without BelongsToTenant
+All tenants will see the model's records. Every business model needs the trait + `tenant_id` FK.
+
+### G2. MySQL FK-backed index cannot be dropped directly
+`SQLSTATE[HY000]: 1553 Cannot drop index: needed in a foreign key constraint`
+Pattern: `dropForeign(['col'])` → `dropIndex/dropUnique(['col', ...])` → create new index → `$table->foreign('col')->...`
+See migration `2026_04_16_000002_add_purpose_to_oauth_tokens.php` for the full pattern.
+
+### G3. 401 handler must clear stores before router.push
+If `router.push('/auth/login')` runs before `userStore.clearUser()` + `permissionStore.clear()`, route guards may loop-redirect. Order matters.
+
+### G4. Permissions must be in migrations, not only in seeders
+Seeders are for dev data. If a permission only exists in a seeder, `migrate:fresh` in staging/prod destroys it. Use `Permission::firstOrCreate()` in a dedicated migration.
+
+### G5. v-can / v-role are UX — not security
+The directives hide UI. Backend authorization (`$this->authorize()`) is the real gate.
+
+### G6. i18n keys must be FLAT strings
+`"module.key": "value"` — never nested objects. Vue I18n supports both, but this project uses flat throughout. Python `json.load/dump` can silently flatten/nest; always verify.
+
+### G7. Observers registered once in AppServiceProvider
+Never call `Model::observe()` inside a Job, Controller, or Service. All observer registrations live in `AppServiceProvider::boot()`.
+
+### G8. CalendarSyncService::$isPulling is process-scoped
+If pull jobs ever run on multiple workers concurrently (parallel queue), the static flag won't prevent cross-process loops. Would need a Redis cache key instead.
+
+### G9. Cloud storage operations may fail silently without ResilientStorageProvider
+Always use `StorageService` (which wraps providers in `ResilientStorageProvider`) rather than calling provider classes directly.
+
+---
 
 ## Project Structure
 
 ```
-vristo-poc/
-├── app/                          # Laravel backend
+├── app/
 │   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── Controller.php    # Base controller
-│   │   │   └── AppController.php # Serves Vue SPA (single controller)
-│   │   └── Middleware/           # 11 standard middlewares
-│   ├── Models/
-│   │   └── User.php              # User model with Sanctum
-│   └── Providers/                # 5 service providers
+│   │   ├── Controllers/Api/    # 31 controllers (+ Admin/ subdirectory)
+│   │   ├── Middleware/         # TenantMiddleware, ValidateBackupApiKey, SecurityHeaders, ...
+│   │   └── Resources/          # 19 API resources
+│   ├── Jobs/                   # 5 async jobs
+│   ├── Models/                 # 23 Eloquent models (all BelongsToTenant)
+│   ├── Observers/              # 5 observers
+│   ├── Providers/              # AppServiceProvider (observer registration)
+│   └── Services/               # Service layer (Auth/, Case/, Calendar/, Storage/, ...)
+│
+├── database/
+│   ├── migrations/             # 25+ migrations (includes permission seeds)
+│   ├── seeders/                # Dev data seeders only
+│   └── factories/              # Model factories for testing
 │
 ├── routes/
-│   ├── web.php                   # Catch-all route → Vue SPA
-│   └── api.php                   # API routes (expandable)
+│   ├── api.php                 # REST API routes (auth:sanctum + tenant middleware)
+│   ├── web.php                 # Catch-all → Vue SPA
+│   └── console.php             # Scheduler definitions
 │
-├── resources/
-│   ├── views/
-│   │   └── app.blade.php         # Single blade template (SPA mount point)
-│   │
-│   └── js/src/                   # Vue 3 frontend
-│       ├── main.ts               # Entry point
-│       ├── App.vue               # Root component (layout switching)
-│       ├── router/index.ts       # 60+ routes defined
-│       ├── stores/index.ts       # Pinia store (global state)
-│       ├── i18n.ts               # Internationalization config
-│       ├── app-setting.ts        # Theme initialization
-│       │
-│       ├── layouts/
-│       │   ├── app-layout.vue    # Main layout (header, sidebar, footer)
-│       │   └── auth-layout.vue   # Auth pages layout (minimal)
-│       │
-│       ├── views/                # 99+ page components
-│       │   ├── index.vue         # Main dashboard
-│       │   ├── analytics.vue, finance.vue, crypto.vue
-│       │   ├── apps/             # Chat, mailbox, calendar, notes, etc.
-│       │   ├── forms/            # 15 form types
-│       │   ├── datatables/       # 14 datatable variants
-│       │   ├── components/       # UI component demos
-│       │   ├── elements/         # UI element demos
-│       │   ├── auth/             # Login, register, etc.
-│       │   ├── pages/            # FAQ, errors, knowledge base
-│       │   └── users/            # Profile, settings
-│       │
-│       ├── components/
-│       │   ├── layout/           # Header.vue, Sidebar.vue, Footer.vue
-│       │   ├── icon/             # 150+ SVG icon components
-│       │   ├── ThemeCustomizer.vue
-│       │   └── plugins/highlight.vue
-│       │
-│       ├── composables/
-│       │   ├── use-meta.ts       # Page meta tags
-│       │   └── codePreview.ts    # Code highlighting
-│       │
-│       ├── locales/              # 16 language JSON files
-│       │   └── en.json, es.json, fr.json, de.json, etc.
-│       │
-│       └── assets/css/           # 19 CSS files
-│           ├── app.css           # Main imports
-│           ├── tailwind.css      # Tailwind directives
-│           └── [component].css   # Component-specific styles
+├── spec/                       # Feature specs (45+ files, Markdown)
 │
-├── public/assets/                # Static assets
-│   └── images/                   # Logos, flags, products, etc.
-│
-├── config/                       # Laravel configuration (16 files)
-├── database/
-│   ├── migrations/               # 4 base migrations
-│   ├── seeders/
-│   └── factories/
-│
-├── vite.config.ts                # Vite + Laravel plugin config
-├── tailwind.config.cjs           # Tailwind CSS config
-├── tsconfig.json                 # TypeScript config
-└── package.json                  # NPM dependencies
+└── resources/js/src/           # Vue 3 frontend
+    ├── main.ts                 # Entry point
+    ├── App.vue                 # Root (layout switching)
+    ├── router/index.ts         # 60+ routes with permission/role guards
+    ├── stores/                 # 15 Pinia stores
+    ├── services/               # 20 API service modules
+    ├── composables/            # usePermissions, useMeta, useDebounce, ...
+    ├── views/                  # Page components
+    │   ├── apps/calendar.vue   # FullCalendar with Google/Outlook source badges
+    │   ├── users/profile.vue   # Profile + CalendarConnections
+    │   ├── clients/            # Client list + detail + companions
+    │   ├── cases/              # Case list + detail + documents + tasks
+    │   ├── auth/               # Login, register, 2FA, password reset
+    │   └── admin/              # Tenant management (super-admin)
+    ├── components/             # Shared components (EventFormModal, icon/*, layout/*)
+    ├── locales/                # 16 FLAT JSON i18n files (en, es, fr, ...)
+    └── assets/css/             # Tailwind + component CSS
 ```
+
+---
 
 ## Key Technologies
 
 ### Backend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Laravel | 12 | PHP Framework |
-| PHP | 8.2+ | Server language |
-| MySQL | 8.0 | Database |
-| Laravel Sanctum | built-in | API authentication |
+| Technology | Purpose |
+|------------|---------|
+| Laravel 12 / PHP 8.2+ | Framework |
+| MySQL 8.0 | Database |
+| Laravel Sanctum (SPA) | Cookie-based authentication |
+| Spatie Laravel-Permission | RBAC roles & permissions |
+| Laravel Queues (DB driver) | Async jobs |
+| Laravel Scheduler | Cron tasks |
 
 ### Frontend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Vue | 3.5 | UI Framework (Composition API) |
-| TypeScript | 5.7 | Type safety |
-| Vue Router | 4.5 | Client-side routing |
-| Pinia | 2.3 | State management |
-| Tailwind CSS | 3.4 | Utility-first CSS |
-| Vue I18n | 11 | Internationalization (16 languages) |
-| Vite | 6 | Build tool + dev server |
-
-### UI Libraries
-| Library | Purpose |
-|---------|---------|
-| ApexCharts | Interactive charts |
-| FullCalendar | Calendar component |
-| SweetAlert2 | Alerts and modals |
-| Swiper | Carousels/sliders |
-| Quill/EasyMDE | Rich text editors |
-| Flatpickr | Date picker |
+| Technology | Purpose |
+|------------|---------|
+| Vue 3.5 (Composition API) | UI Framework |
+| TypeScript 5.7 | Type safety |
+| Vue Router 4.5 | Client-side routing |
+| Pinia 2.3 | State management |
+| Tailwind CSS 3.4 | Utility-first CSS |
+| Vue I18n 11 | Internationalization (16 languages) |
+| Vite 6 | Build tool |
+| FullCalendar | Calendar view |
+| SweetAlert2 | Modals and alerts |
 | vue3-datatable | Data tables |
-| vue-draggable-plus | Drag and drop |
+| vue-draggable-plus | Drag & drop (Scrum board) |
+
+---
 
 ## Important Patterns
 
@@ -178,164 +356,76 @@ vristo-poc/
 Use `@/` for imports from `resources/js/src/`:
 ```typescript
 import { useAppStore } from '@/stores/index';
-import Header from '@/components/layout/Header.vue';
-```
-
-### State Management (Pinia)
-All global state flows through `stores/index.ts`:
-```typescript
-const store = useAppStore();
-
-// State
-store.theme        // 'light' | 'dark' | 'system'
-store.menu         // 'vertical' | 'collapsible-vertical' | 'horizontal'
-store.layout       // 'full' | 'boxed-layout'
-store.locale       // 'en' | 'es' | 'fr' | ... (16 languages)
-store.mainLayout   // 'app' | 'auth'
-store.sidebar      // boolean (mobile sidebar visibility)
-store.isDarkMode   // boolean
-store.rtlClass     // 'ltr' | 'rtl'
-
-// Actions
-store.toggleTheme('dark')
-store.toggleMenu('horizontal')
-store.toggleLocale('es')
-store.setMainLayout('auth')
-```
-State persists to localStorage automatically.
-
-### Layout System
-`App.vue` dynamically switches layouts based on route meta:
-```typescript
-// In router/index.ts
-{
-    path: '/auth/login',
-    component: () => import('../views/auth/cover-login.vue'),
-    meta: { layout: 'auth' }  // Uses auth-layout.vue
-}
-// Routes without meta.layout use app-layout.vue by default
+import api from '@/services/api';
 ```
 
 ### Vue Component Style
-Use Composition API with `<script setup>`:
 ```vue
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
-import { useAppStore } from '@/stores/index';
 import { useMeta } from '@/composables/use-meta';
-
 useMeta({ title: 'Page Title' });
-const store = useAppStore();
-const items = ref([]);
 </script>
 ```
 
-### Adding New Pages
+### Adding a new API endpoint
+1. `php artisan make:controller Api/MyController`
+2. Add service in `app/Services/`
+3. Add route in `routes/api.php` (inside the `auth:sanctum + tenant` group)
+4. Add resource in `app/Http/Resources/` if needed
+5. Add TypeScript service in `resources/js/src/services/`
+6. Add permissions in a new migration
+
+### Adding a new page
 1. Create view in `resources/js/src/views/`
-2. Add route in `resources/js/src/router/index.ts`
-3. Add menu item in `components/layout/Sidebar.vue` if needed
+2. Add route in `resources/js/src/router/index.ts` with `permission` meta if needed
+3. Add sidebar entry in `resources/js/src/components/layout/Sidebar.vue`
+4. Add i18n keys (FLAT) in all locale files
 
-### Adding API Endpoints
-1. Create controller: `php artisan make:controller Api/MyController`
-2. Add route in `routes/api.php`
-3. Call from Vue using fetch/axios with `/api/` prefix
+### Scheduled tasks
+Define in `routes/console.php` using `Schedule::`. Queue worker must be running for jobs dispatched from the scheduler.
 
-## Routes Available
-
-### Dashboards
-- `/` - Main dashboard
-- `/analytics` - Analytics dashboard
-- `/finance` - Finance dashboard
-- `/crypto` - Crypto dashboard
-
-### Apps
-- `/apps/chat` - Chat application
-- `/apps/mailbox` - Email client
-- `/apps/calendar` - Calendar
-- `/apps/todolist` - To-do list
-- `/apps/notes` - Notes
-- `/apps/scrumboard` - Kanban board
-- `/apps/contacts` - Contacts manager
-- `/apps/invoice/list|add|preview|edit` - Invoice management
-
-### Forms (`/forms/*`)
-basic, input-group, layouts, validation, input-mask, select2, touchspin, checkbox-radio, switches, wizards, file-upload, quill-editor, markdown-editor, date-picker, clipboard
-
-### DataTables (`/datatables/*`)
-basic, advanced, skin, order-sorting, columns-filter, multi-column, multiple-tables, alt-pagination, checkbox, range-search, export, sticky-header, clone-header, column-chooser
-
-### Components (`/components/*`)
-tabs, accordions, modals, cards, carousel, countdown, counter, sweetalert, timeline, notifications, media-object, list-group, pricing-table, lightbox
-
-### Elements (`/elements/*`)
-alerts, avatar, badges, breadcrumbs, buttons, buttons-group, color-library, dropdown, infobox, jumbotron, loader, pagination, popovers, progress-bar, search, tooltips, treeview, typography
-
-### Auth (`/auth/*`)
-boxed-signin, boxed-signup, boxed-lockscreen, boxed-password-reset, cover-login, cover-register, cover-lockscreen, cover-password-reset
-
-### Pages (`/pages/*`)
-knowledge-base, faq, contact-us-boxed, contact-us-cover, coming-soon-boxed, coming-soon-cover, error404, error500, error503, maintenence
-
-### Users
-- `/users/profile` - User profile
-- `/users/user-account-settings` - Account settings
-
-### Other
-- `/charts` - Chart examples
-- `/widgets` - Widget examples
-- `/font-icons` - Icon library
-- `/dragndrop` - Drag & drop demo
-- `/tables` - Basic tables
+---
 
 ## Database
 
-- **Connection:** MySQL on port 3306
-- **Database:** vristo-poc
-- **Session Storage:** Database-driven
-- **Migrations:** 4 base tables (users, password_resets, failed_jobs, personal_access_tokens)
+- **Connection:** MySQL 8.0
+- **Multi-tenant:** all business tables have `tenant_id FK → tenants.id`
+- **Soft deletes:** Client, Companion, ImmigrationCase, Document (cascade via observers)
+- **Key tables:** `tenants`, `users`, `clients`, `companions`, `immigration_cases`, `case_tasks`, `case_invoices`, `case_types`, `documents`, `document_folders`, `legal_documents`, `events`, `calendar_sync_status`, `oauth_tokens` (purpose: storage|calendar), `activity_log`, `backup_logs`, `roles`, `permissions`, `model_has_roles`, `model_has_permissions`
 
-## Tailwind CSS Colors
-
-Custom color palette defined in `tailwind.config.cjs`:
-```javascript
-primary: '#4361ee'      // Indigo blue
-secondary: '#805dca'    // Purple
-success: '#00ab55'      // Green
-danger: '#e7515a'       // Red
-warning: '#e2a03f'      // Orange
-info: '#2196f3'         // Blue
-dark: '#3b3f5c'
-```
-
-Dark mode: Use `dark:` prefix (e.g., `dark:bg-gray-800`)
+---
 
 ## Internationalization
 
-16 languages supported via Vue I18n:
-- English (en), Spanish (es), French (fr), German (de)
-- Italian (it), Portuguese (pt), Russian (ru), Polish (pl)
-- Turkish (tr), Japanese (ja), Chinese (zh), Greek (el)
-- Hungarian (hu), Danish (da), Swedish (sv), Arabic (ae)
+16 languages: English (en), Spanish (es), French (fr), German (de), Italian (it), Portuguese (pt), Russian (ru), Polish (pl), Turkish (tr), Japanese (ja), Chinese (zh), Greek (el), Hungarian (hu), Danish (da), Swedish (sv), Arabic (ae).
 
 Arabic (ae) automatically enables RTL layout.
 
-Translation files: `resources/js/src/locales/*.json`
+Translation files: `resources/js/src/locales/*.json` — **FLAT keys only.**
+
+---
+
+## Tailwind CSS Colors
+
+```javascript
+primary: '#4361ee'   // Indigo blue
+secondary: '#805dca' // Purple
+success: '#00ab55'   // Green
+danger: '#e7515a'    // Red
+warning: '#e2a03f'   // Orange
+info: '#2196f3'      // Blue
+dark: '#3b3f5c'
+```
+
+Dark mode: use `dark:` prefix.
+
+---
 
 ## Development Notes
 
-### Vite Configuration
-- Entry point: `resources/js/src/main.ts`
-- Alias `@` → `resources/js/src/`
-- Laravel Vite plugin handles asset versioning
-- Hot reload enabled by default
-
-### Known Configurations
-- FullCalendar requires alias: `@fullcalendar/core/vdom` → `@fullcalendar/core`
-- Swiper modules import from `swiper/modules` (not `swiper`)
-- Perfect Scrollbar uses named export: `{ PerfectScrollbarPlugin }`
-- @unhead/vue client import: `@unhead/vue/client`
-
-### File Naming
-- Vue components: PascalCase (`MyComponent.vue`)
-- Composables: camelCase with `use` prefix (`use-meta.ts`)
-- CSS files: kebab-case (`quill-editor.css`)
+- FullCalendar alias: `@fullcalendar/core/vdom` → `@fullcalendar/core` (vite.config.ts)
+- Swiper modules: import from `swiper/modules`
+- Perfect Scrollbar: named export `{ PerfectScrollbarPlugin }`
+- `@unhead/vue` client import: `@unhead/vue/client`
+- Queue driver: `database` (see `.env` QUEUE_CONNECTION). Always run `queue:work` in dev when testing calendar sync, backup, or document scanning features.

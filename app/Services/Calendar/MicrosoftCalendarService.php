@@ -13,11 +13,33 @@ class MicrosoftCalendarService implements CalendarProviderInterface
 {
     private const BASE_URL = 'https://graph.microsoft.com/v1.0/me/events';
 
+    private ?string $userEmail = null;
+
+    /**
+     * Return a clone of this service scoped to a specific user's mailbox.
+     * When set, all calls use /users/{email}/events (application permissions).
+     * Without it, falls back to /me/events (delegated, for backward compat).
+     */
+    public function withUser(string $email): static
+    {
+        $instance            = clone $this;
+        $instance->userEmail = $email;
+        return $instance;
+    }
+
+    private function getBaseUrl(): string
+    {
+        if ($this->userEmail) {
+            return 'https://graph.microsoft.com/v1.0/users/' . rawurlencode($this->userEmail) . '/events';
+        }
+        return self::BASE_URL;
+    }
+
     public function createEvent(string $accessToken, Event $event): ?array
     {
         $response = Http::withToken($accessToken)
             ->timeout(30)
-            ->post(self::BASE_URL, $this->toMicrosoftEvent($event));
+            ->post($this->getBaseUrl(), $this->toMicrosoftEvent($event));
 
         if (!$response->successful()) {
             Log::error('Microsoft Calendar createEvent failed', [
@@ -35,7 +57,7 @@ class MicrosoftCalendarService implements CalendarProviderInterface
     {
         $response = Http::withToken($accessToken)
             ->timeout(30)
-            ->patch(self::BASE_URL . '/' . $externalId, $this->toMicrosoftEvent($event));
+            ->patch($this->getBaseUrl() . '/' . $externalId, $this->toMicrosoftEvent($event));
 
         if (!$response->successful()) {
             Log::error('Microsoft Calendar updateEvent failed', [
@@ -53,7 +75,7 @@ class MicrosoftCalendarService implements CalendarProviderInterface
     {
         $response = Http::withToken($accessToken)
             ->timeout(30)
-            ->delete(self::BASE_URL . '/' . $externalId);
+            ->delete($this->getBaseUrl() . '/' . $externalId);
 
         return $response->successful() || $response->status() === 404;
     }
@@ -61,7 +83,7 @@ class MicrosoftCalendarService implements CalendarProviderInterface
     public function listEvents(string $accessToken, \DateTimeInterface $since): array
     {
         $events = [];
-        $url = self::BASE_URL;
+        $url = $this->getBaseUrl();
 
         $params = [
             '$filter' => "lastModifiedDateTime ge {$since->format('Y-m-d\TH:i:s\Z')}",

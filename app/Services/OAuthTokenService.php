@@ -289,6 +289,94 @@ class OAuthTokenService
     }
 
     /**
+     * Get a short-lived application-level Microsoft access token via client credentials flow.
+     * Requires Calendars.ReadWrite granted as an Application permission in Azure.
+     * The result is cached until 60 seconds before expiry.
+     */
+    public function getMicrosoftApplicationToken(int $tenantId): ?string
+    {
+        $cacheKey = "ms_app_calendar_token:{$tenantId}";
+
+        if ($cached = Cache::get($cacheKey)) {
+            return $cached;
+        }
+
+        $tenant = Tenant::find($tenantId);
+        $credentials = $this->credentialService->getMicrosoftCredentials($tenant);
+        if (!$credentials) {
+            return null;
+        }
+
+        $directoryId = $this->extractMicrosoftDirectoryId($tenantId);
+        if (!$directoryId) {
+            Log::warning('getMicrosoftApplicationToken: Azure tenant directory ID not found', [
+                'tenant_id' => $tenantId,
+            ]);
+            return null;
+        }
+
+        $response = Http::timeout(30)->asForm()->post(
+            "https://login.microsoftonline.com/{$directoryId}/oauth2/v2.0/token",
+            [
+                'grant_type'    => 'client_credentials',
+                'client_id'     => $credentials['client_id'],
+                'client_secret' => $credentials['client_secret'],
+                'scope'         => 'https://graph.microsoft.com/.default',
+            ]
+        );
+
+        if (!$response->successful()) {
+            Log::error('Microsoft application calendar token request failed', [
+                'tenant_id' => $tenantId,
+                'status'    => $response->status(),
+                'error'     => $response->json('error_description', $response->json('error', 'Unknown')),
+            ]);
+            return null;
+        }
+
+        $token     = $response->json('access_token');
+        $expiresIn = (int) $response->json('expires_in', 3600);
+
+        Cache::put($cacheKey, $token, now()->addSeconds($expiresIn - 60));
+
+        return $token;
+    }
+
+    /**
+     * Decode the stored tenant Microsoft access-token JWT to extract the Azure
+     * directory (tenant) ID from the `tid` claim. Works even on expired tokens.
+     */
+    private function extractMicrosoftDirectoryId(int $tenantId): ?string
+    {
+        $token = OauthToken::where('tenant_id', $tenantId)
+            ->where('provider', 'microsoft')
+            ->where('purpose', 'storage')
+            ->first();
+
+        // Legacy records without the purpose column
+        if (!$token) {
+            $token = OauthToken::where('tenant_id', $tenantId)
+                ->where('provider', 'microsoft')
+                ->whereNull('purpose')
+                ->first();
+        }
+
+        if (!$token) {
+            return null;
+        }
+
+        $parts = explode('.', $token->access_token);
+        if (count($parts) !== 3) {
+            return null;
+        }
+
+        $padded  = str_pad($parts[1], strlen($parts[1]) + (4 - strlen($parts[1]) % 4) % 4, '=');
+        $payload = json_decode(base64_decode($padded), true);
+
+        return $payload['tid'] ?? null;
+    }
+
+    /**
      * Get credentials for a provider using OAuthCredentialService.
      */
     private function getCredentialsForProvider(string $provider, $tenant): ?array

@@ -7,6 +7,7 @@ namespace App\Services\Calendar;
 use App\Models\CalendarSyncStatus;
 use App\Models\Event;
 use App\Models\User;
+use App\Services\OAuthCredentialService;
 use App\Services\OAuthTokenService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -19,6 +20,7 @@ class CalendarSyncService
         private readonly GoogleCalendarService $googleService,
         private readonly MicrosoftCalendarService $microsoftService,
         private readonly OAuthTokenService $tokenService,
+        private readonly OAuthCredentialService $credentialService,
     ) {}
 
     public function pushEvent(Event $event, User $user): void
@@ -26,8 +28,7 @@ class CalendarSyncService
         $provider = $this->getConnectedProvider($user);
         if (!$provider) return;
 
-        $service = $this->getProviderService($provider);
-        $token = $this->tokenService->getValidUserCalendarToken($user, $provider);
+        [$service, $token] = $this->resolveServiceAndToken($provider, $user);
         if (!$token) return;
 
         try {
@@ -39,9 +40,9 @@ class CalendarSyncService
 
             if ($result) {
                 $event->updateQuietly([
-                    'external_id' => $result['id'],
-                    'external_etag' => $result['etag'] ?? null,
-                    'last_synced_at' => now(),
+                    'external_id'       => $result['id'],
+                    'external_etag'     => $result['etag'] ?? null,
+                    'last_synced_at'    => now(),
                     'synced_by_user_id' => $user->id,
                 ]);
 
@@ -52,9 +53,9 @@ class CalendarSyncService
         } catch (\Exception $e) {
             Log::error('Calendar pushEvent failed', [
                 'event_id' => $event->id,
-                'user_id' => $user->id,
+                'user_id'  => $user->id,
                 'provider' => $provider,
-                'error' => $e->getMessage(),
+                'error'    => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -65,8 +66,7 @@ class CalendarSyncService
         $provider = $this->getConnectedProvider($user);
         if (!$provider) return;
 
-        $service = $this->getProviderService($provider);
-        $token = $this->tokenService->getValidUserCalendarToken($user, $provider);
+        [$service, $token] = $this->resolveServiceAndToken($provider, $user);
         if (!$token) return;
 
         $service->deleteEvent($token, $externalId);
@@ -77,8 +77,7 @@ class CalendarSyncService
         $provider = $this->getConnectedProvider($user);
         if (!$provider) return;
 
-        $service = $this->getProviderService($provider);
-        $token = $this->tokenService->getValidUserCalendarToken($user, $provider);
+        [$service, $token] = $this->resolveServiceAndToken($provider, $user);
         if (!$token) return;
 
         $syncStatus = CalendarSyncStatus::where('user_id', $user->id)
@@ -177,18 +176,36 @@ class CalendarSyncService
     public function getConnectedProvider(User $user): ?string
     {
         $syncStatus = CalendarSyncStatus::where('user_id', $user->id)
-            ->where('status', '!=', 'error')
+            ->where('status', 'active')
             ->first();
 
         return $syncStatus?->provider;
     }
 
+    /**
+     * Return [service, accessToken] for the given provider and user.
+     * Microsoft uses application-level token + user-scoped URL.
+     * Google uses the per-user delegated OAuth token.
+     */
+    public function resolveServiceAndToken(string $provider, User $user): array
+    {
+        if ($provider === 'microsoft') {
+            $token   = $this->tokenService->getMicrosoftApplicationToken($user->tenant_id);
+            $service = $this->microsoftService->withUser($user->email);
+            return [$service, $token];
+        }
+
+        // Google: per-user delegated OAuth token
+        $token = $this->tokenService->getValidUserCalendarToken($user, $provider);
+        return [$this->googleService, $token];
+    }
+
     private function getProviderService(string $provider): CalendarProviderInterface
     {
         return match ($provider) {
-            'google' => $this->googleService,
+            'google'    => $this->googleService,
             'microsoft' => $this->microsoftService,
-            default => throw new \InvalidArgumentException("Unknown provider: {$provider}"),
+            default     => throw new \InvalidArgumentException("Unknown provider: {$provider}"),
         };
     }
 }

@@ -148,8 +148,20 @@ async function fetchStatus() {
 async function connect(provider: 'google' | 'microsoft') {
     loading.value = true
     try {
-        const { url } = await calendarSyncService.getRedirectUrl(provider)
-        window.location.href = url
+        const response = await calendarSyncService.getRedirectUrl(provider)
+        if (response.auto_connected) {
+            // Microsoft uses application permissions — no redirect needed
+            await fetchStatus()
+            const providerName = t('calendar_sync.microsoft_outlook')
+            Swal.fire({
+                icon: 'success',
+                title: t('calendar_sync.connected_success', { provider: providerName }),
+                timer: 3000,
+                showConfirmButton: false,
+            })
+        } else {
+            window.location.href = response.url
+        }
     } catch {
         Swal.fire({ icon: 'error', title: t('calendar_sync.connect_error') })
         loading.value = false
