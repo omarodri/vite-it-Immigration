@@ -307,7 +307,9 @@ class OAuthTokenService
             return null;
         }
 
-        $directoryId = $this->extractMicrosoftDirectoryId($tenantId);
+        $directoryId = $credentials['directory_id']
+            ?? $this->extractMicrosoftDirectoryId($tenantId);
+
         if (!$directoryId) {
             Log::warning('getMicrosoftApplicationToken: Azure tenant directory ID not found', [
                 'tenant_id' => $tenantId,

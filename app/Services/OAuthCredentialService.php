@@ -34,18 +34,20 @@ class OAuthCredentialService
         // Try tenant credentials first
         if ($tenant && $tenant->hasMicrosoftOAuth()) {
             return [
-                'client_id' => $tenant->ms_client_id,
+                'client_id'    => $tenant->ms_client_id,
                 'client_secret' => $tenant->ms_client_secret,
-                'source' => 'tenant',
+                'directory_id' => $tenant->ms_directory_id,
+                'source'       => 'tenant',
             ];
         }
 
         // Fall back to system credentials
         if ($this->hasSystemMicrosoftCredentials()) {
             return [
-                'client_id' => config('services.microsoft.client_id'),
+                'client_id'    => config('services.microsoft.client_id'),
                 'client_secret' => config('services.microsoft.client_secret'),
-                'source' => 'system',
+                'directory_id' => config('services.microsoft.tenant'),
+                'source'       => 'system',
             ];
         }
 

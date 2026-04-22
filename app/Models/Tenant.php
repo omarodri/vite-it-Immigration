@@ -28,6 +28,7 @@ class Tenant extends Model
         'settings',
         'ms_client_id',
         'ms_client_secret',
+        'ms_directory_id',
         'google_client_id',
         'google_client_secret',
         'storage_type',

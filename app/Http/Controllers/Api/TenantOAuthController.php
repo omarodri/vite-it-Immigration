@@ -25,6 +25,7 @@ class TenantOAuthController extends Controller
             'microsoft' => [
                 'configured' => $tenant->hasMicrosoftOAuth(),
                 'client_id' => $tenant->ms_client_id ? $this->maskString($tenant->ms_client_id) : null,
+                'directory_id' => $tenant->ms_directory_id ? $this->maskString($tenant->ms_directory_id) : null,
             ],
             'google' => [
                 'configured' => $tenant->hasGoogleOAuth(),
@@ -45,6 +46,7 @@ class TenantOAuthController extends Controller
         $request->validate([
             'client_id' => ['required', 'string', 'max:255'],
             'client_secret' => ['required', 'string', 'max:500'],
+            'directory_id' => ['required', 'string', 'max:255'],
         ]);
 
         $tenant = $request->user()->tenant;
@@ -66,6 +68,7 @@ class TenantOAuthController extends Controller
         $tenant->update([
             'ms_client_id' => $request->client_id,
             'ms_client_secret' => $request->client_secret,
+            'ms_directory_id' => $request->directory_id,
         ]);
 
         return response()->json([
@@ -121,6 +124,7 @@ class TenantOAuthController extends Controller
         $tenant->update([
             'ms_client_id' => null,
             'ms_client_secret' => null,
+            'ms_directory_id' => null,
         ]);
 
         return response()->json([

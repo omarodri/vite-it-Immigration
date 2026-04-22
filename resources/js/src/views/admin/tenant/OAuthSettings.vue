@@ -142,11 +142,21 @@
                                     placeholder="Enter Microsoft Client Secret"
                                 />
                             </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Directory (Tenant) ID</label>
+                                <input
+                                    v-model="microsoftForm.directory_id"
+                                    type="text"
+                                    class="form-input"
+                                    :placeholder="credentialStatus.microsoft?.directory_id || 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'"
+                                />
+                                <p class="text-xs text-gray-400 mt-1">Azure Portal → App registrations → Overview → Directory (tenant) ID</p>
+                            </div>
                             <div class="flex gap-2">
                                 <button
                                     type="submit"
                                     class="btn btn-primary"
-                                    :disabled="savingMicrosoft || !microsoftForm.client_id || !microsoftForm.client_secret"
+                                    :disabled="savingMicrosoft || !microsoftForm.client_id || !microsoftForm.client_secret || !microsoftForm.directory_id"
                                 >
                                     <span v-if="savingMicrosoft" class="animate-spin border-2 border-white border-l-transparent rounded-full w-4 h-4 mr-2"></span>
                                     {{ $t('save') }}
@@ -390,7 +400,7 @@ const connectingProvider = ref<string | null>(null);
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 
 const storageForm = reactive({ storage_type: 'local' });
-const microsoftForm = reactive({ client_id: '', client_secret: '' });
+const microsoftForm = reactive({ client_id: '', client_secret: '', directory_id: '' });
 const googleForm = reactive({ client_id: '', client_secret: '' });
 
 const savingBaseFolder = ref(false);
@@ -472,6 +482,7 @@ const saveMicrosoft = async () => {
         await fetchAll();
         microsoftForm.client_id = '';
         microsoftForm.client_secret = '';
+        microsoftForm.directory_id = '';
         Swal.fire({ icon: 'success', title: 'Success', text: 'Microsoft OAuth credentials saved.', timer: 2000, showConfirmButton: false });
     } catch (error: any) {
         Swal.fire({ icon: 'error', title: 'Error', text: error.response?.data?.message || error.response?.data?.error || 'Failed to save credentials.' });
