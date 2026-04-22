@@ -190,9 +190,16 @@ class CalendarSyncService
     public function resolveServiceAndToken(string $provider, User $user): array
     {
         if ($provider === 'microsoft') {
-            $token   = $this->tokenService->getMicrosoftApplicationToken($user->tenant_id);
-            $service = $this->microsoftService->withUser($user->email);
-            return [$service, $token];
+            // Application permissions (Azure AD org accounts — no per-user OAuth needed).
+            $appToken = $this->tokenService->getMicrosoftApplicationToken($user->tenant_id);
+            if ($appToken) {
+                return [$this->microsoftService->withUser($user->email), $appToken];
+            }
+
+            // Fallback: delegated per-user OAuth (personal @outlook.com / @hotmail.com accounts).
+            // Uses /me/events — token is scoped to the authorizing user, no email routing needed.
+            $delegatedToken = $this->tokenService->getValidUserCalendarToken($user, 'microsoft');
+            return [$this->microsoftService, $delegatedToken];
         }
 
         // Google: per-user delegated OAuth token

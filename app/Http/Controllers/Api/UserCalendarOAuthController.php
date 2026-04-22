@@ -30,10 +30,10 @@ class UserCalendarOAuthController extends Controller
     /**
      * Generate and return the OAuth authorization URL for calendar access.
      *
-     * For Microsoft, calendar sync runs via application permissions (no per-user
-     * OAuth needed): we auto-create the CalendarSyncStatus record and return
-     * auto_connected=true so the frontend skips the redirect.
-     * For Google, the standard per-user OAuth redirect is returned.
+     * Microsoft: tries Application permissions first (Azure AD org accounts).
+     * If an app token is obtainable, returns auto_connected=true (no redirect needed).
+     * If not (personal @outlook.com / @hotmail.com accounts), returns the delegated
+     * OAuth URL so the user can authorize manually — same flow as Google.
      */
     public function redirect(string $provider): JsonResponse
     {
@@ -52,22 +52,30 @@ class UserCalendarOAuthController extends Controller
             ], 422);
         }
 
-        // Microsoft uses application permissions — no per-user OAuth flow needed.
+        // Microsoft: try Application permissions first (Azure AD org accounts).
+        // If an application token can be obtained, auto-connect without per-user OAuth.
+        // For personal accounts (@outlook.com / @hotmail.com), fall through to delegated OAuth.
         if ($provider === 'microsoft') {
-            CalendarSyncStatus::updateOrCreate(
-                ['user_id' => $user->id, 'provider' => 'microsoft'],
-                ['tenant_id' => $user->tenant_id, 'status' => 'active', 'error_count' => 0, 'last_error' => null]
-            );
-
-            return response()->json(['auto_connected' => true]);
+            $appToken = $this->tokenService->getMicrosoftApplicationToken($user->tenant_id);
+            if ($appToken) {
+                CalendarSyncStatus::updateOrCreate(
+                    ['user_id' => $user->id, 'provider' => 'microsoft'],
+                    ['tenant_id' => $user->tenant_id, 'status' => 'active', 'error_count' => 0, 'last_error' => null]
+                );
+                return response()->json(['auto_connected' => true]);
+            }
+            // No application token → fall through to delegated OAuth below.
         }
 
         $state = Str::random(40);
         Cache::put("calendar_oauth_state:{$state}", $user->id, now()->addMinutes(10));
 
-        return response()->json([
-            'url' => $this->buildGoogleAuthUrl($credentials, $state),
-        ]);
+        $url = match ($provider) {
+            'microsoft' => $this->buildMicrosoftAuthUrl($credentials, $state),
+            default     => $this->buildGoogleAuthUrl($credentials, $state),
+        };
+
+        return response()->json(['url' => $url]);
     }
 
     /**
