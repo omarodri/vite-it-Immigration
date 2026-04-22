@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\CalendarSyncStatus;
 use App\Models\OauthToken;
+use App\Services\Calendar\CalendarSyncService;
 use App\Services\OAuthCredentialService;
 use App\Services\OAuthTokenService;
 use Illuminate\Http\JsonResponse;
@@ -22,7 +23,8 @@ class UserCalendarOAuthController extends Controller
 {
     public function __construct(
         private readonly OAuthTokenService $tokenService,
-        private readonly OAuthCredentialService $credentialService
+        private readonly OAuthCredentialService $credentialService,
+        private readonly CalendarSyncService $syncService,
     ) {}
 
     /**
@@ -238,6 +240,55 @@ class UserCalendarOAuthController extends Controller
         return response()->json([
             'message' => ucfirst($provider) . ' calendar disconnected successfully.',
         ]);
+    }
+
+    /**
+     * Trigger an on-demand calendar pull for the authenticated user.
+     *
+     * Runs synchronously (no queue). Applies a 15-minute cooldown per provider
+     * so successive calls return immediately without hitting the external API.
+     * Designed for use on shared hosting where no cron or queue worker is available.
+     */
+    public function pull(): JsonResponse
+    {
+        $user             = Auth::user();
+        $cooldownMinutes  = 15;
+
+        $statuses = CalendarSyncStatus::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->get();
+
+        if ($statuses->isEmpty()) {
+            return response()->json(['pulled' => false, 'reason' => 'no_connection']);
+        }
+
+        $needsPull = $statuses->contains(
+            fn ($s) => $s->last_pull_at === null || $s->last_pull_at->lt(now()->subMinutes($cooldownMinutes))
+        );
+
+        if (!$needsPull) {
+            return response()->json(['pulled' => false, 'reason' => 'cooldown']);
+        }
+
+        $pulled = [];
+        foreach ($statuses as $syncStatus) {
+            if ($syncStatus->last_pull_at !== null && $syncStatus->last_pull_at->gte(now()->subMinutes($cooldownMinutes))) {
+                continue;
+            }
+
+            try {
+                $this->syncService->pullEvents($user);
+                $pulled[] = $syncStatus->provider;
+            } catch (\Exception $e) {
+                Log::warning('On-demand calendar pull failed', [
+                    'user_id'  => $user->id,
+                    'provider' => $syncStatus->provider,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return response()->json(['pulled' => true, 'providers' => $pulled]);
     }
 
     /**

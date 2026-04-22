@@ -93,7 +93,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import '@fullcalendar/core/vdom';
 import FullCalendar from '@fullcalendar/vue3';
@@ -105,11 +105,18 @@ import { useAppStore } from '@/stores/index';
 import { useUserStore } from '@/stores/user';
 import { useMeta } from '@/composables/use-meta';
 import api from '@/services/api';
+import { calendarSyncService } from '@/services/calendarSyncService';
 
 import EventFormModal, { type EventEditPayload } from '@/components/EventFormModal.vue';
 import IconPlus from '@/components/icon/icon-plus.vue';
 
 useMeta({ title: 'Calendar' });
+
+onMounted(() => {
+    calendarSyncService.triggerPull()
+        .then(({ pulled }) => { if (pulled) refreshCalendar(); })
+        .catch(() => {});
+});
 
 const { t } = useI18n();
 const store = useAppStore();

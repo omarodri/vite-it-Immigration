@@ -30,4 +30,9 @@ export const calendarSyncService = {
     async disconnect(provider: 'google' | 'microsoft'): Promise<void> {
         await api.post(`/calendar-oauth/${provider}/disconnect`);
     },
+
+    async triggerPull(): Promise<{ pulled: boolean; providers?: string[] }> {
+        const { data } = await api.post('/calendar-oauth/pull');
+        return data;
+    },
 };

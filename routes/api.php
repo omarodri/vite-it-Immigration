@@ -244,6 +244,7 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
     // User-level Calendar OAuth routes
     Route::prefix('calendar-oauth')->group(function () {
         Route::get('/status', [UserCalendarOAuthController::class, 'status']);
+        Route::post('/pull', [UserCalendarOAuthController::class, 'pull']);
         Route::get('/{provider}/redirect', [UserCalendarOAuthController::class, 'redirect'])
             ->whereIn('provider', ['google', 'microsoft']);
         Route::post('/{provider}/disconnect', [UserCalendarOAuthController::class, 'disconnect'])
