@@ -251,8 +251,18 @@ class UserCalendarOAuthController extends Controller
      */
     public function pull(): JsonResponse
     {
-        $user             = Auth::user();
-        $cooldownMinutes  = 15;
+        $user            = Auth::user();
+        $cooldownMinutes = 15;
+
+        // Auto-provision Microsoft sync if tenant has MS credentials but user has
+        // no record yet (happens when no cron has run provisionMicrosoftUsers()).
+        $msCredentials = $this->credentialService->getMicrosoftCredentials($user->tenant);
+        if ($msCredentials) {
+            CalendarSyncStatus::firstOrCreate(
+                ['user_id' => $user->id, 'provider' => 'microsoft'],
+                ['tenant_id' => $user->tenant_id, 'status' => 'active', 'error_count' => 0]
+            );
+        }
 
         $statuses = CalendarSyncStatus::where('user_id', $user->id)
             ->where('status', 'active')
@@ -271,6 +281,7 @@ class UserCalendarOAuthController extends Controller
         }
 
         $pulled = [];
+        $errors = [];
         foreach ($statuses as $syncStatus) {
             if ($syncStatus->last_pull_at !== null && $syncStatus->last_pull_at->gte(now()->subMinutes($cooldownMinutes))) {
                 continue;
@@ -280,6 +291,7 @@ class UserCalendarOAuthController extends Controller
                 $this->syncService->pullEvents($user);
                 $pulled[] = $syncStatus->provider;
             } catch (\Exception $e) {
+                $errors[] = $syncStatus->provider . ': ' . $e->getMessage();
                 Log::warning('On-demand calendar pull failed', [
                     'user_id'  => $user->id,
                     'provider' => $syncStatus->provider,
@@ -288,7 +300,11 @@ class UserCalendarOAuthController extends Controller
             }
         }
 
-        return response()->json(['pulled' => true, 'providers' => $pulled]);
+        return response()->json([
+            'pulled'    => true,
+            'providers' => $pulled,
+            'errors'    => $errors,
+        ]);
     }
 
     /**
