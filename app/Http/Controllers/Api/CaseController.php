@@ -7,8 +7,11 @@ use App\Http\Requests\Case\AssignCaseRequest;
 use App\Http\Requests\Case\StoreCaseRequest;
 use App\Http\Requests\Case\UpdateCaseRequest;
 use App\Http\Resources\CaseResource;
+use App\Http\Resources\WorkflowStageResource;
 use App\Models\ImmigrationCase;
 use App\Services\Case\CaseService;
+use App\Services\Workflow\WorkflowInstantiator;
+use App\Services\Workflow\WorkflowStageService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,6 +43,7 @@ class CaseController extends Controller
             'hearing_from',
             'hearing_to',
             'stage',
+            'current_case_stage_id',
             'ircc_status',
             'service_type',
             'sort_by',
@@ -162,5 +166,36 @@ class CaseController extends Controller
         $statistics = $this->caseService->getStatistics();
 
         return response()->json(['data' => $statistics]);
+    }
+
+    /**
+     * Preview the workflow (stages + task templates) for a case type.
+     * Used by the wizard step 5 to render the dynamic checklist.
+     */
+    public function workflowPreview(int $caseTypeId, WorkflowStageService $service): JsonResponse
+    {
+        $stages = $service->listByCaseType($caseTypeId);
+
+        return response()->json([
+            'data' => WorkflowStageResource::collection($stages),
+        ]);
+    }
+
+    /**
+     * Advance the case to the next workflow stage.
+     */
+    public function advanceStage(ImmigrationCase $case, WorkflowInstantiator $instantiator): JsonResponse
+    {
+        $this->authorize('update', $case);
+
+        $next = $instantiator->advanceStage($case);
+
+        $case = $case->fresh(['currentStage.translations', 'tasks.template.translations']);
+
+        return response()->json([
+            'message' => 'Etapa avanzada',
+            'next'    => $next ? new WorkflowStageResource($next->load('translations')) : null,
+            'case'    => new CaseResource($case),
+        ]);
     }
 }

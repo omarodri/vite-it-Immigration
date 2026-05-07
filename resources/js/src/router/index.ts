@@ -535,6 +535,20 @@ const routes: RouteRecordRaw[] = [
         meta: { permission: 'roles.update' },
     },
 
+    // Admin - Workflows
+    {
+        path: '/admin/workflows',
+        name: 'admin-workflows',
+        component: () => import('../views/admin/workflows/index.vue'),
+        meta: { permission: 'workflows.view' },
+    },
+    {
+        path: '/admin/workflows/:caseTypeId',
+        name: 'admin-workflows-builder',
+        component: () => import('../views/admin/workflows/builder.vue'),
+        meta: { permission: 'workflows.view' },
+    },
+
     // Tenant Settings
     {
         path: '/admin/tenant/settings',

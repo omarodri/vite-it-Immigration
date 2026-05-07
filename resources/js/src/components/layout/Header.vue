@@ -12,7 +12,7 @@
                     </router-link>
 
                     <a
-                        href="javascript:;"
+                        href="#"
                         class="collapse-icon flex-none dark:text-[#d0d2d6] hover:text-primary dark:hover:text-primary flex lg:hidden ltr:ml-2 rtl:mr-2 p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:bg-white-light/90 dark:hover:bg-dark/60"
                         @click="store.toggleSidebar()"
                     >
@@ -73,7 +73,7 @@
                     <!-- Theme -->
                     <div>
                         <a
-                            href="javascript:;"
+                            href="#"
                             v-show="store.theme === 'light'"
                             class="flex items-center p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60"
                             @click="store.toggleTheme('dark')"
@@ -81,7 +81,7 @@
                             <icon-sun />
                         </a>
                         <a
-                            href="javascript:;"
+                            href="#"
                             v-show="store.theme === 'dark'"
                             class="flex items-center p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60"
                             @click="store.toggleTheme('system')"
@@ -89,7 +89,7 @@
                             <icon-moon />
                         </a>
                         <a
-                            href="javascript:;"
+                            href="#"
                             v-show="store.theme === 'system'"
                             class="flex items-center p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60"
                             @click="store.toggleTheme('light')"
@@ -345,7 +345,7 @@
                 class="horizontal-menu hidden py-1.5 font-semibold px-6 lg:space-x-1.5 xl:space-x-8 rtl:space-x-reverse bg-white border-t border-[#ebedf2] dark:border-[#191e3a] dark:bg-[#0e1726] text-black dark:text-white-dark"
             >
                 <li class="menu nav-item relative">
-                    <a href="javascript:;" class="nav-link">
+                    <a href="#" class="nav-link">
                         <div class="flex items-center">
                             <icon-menu-dashboard class="shrink-0" />
 
@@ -371,7 +371,7 @@
                     </ul>
                 </li>
                 <li class="menu nav-item relative">
-                    <a href="javascript:;" class="nav-link">
+                    <a href="#" class="nav-link">
                         <div class="flex items-center">
                             <icon-menu-apps class="shrink-0" />
 
@@ -401,7 +401,7 @@
                             <router-link to="/apps/contacts">{{ $t('contacts') }}</router-link>
                         </li>
                         <li class="relative">
-                            <a href="javascript:;"
+                            <a href="#"
                                 >{{ $t('invoice') }}
                                 <div class="ltr:ml-auto rtl:mr-auto rtl:rotate-90 -rotate-90">
                                     <icon-caret-down />
@@ -430,7 +430,7 @@
                     </ul>
                 </li>
                 <li class="menu nav-item relative">
-                    <a href="javascript:;" class="nav-link">
+                    <a href="#" class="nav-link">
                         <div class="flex items-center">
                             <icon-menu-components class="shrink-0" />
                             <span class="px-2">{{ $t('components') }}</span>
@@ -485,7 +485,7 @@
                     </ul>
                 </li>
                 <li class="menu nav-item relative">
-                    <a href="javascript:;" class="nav-link">
+                    <a href="#" class="nav-link">
                         <div class="flex items-center">
                             <icon-menu-elements class="shrink-0" />
                             <span class="px-2">{{ $t('elements') }}</span>
@@ -552,7 +552,7 @@
                     </ul>
                 </li>
                 <li class="menu nav-item relative">
-                    <a href="javascript:;" class="nav-link">
+                    <a href="#" class="nav-link">
                         <div class="flex items-center">
                             <icon-menu-datatables class="shrink-0" />
                             <span class="px-2">{{ $t('tables') }}</span>
@@ -566,7 +566,7 @@
                             <router-link to="/tables">{{ $t('tables') }}</router-link>
                         </li>
                         <li class="relative">
-                            <a href="javascript:;"
+                            <a href="#"
                                 >{{ $t('datatables') }}
                                 <div class="ltr:ml-auto rtl:mr-auto rtl:rotate-90 -rotate-90">
                                     <icon-caret-down />
@@ -622,7 +622,7 @@
                     </ul>
                 </li>
                 <li class="menu nav-item relative">
-                    <a href="javascript:;" class="nav-link">
+                    <a href="#" class="nav-link">
                         <div class="flex items-center">
                             <icon-menu-forms class="shrink-0" />
                             <span class="px-2">{{ $t('forms') }}</span>
@@ -680,7 +680,7 @@
                     </ul>
                 </li>
                 <li class="menu nav-item relative">
-                    <a href="javascript:;" class="nav-link">
+                    <a href="#" class="nav-link">
                         <div class="flex items-center">
                             <icon-menu-pages class="shrink-0" />
                             <span class="px-2">{{ $t('pages') }}</span>
@@ -691,7 +691,7 @@
                     </a>
                     <ul class="sub-menu">
                         <li class="relative">
-                            <a href="javascript:;"
+                            <a href="#"
                                 >{{ $t('users') }}
                                 <div class="ltr:ml-auto rtl:mr-auto rtl:rotate-90 -rotate-90">
                                     <icon-caret-down />
@@ -730,7 +730,7 @@
                             <router-link to="/pages/maintenence" target="_blank">{{ $t('maintenence') }}</router-link>
                         </li>
                         <li class="relative">
-                            <a href="javascript:;"
+                            <a href="#"
                                 >{{ $t('error') }}
                                 <div class="ltr:ml-auto rtl:mr-auto rtl:rotate-90 -rotate-90">
                                     <icon-caret-down />
@@ -751,7 +751,7 @@
                             </ul>
                         </li>
                         <li class="relative">
-                            <a href="javascript:;"
+                            <a href="#"
                                 >{{ $t('login') }}
                                 <div class="ltr:ml-auto rtl:mr-auto rtl:rotate-90 -rotate-90">
                                     <icon-caret-down />
@@ -769,7 +769,7 @@
                             </ul>
                         </li>
                         <li class="relative">
-                            <a href="javascript:;"
+                            <a href="#"
                                 >{{ $t('register') }}
                                 <div class="ltr:ml-auto rtl:mr-auto rtl:rotate-90 -rotate-90">
                                     <icon-caret-down />
@@ -787,7 +787,7 @@
                             </ul>
                         </li>
                         <li class="relative">
-                            <a href="javascript:;"
+                            <a href="#"
                                 >{{ $t('password_recovery') }}
                                 <div class="ltr:ml-auto rtl:mr-auto rtl:rotate-90 -rotate-90">
                                     <icon-caret-down />
@@ -805,7 +805,7 @@
                             </ul>
                         </li>
                         <li class="relative">
-                            <a href="javascript:;"
+                            <a href="#"
                                 >{{ $t('lockscreen') }}
                                 <div class="ltr:ml-auto rtl:mr-auto rtl:rotate-90 -rotate-90">
                                     <icon-caret-down />
@@ -825,7 +825,7 @@
                     </ul>
                 </li>
                 <li class="menu nav-item relative">
-                    <a href="javascript:;" class="nav-link">
+                    <a href="#" class="nav-link">
                         <div class="flex items-center">
                             <icon-menu-more class="shrink-0" />
 

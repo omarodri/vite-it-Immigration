@@ -4,6 +4,7 @@
  */
 
 import type { CaseInvoice, FinancialSummary } from './invoice';
+import type { WorkflowSnapshot, WorkflowStage, WorkflowTask } from './workflow';
 
 // =============================================
 // Base Types (Enums)
@@ -115,10 +116,21 @@ export interface ImmigrationCase {
     // Important Dates
     important_dates?: ImportantDate[];
 
-    // Lifecycle Tasks
-    tasks?: CaseTask[];
+    // Lifecycle Tasks (workflow-driven)
+    tasks?: WorkflowTask[];
 
-    // Operational
+    // Workflow
+    current_stage_id: number | null;
+    current_case_stage_id: number | null;
+    workflow_snapshot: WorkflowSnapshot | null;
+    current_stage?: WorkflowStage | null;
+    current_case_stage?: {
+        id: number;
+        name_resolved: string | null;
+        color: string | null;
+    } | null;
+
+    // Operational (legacy - kept while migrating off cases.stage string)
     stage: CaseStage | null;
     stage_label: string | null;
     ircc_status: IrccStatus | null;
@@ -192,7 +204,8 @@ export interface CreateCaseData {
     language?: string;
     description?: string;
     important_dates?: Omit<ImportantDate, 'id'>[];
-    case_tasks?: Omit<CaseTask, 'id' | 'completed_at'>[];
+    case_tasks?: Omit<CaseTask, 'id' | 'completed_at'>[]; // legacy, ignored by backend
+    excluded_template_ids?: number[];
     service_type?: ServiceType;
     contract_number?: string | null;
     fees?: number | null;
@@ -201,6 +214,7 @@ export interface CreateCaseData {
 export interface UpdateCaseData {
     client_id?: number;
     case_type_id?: number;
+    current_stage_id?: number | null;
     status?: CaseStatus;
     priority?: CasePriority;
     progress?: number;
@@ -243,6 +257,7 @@ export interface CaseFilters {
     per_page?: number;
     page?: number;
     stage?: CaseStage;
+    current_case_stage_id?: number;
     ircc_status?: IrccStatus;
     service_type?: ServiceType;
 }
@@ -261,7 +276,7 @@ export interface CaseStatistics {
         medium: number;
         low: number;
     };
-    upcoming_hearings: number;
+    upcoming_deadlines: number;
     unassigned: number;
 }
 

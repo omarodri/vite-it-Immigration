@@ -11,7 +11,7 @@
             :class="{ 'ltr:!right-0 rtl:!left-0': showCustomizer }"
         >
             <a
-                href="javascript:;"
+                href="#"
                 class="bg-primary ltr:rounded-tl-full rtl:rounded-tr-full ltr:rounded-bl-full rtl:rounded-br-full absolute ltr:-left-12 rtl:-right-12 top-0 bottom-0 my-auto w-12 h-10 flex justify-center items-center text-white cursor-pointer"
                 @click="showCustomizer = !showCustomizer"
             >
@@ -27,7 +27,7 @@
                 <div>
                     <div class="text-center relative pb-5">
                         <a
-                            href="javascript:;"
+                            href="#"
                             class="absolute top-0 ltr:right-0 rtl:left-0 opacity-30 hover:opacity-100 dark:text-white"
                             @click="showCustomizer = false"
                         >

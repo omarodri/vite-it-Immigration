@@ -6,13 +6,22 @@ use App\Models\Client;
 use App\Models\Companion;
 use App\Models\Event;
 use App\Models\ImmigrationCase;
+use App\Models\Task;
+use App\Models\TaskTemplate;
+use App\Models\Todo;
+use App\Models\WorkflowStage;
 use App\Observers\CaseObserver;
 use App\Observers\ClientObserver;
 use App\Observers\CompanionObserver;
 use App\Observers\EventSyncObserver;
 use App\Observers\ImmigrationCaseObserver;
+use App\Observers\TaskWorkflowObserver;
+use App\Observers\TodoObserver;
+use App\Policies\TaskTemplatePolicy;
+use App\Policies\WorkflowStagePolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -36,6 +45,11 @@ class AppServiceProvider extends ServiceProvider
         Event::observe(EventSyncObserver::class);
         ImmigrationCase::observe(CaseObserver::class);
         ImmigrationCase::observe(ImmigrationCaseObserver::class);
+        Task::observe(TaskWorkflowObserver::class);
+        Todo::observe(TodoObserver::class);
+
+        Gate::policy(WorkflowStage::class, WorkflowStagePolicy::class);
+        Gate::policy(TaskTemplate::class, TaskTemplatePolicy::class);
 
         $this->configureRateLimiting();
     }

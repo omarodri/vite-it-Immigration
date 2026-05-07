@@ -160,6 +160,7 @@ class RolePermissionSeeder extends Seeder
                     'clients.view', 'clients.create', 'clients.update',
                     'companions.view', 'companions.create', 'companions.update', 'companions.delete',
                     'cases.view', 'cases.create', 'cases.update', 'cases.assign', 'cases.view-fees', 'cases.manage-invoices',
+                    'workflows.view', 'workflows.create', 'workflows.update', 'workflows.delete',
                     'tasks.view', 'tasks.create', 'tasks.update',
                     'follow-ups.view', 'follow-ups.create', 'follow-ups.update',
                     'documents.view', 'documents.create', 'documents.update', 'documents.delete', 'documents.download',

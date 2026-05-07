@@ -7,91 +7,102 @@
             {{ $t('case_tasks.step_subtitle') }}
         </p>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Left: Available base tasks -->
-            <div class="panel">
-                <h6 class="text-base font-medium mb-3">{{ $t('case_tasks.available_tasks') }}</h6>
-                <div class="space-y-2">
+        <!-- Loading -->
+        <div v-if="isLoading" class="panel">
+            <div class="animate-pulse space-y-3">
+                <div v-for="n in 3" :key="n" class="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            </div>
+        </div>
+
+        <!-- No workflow defined -->
+        <div v-else-if="!hasWorkflow" class="panel border-warning border bg-warning/5">
+            <div class="flex items-start gap-3">
+                <svg class="w-6 h-6 text-warning shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0L3.16 16.25A2 2 0 005 19z" />
+                </svg>
+                <div class="flex-1">
+                    <h4 class="font-semibold text-sm mb-1">{{ $t('workflow.no_workflow_defined') }}</h4>
+                    <p class="text-xs text-gray-500 mb-2">{{ $t('workflow.no_workflow_help') }}</p>
+                    <router-link
+                        v-if="canViewWorkflows && caseTypeId"
+                        :to="`/admin/workflows/${caseTypeId}`"
+                        class="text-primary text-xs hover:underline"
+                    >
+                        {{ $t('workflow.configure_workflow') }} &rarr;
+                    </router-link>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow stages with their templates -->
+        <div v-else class="space-y-4">
+            <div
+                v-for="stage in stages"
+                :key="stage.id"
+                class="panel"
+            >
+                <div class="flex items-center gap-3 mb-3 pb-3 border-b border-[#e0e6ed] dark:border-[#1b2e4b]">
+                    <span
+                        class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-semibold shrink-0"
+                        :class="`bg-${stage.color || 'primary'} text-white`"
+                    >
+                        {{ stage.sort_order + 1 }}
+                    </span>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold text-sm dark:text-white-light">
+                            {{ getTranslated(stage.translations, 'name') }}
+                        </h4>
+                        <p v-if="getTranslated(stage.translations, 'description')" class="text-xs text-gray-500">
+                            {{ getTranslated(stage.translations, 'description') }}
+                        </p>
+                    </div>
+                    <span class="text-xs text-gray-400">
+                        {{ activeTemplatesIn(stage) }}/{{ stage.task_templates?.length ?? 0 }} {{ $t('case_tasks.tasks_short') }}
+                    </span>
+                </div>
+
+                <div v-if="!stage.task_templates?.length" class="text-xs text-gray-400 italic">
+                    {{ $t('workflow.no_templates_in_stage') }}
+                </div>
+
+                <div v-else class="space-y-2">
                     <label
-                        v-for="task in DEFAULT_CASE_TASKS"
-                        :key="task.key"
-                        class="flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                        v-for="tmpl in stage.task_templates"
+                        :key="tmpl.id"
+                        class="flex items-start gap-3 p-2 rounded transition"
+                        :class="tmpl.is_required
+                            ? 'bg-gray-50 dark:bg-gray-900 cursor-not-allowed'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'"
                     >
                         <input
                             type="checkbox"
-                            class="form-checkbox"
-                            :checked="isTaskSelected(task.key)"
-                            @change="toggleBaseTask(task.key)"
+                            class="form-checkbox mt-0.5"
+                            :checked="!isExcluded(tmpl.id)"
+                            :disabled="tmpl.is_required"
+                            @change="toggleTemplate(tmpl.id)"
                         />
-                        <span class="text-sm">{{ getTaskLabel(task.key) }}</span>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-sm">{{ getTranslated(tmpl.translations, 'name') }}</span>
+                                <span v-if="tmpl.is_required" class="badge badge-outline-danger text-[10px]">
+                                    {{ $t('workflow.required_short') }}
+                                </span>
+                                <span v-if="tmpl.due_offset_days != null" class="text-xs text-gray-400">
+                                    +{{ tmpl.due_offset_days }}d
+                                </span>
+                            </div>
+                            <p v-if="getTranslated(tmpl.translations, 'description')" class="text-xs text-gray-500 mt-0.5">
+                                {{ getTranslated(tmpl.translations, 'description') }}
+                            </p>
+                        </div>
                     </label>
-                </div>
-            </div>
-
-            <!-- Right: Selected tasks with drag-and-drop -->
-            <div class="panel">
-                <h6 class="text-base font-medium mb-3">
-                    {{ $t('case_tasks.selected_tasks') }}
-                    <span class="badge badge-outline-primary ml-2">{{ selectedTasks.length }}</span>
-                </h6>
-
-                <div v-if="selectedTasks.length === 0" class="text-sm text-gray-400 italic py-4 text-center">
-                    {{ $t('case_tasks.no_selected') }}
-                </div>
-
-                <VueDraggable
-                    v-model="wizard.state.selectedTasks"
-                    :animation="150"
-                    handle=".drag-handle"
-                    @end="recalculateSortOrder"
-                    class="space-y-2"
-                >
-                    <div
-                        v-for="(task, idx) in selectedTasks"
-                        :key="task.key ?? `custom-${idx}`"
-                        class="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded border border-[#e0e6ed] dark:border-[#1b2e4b]"
-                    >
-                        <!-- Drag handle -->
-                        <span class="drag-handle cursor-grab text-gray-400 shrink-0">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 6a2 2 0 1 1 4 0 2 2 0 0 1-4 0zM14 12a2 2 0 1 1 4 0 2 2 0 0 1-4 0zM14 18a2 2 0 1 1 4 0 2 2 0 0 1-4 0z"/>
-                            </svg>
-                        </span>
-                        <!-- Label -->
-                        <span class="flex-1 text-sm">{{ task.label }}</span>
-                        <!-- Custom badge -->
-                        <span v-if="task.is_custom" class="badge badge-outline-secondary text-xs shrink-0">
-                            {{ $t('case_tasks.custom_task_label') }}
-                        </span>
-                        <!-- Remove -->
-                        <button type="button" @click="removeTask(idx)" class="text-danger hover:text-danger/80 shrink-0">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
-                    </div>
-                </VueDraggable>
-
-                <!-- Add custom task -->
-                <div class="flex gap-2 mt-4">
-                    <input
-                        v-model="customTaskLabel"
-                        type="text"
-                        class="form-input flex-1 text-sm"
-                        :placeholder="$t('case_tasks.custom_task_label') + '...'"
-                        maxlength="150"
-                        @keydown.enter.prevent="addCustomTask"
-                    />
-                    <button type="button" class="btn btn-outline-primary btn-sm" @click="addCustomTask">
-                        {{ $t('case_tasks.add_custom') }}
-                    </button>
                 </div>
             </div>
         </div>
 
         <p class="text-xs text-gray-400 mt-4 text-center">
             <svg class="w-3 h-3 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             {{ $t('case_tasks.optional_step') }}
         </p>
@@ -101,74 +112,66 @@
 <script lang="ts" setup>
 import { ref, computed, watch, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { VueDraggable } from 'vue-draggable-plus';
-import { DEFAULT_CASE_TASKS } from '@/types/case';
-import type { WizardTaskItem } from '@/types/wizard';
+import { useAuthStore } from '@/stores/auth';
+import { workflowService } from '@/services/workflowService';
+import type { WorkflowStage, TranslationsByField } from '@/types/workflow';
 
-// Get wizard from parent via inject (same pattern as StepDetails, StepCompanions)
 const wizard = inject<ReturnType<typeof import('@/composables/useCaseWizard').useCaseWizard>>('wizard')!;
 
-const { t } = useI18n();
+const { locale: i18nLocale } = useI18n();
+const authStore = useAuthStore();
 
-// The language selected in step 4 (caseDetails)
-const caseLanguage = computed(() => wizard.state.caseDetails.language || 'es');
+const stages = ref<WorkflowStage[]>([]);
+const isLoading = ref(false);
 
-// Translated label for a base task key in the case language
-function getTaskLabel(key: string): string {
-    // vue-i18n supports per-call locale override via the 3rd argument
-    return t(`case_tasks.${key}`, 1, { locale: caseLanguage.value });
+const caseTypeId = computed<number | null>(() => wizard.state.caseTypeId);
+const caseLanguage = computed<string>(() => wizard.state.caseDetails.language || (i18nLocale.value as string));
+const hasWorkflow = computed(() => stages.value.length > 0);
+const canViewWorkflows = computed(() => authStore.hasPermission('workflows.view'));
+
+function getTranslated(translations: TranslationsByField | undefined, field: string): string {
+    if (!translations?.[field]) return '';
+    const loc = caseLanguage.value as 'es' | 'en' | 'fr';
+    return translations[field][loc] ?? translations[field].es ?? Object.values(translations[field])[0] ?? '';
 }
 
-// Selected tasks (reactive reference to wizard state)
-const selectedTasks = computed(() => wizard.state.selectedTasks as WizardTaskItem[]);
-
-// Check if a base task key is selected
-function isTaskSelected(key: string): boolean {
-    return selectedTasks.value.some(t => t.key === key);
+function isExcluded(templateId: number): boolean {
+    return wizard.state.excludedTemplateIds.includes(templateId);
 }
 
-// Toggle a base task
-function toggleBaseTask(key: string) {
-    if (isTaskSelected(key)) {
-        wizard.state.selectedTasks = selectedTasks.value.filter(t => t.key !== key);
+function toggleTemplate(templateId: number) {
+    if (isExcluded(templateId)) {
+        wizard.state.excludedTemplateIds = wizard.state.excludedTemplateIds.filter(id => id !== templateId);
     } else {
-        wizard.state.selectedTasks = [
-            ...selectedTasks.value,
-            { key, label: getTaskLabel(key), is_custom: false, sort_order: selectedTasks.value.length },
-        ];
+        wizard.state.excludedTemplateIds = [...wizard.state.excludedTemplateIds, templateId];
     }
-    recalculateSortOrder();
 }
 
-// Custom task
-const customTaskLabel = ref('');
-
-function addCustomTask() {
-    if (!customTaskLabel.value.trim()) return;
-    wizard.state.selectedTasks = [
-        ...selectedTasks.value,
-        { key: null, label: customTaskLabel.value.trim(), is_custom: true, sort_order: selectedTasks.value.length },
-    ];
-    customTaskLabel.value = '';
-    recalculateSortOrder();
+function activeTemplatesIn(stage: WorkflowStage): number {
+    if (!stage.task_templates) return 0;
+    return stage.task_templates.filter(t => !isExcluded(t.id)).length;
 }
 
-function removeTask(idx: number) {
-    wizard.state.selectedTasks.splice(idx, 1);
-    recalculateSortOrder();
-}
-
-function recalculateSortOrder() {
-    wizard.state.selectedTasks.forEach((t: WizardTaskItem, i: number) => { t.sort_order = i; });
-}
-
-// When language changes in step 4, retranslate base tasks
-watch(caseLanguage, (newLang) => {
-    wizard.state.selectedTasks = selectedTasks.value.map((task: WizardTaskItem) => {
-        if (!task.is_custom && task.key) {
-            return { ...task, label: t(`case_tasks.${task.key}`, 1, { locale: newLang }) };
+async function loadWorkflow(typeId: number) {
+    isLoading.value = true;
+    try {
+        const { data } = await workflowService.workflowPreview(typeId);
+        stages.value = data.data;
+        // Reset excluded when changing case type; required ones are forced included
+        wizard.state.excludedTemplateIds = [];
+    } catch (err: any) {
+        // Don't swallow auth errors — they were already handled by the axios interceptor.
+        // For any other failure, just leave the stages empty so the wizard can still submit.
+        if (err?.response?.status && err.response.status !== 401) {
+            console.warn('[StepChecklist] workflow-preview failed:', err.response.status, err.response.data);
         }
-        return task;
-    });
-});
+        stages.value = [];
+    } finally {
+        isLoading.value = false;
+    }
+}
+
+watch(caseTypeId, (id) => {
+    if (id) loadWorkflow(id);
+}, { immediate: true });
 </script>

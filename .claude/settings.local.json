@@ -66,7 +66,9 @@
       "Bash(sed -i '' 's/\"\"sidebar.integrations\"\": \"\"Integraciones\"\",/\"\"sidebar.integrations\"\": \"\"Integraciones\"\",\\\\n    \"\"sidebar.backups\"\": \"\"Respaldos BD\"\",/' /Users/omar/Herd/vite-it-Immigration/resources/js/src/locales/es.json)",
       "Bash(sed -i '' 's/\"\"sidebar.integrations\"\": \"\"Intégrations\"\",/\"\"sidebar.integrations\"\": \"\"Intégrations\"\",\\\\n    \"\"sidebar.backups\"\": \"\"Sauvegardes BD\"\",/' /Users/omar/Herd/vite-it-Immigration/resources/js/src/locales/fr.json)",
       "Bash(node_modules/.bin/vite build:*)",
-      "Bash(composer --version)"
+      "Bash(composer --version)",
+      "Bash(continue)",
+      "Bash(git -C /Users/omar/Herd/vite-it-Immigration status --short)"
     ]
   }
 }

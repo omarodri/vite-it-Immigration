@@ -39,6 +39,13 @@ const todoService = {
     async bulkDelete(ids: number[]): Promise<void> {
         await api.delete('/todos/bulk', { data: { ids } });
     },
+
+    async listCoreByCase(caseId: number): Promise<{ data: Todo[] }> {
+        const response = await api.get<{ data: Todo[] }>('/todos', {
+            params: { case_id: caseId, is_core: 1 },
+        });
+        return response.data;
+    },
 };
 
 export default todoService;

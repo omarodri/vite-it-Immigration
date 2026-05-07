@@ -1,6 +1,6 @@
 <template>
     <div class="space-y-4">
-        <!-- Top toolbar -->
+        <!-- Top toolbar + filters-->
         <div class="flex flex-wrap items-center gap-3">
             <button type="button" class="btn btn-primary btn-sm gap-1" @click="addEditTask()">
                 <icon-plus class="w-4 h-4 shrink-0" />
@@ -32,6 +32,7 @@
                 <option value="seguimiento">{{ $t('todo_tag_seguimiento') }}</option>
                 <option value="ircc">{{ $t('todo_tag_ircc') }}</option>
                 <option value="contabilidad">{{ $t('todo_tag_contabilidad') }}</option>
+                <option value="nucleo">{{ $t('todo_tag_nucleo') }}</option>
             </select>
         </div>
 
@@ -138,6 +139,15 @@
                                                 :class="tagBadgeOutlineClass(task.tag)"
                                             >
                                                 {{ $t('todo_tag_' + task.tag) }}
+                                            </span>
+                                        </template>
+                                        <template v-if="task.is_core">
+                                            <span
+                                                :class="{
+                                                    'badge-outline-success': task.is_core,
+                                                }"
+                                            >
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"></circle><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"></circle><path opacity="0.5" d="M15 9L19 5" stroke="currentColor" stroke-width="1.5"></path><path opacity="0.5" d="M5 19L9 15" stroke="currentColor" stroke-width="1.5"></path><path opacity="0.5" d="M9 9L5 5" stroke="currentColor" stroke-width="1.5"></path><path opacity="0.5" d="M19 19L15 15" stroke="currentColor" stroke-width="1.5"></path></svg>                                        
                                             </span>
                                         </template>
                                     </div>
@@ -381,13 +391,15 @@
                                         v-show="selectedTask.priority"
                                         class="badge rounded-3xl capitalize"
                                         :class="{
-                                            'badge-outline-primary': selectedTask.priority === 'medium',
                                             'badge-outline-warning': selectedTask.priority === 'low',
+                                            'badge-outline-primary': selectedTask.priority === 'medium',
                                             'badge-outline-danger': selectedTask.priority === 'high',
                                         }"
                                     >
                                         {{ selectedTask.priority }}
                                     </div>
+                                    <div v-if="selectedTask.is_core" class="badge rounded-3xl capitalize text-success"> 
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"></circle><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"></circle><path opacity="0.5" d="M15 9L19 5" stroke="currentColor" stroke-width="1.5"></path><path opacity="0.5" d="M5 19L9 15" stroke="currentColor" stroke-width="1.5"></path><path opacity="0.5" d="M9 9L5 5" stroke="currentColor" stroke-width="1.5"></path><path opacity="0.5" d="M19 19L15 15" stroke="currentColor" stroke-width="1.5"></path></svg>                                    </div>
                                     <div
                                         v-show="selectedTask.tag"
                                         class="badge rounded-3xl capitalize"
@@ -406,6 +418,10 @@
                                         <span class="font-medium">{{ $t('todo_due_date') }}:</span>
                                         {{ formatDate(selectedTask.due_date) }}
                                     </div>
+                                    <div v-if="selectedTask.created_at" class="mt-2 flex items-center gap-2 text-sm text-white-dark">
+                                        <span class="font-medium">{{ $t('todo_created_at') }}:</span>
+                                        {{ formatDate(selectedTask.created_at) }}
+                                    </div>                                    
                                     <div class="flex justify-end items-center mt-8">
                                         <button type="button" class="btn btn-outline-danger" @click="viewTaskModal = false">{{ $t('todo_close') }}</button>
                                     </div>
@@ -448,6 +464,10 @@ import { sanitizeHtml } from '@/utils/sanitize';
 const props = defineProps<{
     caseId: number;
     caseNumber: string;
+}>();
+
+const emit = defineEmits<{
+    (e: 'core-status-changed'): void;
 }>();
 
 const { t } = useI18n();
@@ -565,6 +585,7 @@ async function taskComplete(task: Todo) {
     const newStatus = task.status === 'complete' ? 'pending' : 'complete';
     await todoStore.updateStatus(task.id, newStatus);
     await refreshTodos();
+    if (task.is_core) emit('core-status-changed');
 }
 
 async function setImportant(task: Todo) {
@@ -643,8 +664,9 @@ async function saveTask() {
             due_date: params.value.due_date || undefined,
         };
 
-        if (params.value.id) {
-            await todoStore.updateTodo(params.value.id, data);
+        const savedId = params.value.id;
+        if (savedId) {
+            await todoStore.updateTodo(savedId, data);
             showMessage(t('todo_task_updated'));
         } else {
             await todoStore.createTodo({ ...data, status: 'pending' } as CreateTodoData);
@@ -652,6 +674,10 @@ async function saveTask() {
         }
         forceTodoClose();
         await refreshTodos();
+        if (savedId) {
+            const fresh = todoStore.todos.find((t) => t.id === savedId);
+            if (fresh) selectedTask.value = fresh;
+        }
     } catch {
         showMessage(t('todo_save_failed'), 'error');
     } finally {
@@ -705,6 +731,7 @@ const TAG_BADGE_OUTLINE: Record<string, string> = {
     seguimiento: 'badge-outline-warning',
     ircc: 'badge-outline-primary',
     contabilidad: 'badge-outline-success',
+    nucleo: 'badge-primary',
 };
 
 function tagBadgeOutlineClass(tag: string | undefined | null): string {

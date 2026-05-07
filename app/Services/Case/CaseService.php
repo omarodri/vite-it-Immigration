@@ -11,6 +11,7 @@ use App\Repositories\Contracts\CaseRepositoryInterface;
 use App\Repositories\Contracts\CaseTypeRepositoryInterface;
 use App\Services\Document\CaseFolderSyncService;
 use App\Services\Document\FolderService;
+use App\Services\Workflow\WorkflowInstantiator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -26,6 +27,7 @@ class CaseService
         private CaseTaskService $caseTaskService,
         private FolderService $folderService,
         private CaseFolderSyncService $caseFolderSyncService,
+        private WorkflowInstantiator $workflowInstantiator,
     ) {}
 
     /**
@@ -41,7 +43,17 @@ class CaseService
      */
     public function getCase(ImmigrationCase $case): ImmigrationCase
     {
-        return $case->load(['client', 'caseType', 'assignedTo.profile', 'companions', 'importantDates', 'tasks', 'invoices']);
+        return $case->load([
+            'client',
+            'caseType',
+            'currentStage.translations',
+            'assignedTo.profile',
+            'companions',
+            'importantDates',
+            'tasks.template.translations',
+            'tasks.workflowStage.translations',
+            'invoices',
+        ]);
     }
 
     /**
@@ -54,8 +66,11 @@ class CaseService
             $companionIds = $data['companion_ids'] ?? [];
             unset($data['companion_ids']);
 
-            // Extract case_tasks before creating the case
-            $caseTasks = $data['case_tasks'] ?? [];
+            // Workflow: excluded template ids (optional templates the user opted out of)
+            $excludedTemplateIds = $data['excluded_template_ids'] ?? [];
+            unset($data['excluded_template_ids']);
+
+            // Legacy: case_tasks input is ignored (workflow drives task creation now)
             unset($data['case_tasks']);
 
             // Extract important_dates before creating the case
@@ -91,10 +106,8 @@ class CaseService
 
             $case->importantDates()->createMany($datesWithCaseId);
 
-            // Sync case tasks if provided
-            if (! empty($caseTasks)) {
-                $this->caseTaskService->syncTasks($case, $caseTasks);
-            }
+            // Materialize workflow stages + tasks from templates (no-op if no workflow defined for this case_type)
+            $this->workflowInstantiator->instantiate($case, $excludedTemplateIds);
 
             activity()
                 ->causedBy(Auth::user())
@@ -107,12 +120,12 @@ class CaseService
                 ])
                 ->log('Created case: ' . $case->case_number);
 
-            return $case->load(['client', 'caseType', 'assignedTo.profile', 'companions', 'importantDates', 'tasks']);
+            return $case->load(['client', 'caseType', 'currentStage.translations',
+                                'assignedTo.profile', 'companions', 'importantDates',
+                                'tasks.template.translations']);
         });
 
-        // Create default folder structure AFTER transaction commits.
-        // Runs outside the transaction so folder creation errors
-        // do not prevent the case from being created.
+        // Step 1: Create folder records in the DB (fast, no external calls).
         try {
             $this->folderService->createDefaultStructure($case);
         } catch (\Throwable $e) {
@@ -123,22 +136,10 @@ class CaseService
             ]);
         }
 
-        // Sync folders to cloud synchronously (no queue dependency).
-        // For local storage, folders are already synced in createDefaultStructure().
-        $tenant = $case->tenant ?? \App\Models\Tenant::find($case->tenant_id);
-        $storageType = $tenant->storage_type ?? 'local';
-
-        if (in_array($storageType, ['onedrive', 'google_drive', 'sharepoint'], true)) {
-            try {
-                $this->caseFolderSyncService->syncFolderStructure($case);
-            } catch (\Throwable $e) {
-                Log::error('CaseService: Failed to sync folders to cloud', [
-                    'case_id' => $case->id,
-                    'storage_type' => $storageType,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
+        // Step 2: Dispatch cloud sync to the queue — never block the HTTP request on
+        // external API calls (Guzzle timeouts cause PHP fatal errors uncatchable by try-catch).
+        // SyncCaseFolderStructure handles local vs cloud and retries on failure.
+        \App\Jobs\SyncCaseFolderStructure::dispatch($case->id);
 
         return $case;
     }

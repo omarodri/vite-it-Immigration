@@ -921,8 +921,9 @@
                 due_date: params.value.due_date || undefined,
             };
 
-            if (params.value.id) {
-                await todoStore.updateTodo(params.value.id, data);
+            const savedId = params.value.id;
+            if (savedId) {
+                await todoStore.updateTodo(savedId, data);
                 showMessage(t('todo_task_updated'));
             } else {
                 await todoStore.createTodo({ ...data, status: 'pending' } as CreateTodoData);
@@ -930,6 +931,10 @@
             }
             forceTodoClose();
             await refreshTodos();
+            if (savedId) {
+                const fresh = todoStore.todos.find((t) => t.id === savedId);
+                if (fresh) selectedTask.value = fresh;
+            }
         } catch {
             showMessage(t('todo_save_failed'), 'error');
         } finally {

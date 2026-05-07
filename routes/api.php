@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CaseController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\CaseInvoiceController;
+use App\Http\Controllers\Api\CaseStageController;
 use App\Http\Controllers\Api\CaseTaskController;
 use App\Http\Controllers\Api\CaseTypeController;
 use App\Http\Controllers\Api\ClientController;
@@ -17,7 +18,9 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\Admin\BackupController as AdminBackupController;
+use App\Http\Controllers\Api\Admin\TaskTemplateController as AdminTaskTemplateController;
 use App\Http\Controllers\Api\Admin\TenantController as AdminTenantController;
+use App\Http\Controllers\Api\Admin\WorkflowStageController as AdminWorkflowStageController;
 use App\Http\Controllers\Api\OAuthFlowController;
 use App\Http\Controllers\Api\TenantOAuthController;
 use App\Http\Controllers\Api\TwoFactorController;
@@ -113,13 +116,34 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
 
     // Case management routes
     Route::get('/cases/statistics', [CaseController::class, 'statistics']);
+    Route::get('/cases/workflow-preview/{caseTypeId}', [CaseController::class, 'workflowPreview'])
+        ->where('caseTypeId', '[0-9]+');
     Route::apiResource('cases', CaseController::class);
     Route::post('/cases/{case}/assign', [CaseController::class, 'assign']);
     Route::get('/cases/{case}/timeline', [CaseController::class, 'timeline']);
+    Route::patch('/cases/{case}/advance-stage', [CaseController::class, 'advanceStage']);
 
-    // Case Tasks routes
+    // Case Tasks routes (legacy case_tasks table)
     Route::put('/cases/{case}/tasks', [CaseTaskController::class, 'bulkUpdate']);
     Route::patch('/cases/{case}/tasks/{task}/toggle', [CaseTaskController::class, 'toggle']);
+
+    // Case Stages routes (per-case workflow stages)
+    Route::get   ('/cases/{case}/stages',         [CaseStageController::class, 'index']);
+    Route::post  ('/cases/{case}/stages',         [CaseStageController::class, 'store']);
+    Route::patch ('/cases/{case}/stages/reorder', [CaseStageController::class, 'reorder']);
+    Route::patch ('/cases/{case}/stages/{stage}', [CaseStageController::class, 'update']);
+    Route::delete('/cases/{case}/stages/{stage}', [CaseStageController::class, 'destroy']);
+
+    // Workflow Tasks routes (new tasks table)
+    Route::get('/cases/{case}/workflow-tasks/trashed', [CaseTaskController::class, 'listTrashedWorkflowTasks']);
+    Route::post('/cases/{case}/workflow-tasks', [CaseTaskController::class, 'createWorkflowTask']);
+    Route::patch('/cases/{case}/workflow-tasks/reorder', [CaseTaskController::class, 'reorderWorkflowTasks']);
+    Route::post('/cases/{case}/workflow-tasks/{workflowTaskId}/restore', [CaseTaskController::class, 'restoreWorkflowTask'])->whereNumber('workflowTaskId');
+    Route::patch('/cases/{case}/workflow-tasks/{workflowTask}/toggle', [CaseTaskController::class, 'toggleWorkflowTask']);
+    Route::patch('/cases/{case}/workflow-tasks/{workflowTask}/move', [CaseTaskController::class, 'moveWorkflowTask']);
+    Route::delete('/cases/{case}/workflow-tasks/{workflowTask}', [CaseTaskController::class, 'deleteWorkflowTask']);
+    Route::patch('/cases/{case}/workflow-tasks/{workflowTask}/update-core', [CaseTaskController::class, 'updateWorkflowTaskCore']);
+    Route::post('/cases/{case}/workflow-tasks/{workflowTask}/clone', [CaseTaskController::class, 'cloneWorkflowTask']);
 
     // Case Invoices routes
     Route::put('/cases/{case}/invoices', [CaseInvoiceController::class, 'bulkUpdate']);
@@ -288,6 +312,23 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin|super-admin'])->
 // Backup external endpoint — CRON/Job (API Key auth)
 Route::post('/admin/backup/run', [AdminBackupController::class, 'runExternal'])
     ->middleware(['backup.key']);
+
+// Workflow management routes (admin)
+Route::prefix('admin/workflow')
+    ->middleware(['auth:sanctum', 'tenant', 'permission:workflows.view'])
+    ->group(function () {
+        Route::get('/case-types/{caseType}/stages', [AdminWorkflowStageController::class, 'index']);
+        Route::post('/case-types/{caseType}/stages', [AdminWorkflowStageController::class, 'store']);
+        Route::patch('/case-types/{caseType}/stages/reorder', [AdminWorkflowStageController::class, 'reorder']);
+        Route::put('/stages/{stage}', [AdminWorkflowStageController::class, 'update']);
+        Route::delete('/stages/{stage}', [AdminWorkflowStageController::class, 'destroy']);
+
+        Route::get('/stages/{stage}/templates', [AdminTaskTemplateController::class, 'index']);
+        Route::post('/stages/{stage}/templates', [AdminTaskTemplateController::class, 'store']);
+        Route::patch('/stages/{stage}/templates/reorder', [AdminTaskTemplateController::class, 'reorder']);
+        Route::put('/templates/{template}', [AdminTaskTemplateController::class, 'update']);
+        Route::delete('/templates/{template}', [AdminTaskTemplateController::class, 'destroy']);
+    });
 
 // OAuth callback route (no auth required - called by OAuth provider redirect)
 Route::middleware('throttle:login')->get('/oauth/{provider}/callback', [OAuthFlowController::class, 'callback'])

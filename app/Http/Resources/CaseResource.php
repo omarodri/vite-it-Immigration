@@ -3,7 +3,8 @@
 namespace App\Http\Resources;
 
 use App\Http\Resources\CaseInvoiceResource;
-use App\Http\Resources\CaseTaskResource;
+use App\Http\Resources\TaskResource;
+use App\Http\Resources\WorkflowStageResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -36,6 +37,15 @@ class CaseResource extends JsonResource
             // Operational tracking
             'stage' => $this->stage,
             'stage_label' => $this->stage_label,
+            'current_stage_id' => $this->current_stage_id,
+            'current_case_stage_id' => $this->current_case_stage_id,
+            'workflow_snapshot' => $this->workflow_snapshot,
+            'current_stage' => $this->whenLoaded('currentStage', fn () => new WorkflowStageResource($this->currentStage)),
+            'current_case_stage' => $this->whenLoaded('currentCaseStage', fn () => [
+                'id'            => $this->currentCaseStage->id,
+                'name_resolved' => $this->currentCaseStage->trans('name', app()->getLocale()),
+                'color'         => $this->currentCaseStage->color,
+            ]),
             'ircc_status' => $this->ircc_status,
             'ircc_status_label' => $this->ircc_status_label,
             'final_result' => $this->final_result,
@@ -88,7 +98,7 @@ class CaseResource extends JsonResource
 
             'important_dates' => CaseImportantDateResource::collection($this->whenLoaded('importantDates')),
 
-            'tasks' => CaseTaskResource::collection($this->whenLoaded('tasks')),
+            'tasks' => TaskResource::collection($this->whenLoaded('tasks')),
 
             'invoices' => CaseInvoiceResource::collection($this->whenLoaded('invoices')),
 

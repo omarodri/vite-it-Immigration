@@ -27,6 +27,9 @@ class ImmigrationCase extends Model
         'case_number',
         'client_id',
         'case_type_id',
+        'current_stage_id',
+        'current_case_stage_id',
+        'workflow_snapshot',
         'assigned_to',
         'status',
         'priority',
@@ -53,6 +56,7 @@ class ImmigrationCase extends Model
         'progress' => 'integer',
         'fees' => 'decimal:2',
         'folder_synced_at' => 'datetime',
+        'workflow_snapshot' => 'array',
     ];
 
     /**
@@ -232,9 +236,41 @@ class ImmigrationCase extends Model
     }
 
     /**
-     * Get the tasks for this case.
+     * Get the workflow stage this case is currently on.
+     */
+    public function currentStage(): BelongsTo
+    {
+        return $this->belongsTo(WorkflowStage::class, 'current_stage_id');
+    }
+
+    /**
+     * Get the case stages (instance of workflow stages for this case).
+     */
+    public function caseStages(): HasMany
+    {
+        return $this->hasMany(CaseStage::class, 'case_id')->orderBy('sort_order');
+    }
+
+    /**
+     * Get the current case stage for this case.
+     */
+    public function currentCaseStage(): BelongsTo
+    {
+        return $this->belongsTo(CaseStage::class, 'current_case_stage_id');
+    }
+
+    /**
+     * Get the workflow tasks for this case.
      */
     public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class, 'case_id')->orderBy('sort_order');
+    }
+
+    /**
+     * Legacy checklist (case_tasks table). Kept during workflow migration phase.
+     */
+    public function legacyChecklist(): HasMany
     {
         return $this->hasMany(CaseTask::class, 'case_id')->orderBy('sort_order');
     }
@@ -438,7 +474,7 @@ class ImmigrationCase extends Model
                 'progress',
                 'assigned_to',
                 'description',
-                'stage',
+                'current_stage_id',
                 'ircc_status',
                 'final_result',
                 'fees',

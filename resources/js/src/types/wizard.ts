@@ -26,6 +26,7 @@ export interface WizardState {
     clientId: number | null;
     selectedCompanionIds: number[];
     selectedTasks: WizardTaskItem[];
+    excludedTemplateIds: number[];
     caseDetails: CaseDetailsForm;
     isSubmitting: boolean;
     errors: Record<string, string[]>;

@@ -111,7 +111,7 @@ export const useCaseStore = defineStore('case', {
         },
 
         upcomingHearingsCount: (state): number => {
-            return state.statistics?.upcoming_hearings ?? 0;
+            return state.statistics?.upcoming_deadlines ?? 0;
         },
 
         unassignedCount: (state): number => {
@@ -412,12 +412,9 @@ export const useCaseStore = defineStore('case', {
             try {
                 const result = await caseService.toggleTask(caseId, taskId);
 
-                // Update currentCase tasks and progress if applicable
+                // toggleTask operates on the legacy case_tasks table, not the workflow tasks relation.
+                // Only sync the progress scalar; the legacy checklist is re-fetched by the component.
                 if (this.currentCase?.id === caseId) {
-                    const taskIdx = this.currentCase.tasks?.findIndex(t => t.id === taskId);
-                    if (taskIdx !== undefined && taskIdx !== -1 && this.currentCase.tasks) {
-                        this.currentCase.tasks[taskIdx] = result.task;
-                    }
                     this.currentCase.progress = result.progress;
                 }
 

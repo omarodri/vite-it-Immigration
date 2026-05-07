@@ -3,7 +3,7 @@
  * Manages state and navigation for the case creation wizard
  */
 
-import { reactive, computed, watch } from 'vue';
+import { reactive, ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import caseService from '@/services/caseService';
@@ -21,6 +21,7 @@ const createDefaultState = (): WizardState => ({
     clientId: null,
     selectedCompanionIds: [],
     selectedTasks: [] as WizardTaskItem[],
+    excludedTemplateIds: [] as number[],
     caseDetails: {
         priority: 'medium',
         language: 'es',
@@ -47,6 +48,9 @@ export function useCaseWizard() {
 
     // Reactive state
     const state = reactive<WizardState>(createDefaultState());
+
+    // Todo Core confirmation modal
+    const showTodoCoreModal = ref(false);
 
     // Computed steps with validation status
     const steps = computed<WizardStep[]>(() => {
@@ -170,6 +174,7 @@ export function useCaseWizard() {
                 selectedCompanionIds: state.selectedCompanionIds,
                 selectedTasks: state.selectedTasks,
                 caseDetails: state.caseDetails,
+                excludedTemplateIds: state.excludedTemplateIds,
             };
             sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         } catch (e) {
@@ -187,6 +192,7 @@ export function useCaseWizard() {
                 state.clientId = data.clientId || null;
                 state.selectedCompanionIds = data.selectedCompanionIds || [];
                 state.selectedTasks = data.selectedTasks || [];
+                state.excludedTemplateIds = data.excludedTemplateIds || [];
                 if (data.caseDetails) {
                     Object.assign(state.caseDetails, data.caseDetails);
                 }
@@ -209,10 +215,28 @@ export function useCaseWizard() {
         clearSession();
     }
 
+    // Determine whether the wizard will create operational todos for the consultant.
+    // Conditions: the consultant is assigned AND there is at least one template-based
+    // task selected (i.e. not excluded).
+    function hasOperationalTasksForConsultant(): boolean {
+        if (!state.caseDetails.assigned_to) return false;
+        const includedTemplates = state.selectedTasks.filter(
+            (task) => !task.is_custom && task.key && !state.excludedTemplateIds.some((id) => String(id) === task.key),
+        );
+        return includedTemplates.length > 0;
+    }
+
     // Submit case
     async function submit(): Promise<ImmigrationCase | null> {
         if (!isStepValid(1) || !isStepValid(2)) {
             notification.error(t('wizard.errors.select_client'));
+            return null;
+        }
+
+        // Show the Todo Core confirmation modal before actually submitting,
+        // when the wizard is going to create operational todos for a consultant.
+        if (!showTodoCoreModal.value && hasOperationalTasksForConsultant()) {
+            showTodoCoreModal.value = true;
             return null;
         }
 
@@ -236,13 +260,8 @@ export function useCaseWizard() {
                 service_type: state.caseDetails.service_type,
                 contract_number: state.caseDetails.contract_number || undefined,
                 fees: state.caseDetails.fees ?? undefined,
-                case_tasks: state.selectedTasks.length > 0
-                    ? state.selectedTasks.map((t, idx) => ({
-                        label: t.label,
-                        is_completed: false,
-                        is_custom: t.is_custom,
-                        sort_order: idx,
-                    }))
+                excluded_template_ids: state.excludedTemplateIds.length > 0
+                    ? state.excludedTemplateIds
                     : undefined,
             };
 
@@ -267,6 +286,16 @@ export function useCaseWizard() {
         } finally {
             state.isSubmitting = false;
         }
+    }
+
+    // Confirm the Todo Core modal and proceed with the actual submission.
+    async function confirmTodoCoreAndSubmit(): Promise<ImmigrationCase | null> {
+        showTodoCoreModal.value = false;
+        return submit();
+    }
+
+    function cancelTodoCoreConfirmation(): void {
+        showTodoCoreModal.value = false;
     }
 
     // Check for unsaved changes
@@ -307,6 +336,11 @@ export function useCaseWizard() {
         submit,
         reset,
         hasUnsavedChanges,
+
+        // Todo Core confirmation
+        showTodoCoreModal,
+        confirmTodoCoreAndSubmit,
+        cancelTodoCoreConfirmation,
     };
 }
 

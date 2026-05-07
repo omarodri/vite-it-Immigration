@@ -81,8 +81,14 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <ul class="list-none space-y-0 text-sm w-full sm:w-auto">
 
-                            <!-- Stage -->
-                            <li v-if="currentCase.stage" class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-x-4 py-0">
+                            <!-- Stage (workflow current_stage takes precedence; legacy `stage` only as fallback) -->
+                            <li v-if="currentCase.current_stage" class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-x-4 py-0">
+                                <span class="text-gray-500 shrink-0 sm:w-30 dark:text-white-light">{{ $t('cases.stage') }}:</span>
+                                <span :class="`badge badge-outline-${currentCase.current_stage.color || 'primary'} shrink-0`">
+                                    {{ resolveStageName(currentCase.current_stage.translations) }}
+                                </span>
+                            </li>
+                            <li v-else-if="currentCase.stage" class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-x-4 py-0">
                                 <span class="text-gray-500 shrink-0 sm:w-30 dark:text-white-light">{{ $t('cases.stage') }}:</span>
                                 <span :class="`badge badge-outline-${stageColor} shrink-0`">{{
                                     $t(CASE_STAGE_OPTIONS.find(o => o.value === currentCase.stage)?.label ?? currentCase.stage ?? '')
@@ -117,7 +123,7 @@
                 </div>
 
                 <div class="flex flex-row flex-nowrap items-center gap-4 mt-4 min-w-0">
-                    <div class="min-w-0 flex-[2] flex flex-col justify-center">
+                    <div class="min-w-0 flex-[1] flex flex-col justify-center">
                         <div class="flex justify-between text-sm mb-2">
                             <span class="text-gray-500">{{ $t('cases.progress') }}</span>
                             <span class="text-gray-500">{{ currentCase.progress }}%</span>
@@ -127,6 +133,17 @@
                         </div>
                     </div>
                     <div class="flex-[1] flex flex-nowrap justify-end gap-2 items-center min-w-0">
+                        <button
+                            v-can="'cases.update'"
+                            v-if="currentCase.current_stage_id"
+                            type="button"
+                            class="btn btn-success gap-2 btn-sm"
+                            :disabled="isAdvancingStage"
+                            @click="confirmAdvanceStage"
+                        >
+                            <icon-arrow-forward class="w-4 h-4" />
+                            {{ $t('workflow.advance_stage') }}
+                        </button>
                         <router-link v-can="'cases.update'" :to="`/cases/${currentCase.id}/edit`" class="btn btn-primary gap-2 btn-sm">
                             <icon-pencil class="w-4 h-4" />
                             {{ $t('cases.edit') }}
@@ -360,11 +377,17 @@
 
                     <!-- Lifecycle Tab -->
                     <div v-else-if="activeTab === 'lifecycle'">
-                        <LifecycleChecklist
-                            :model-value="currentCase.tasks ?? []"
-                            :readonly="true"
+                        <!-- Workflow Roadmap (only when workflow snapshot exists) -->
+                        <StageProgressBar
+                            v-if="currentCase.workflow_snapshot && currentCase.workflow_snapshot.stages.length"
+                            :snapshot="currentCase.workflow_snapshot"
+                            :current-stage-id="currentCase.current_stage_id"
+                        />
+                        <WorkflowTaskChecklist
+                            :tasks="currentCase.tasks ?? []"
                             :case-id="currentCase.id"
                             @progress-updated="(p: number) => { if (currentCase) currentCase.progress = p }"
+                            @task-toggled="onTaskToggled"
                         />
                     </div>
 
@@ -407,6 +430,7 @@
                         <CaseTodoTab
                             :case-id="currentCase.id"
                             :case-number="currentCase.case_number"
+                            @core-status-changed="caseStore.fetchCase(currentCase.id)"
                         />
                     </div>
 
@@ -467,6 +491,7 @@ import { useI18n } from 'vue-i18n';
 import { useMeta } from '@/composables/use-meta';
 import Swal from 'sweetalert2';
 import { useCaseStore } from '@/stores/case';
+import { useTodoStore } from '@/stores/todo';
 import { useNotification } from '@/composables/useNotification';
 import userService from '@/services/userService';
 import { formatDate } from '@/utils/formatters';
@@ -474,17 +499,21 @@ import type { CaseStatus, CasePriority, ImportantDate } from '@/types/case';
 import { CASE_STAGE_OPTIONS, IRCC_STATUS_OPTIONS, FINAL_RESULT_OPTIONS, SERVICE_TYPE_OPTIONS } from '@/types/case';
 import api from '@/services/api';
 import DateManager from '@/components/DateManager.vue';
-import LifecycleChecklist from '@/components/LifecycleChecklist.vue';
+import WorkflowTaskChecklist from '@/components/WorkflowTaskChecklist.vue';
 import InvoiceTable from '@/views/cases/components/InvoiceTable.vue';
 import CaseTodoTab from '@/views/cases/components/CaseTodoTab.vue';
 import CaseEventTab from '@/views/cases/components/CaseEventTab.vue';
 import CaseDocumentsTab from '@/views/cases/components/CaseDocumentsTab.vue';
+import StageProgressBar from '@/components/cases/StageProgressBar.vue';
+import { workflowService } from '@/services/workflowService';
+import type { TranslationsByField, WorkflowTask } from '@/types/workflow';
 
 // Icons
 import IconFolder from '@/components/icon/icon-folder.vue';
 import IconPencil from '@/components/icon/icon-pencil.vue';
 import IconTrashLines from '@/components/icon/icon-trash-lines.vue';
 import IconUserPlus from '@/components/icon/icon-user-plus.vue';
+import IconArrowForward from '@/components/icon/icon-arrow-forward.vue';
 import IconEye from '@/components/icon/icon-eye.vue';
 import CompanionViewModal from '@/components/companions/CompanionViewModal.vue';
 import type { Companion } from '@/types/companion';
@@ -495,10 +524,53 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const caseStore = useCaseStore();
+const todoStore = useTodoStore();
 const { confirm: confirmDialog, success, error } = useNotification();
 
 const isLoading = ref(true);
 const activeTab = ref('info');
+const isAdvancingStage = ref(false);
+
+function resolveStageName(translations: TranslationsByField | undefined): string {
+    if (!translations?.name) return '';
+    const loc = (currentCase.value?.language ?? 'es') as 'es' | 'en' | 'fr';
+    return translations.name[loc] ?? translations.name.es ?? Object.values(translations.name)[0] ?? '';
+}
+
+async function confirmAdvanceStage() {
+    if (!currentCase.value) return;
+    const ok = await confirmDialog({
+        title: t('workflow.confirm_advance_title'),
+        text: t('workflow.confirm_advance_text'),
+        icon: 'question',
+    });
+    if (!ok) return;
+    isAdvancingStage.value = true;
+    try {
+        await workflowService.advanceStage(currentCase.value.id);
+        success(t('workflow.stage_advanced'));
+        await caseStore.fetchCase(currentCase.value.id);
+    } catch (e: any) {
+        const code = e?.response?.data?.code;
+        if (code === 'STAGE_BLOCKED') {
+            error(t('workflow.stage_blocked'));
+        } else {
+            error(e?.response?.data?.message || t('workflow.stage_advance_failed'));
+        }
+    } finally {
+        isAdvancingStage.value = false;
+    }
+}
+
+function onTaskToggled(updatedTask: WorkflowTask) {
+    if (currentCase.value?.tasks) {
+        const idx = currentCase.value.tasks.findIndex(t => t.id === updatedTask.id);
+        if (idx !== -1) Object.assign(currentCase.value.tasks[idx], updatedTask);
+    }
+    if (updatedTask.task_template_id && currentCase.value) {
+        todoStore.fetchTodos({ case_id: currentCase.value.id });
+    }
+}
 
 // Companion view modal state
 const showCompanionView = ref(false);

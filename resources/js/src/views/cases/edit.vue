@@ -97,24 +97,18 @@
                             </select>
                         </div>
 
-                        <!-- Progress -->
+                        <!-- Progress (driven by workflow tasks) -->
                         <div>
-                            <template v-if="form.tasks.length === 0">
-                                <label for="progress" class="block text-sm font-medium mb-2">{{ $t('cases.progress') }}: {{ form.progress }}%</label>
-                                <input id="progress" v-model.number="form.progress" type="range" min="0" max="100" class="w-full" />
-                            </template>
-                            <template v-else>
-                                <div class="space-y-1">
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-500">{{ $t('cases.progress') }}</span>
-                                        <span class="font-semibold">{{ form.progress }}%</span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                        <div class="h-2 rounded-full bg-primary transition-all" :style="{ width: `${form.progress}%` }"></div>
-                                    </div>
-                                    <p class="text-xs text-gray-400">{{ $t('cases.lifecycle_auto_progress') }}</p>
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">{{ $t('cases.progress') }}</span>
+                                    <span class="font-semibold">{{ form.progress }}%</span>
                                 </div>
-                            </template>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div class="h-2 rounded-full bg-primary transition-all" :style="{ width: `${form.progress}%` }"></div>
+                                </div>
+                                <p class="text-xs text-gray-400">{{ $t('cases.lifecycle_auto_progress') }}</p>
+                            </div>
                         </div>
 
                         <!-- Language -->
@@ -129,13 +123,17 @@
                         <!-- Operational Tracking -->
                         <h6 class="font-semibold border-b border-gray-200 dark:border-gray-700 pb-2 mt-4">{{ $t('cases.operational_info') }}</h6>
 
-                        <!-- Stage -->
+                        <!-- Current Workflow Stage -->
                         <div>
-                            <label for="stage" class="block text-sm font-medium mb-2">{{ $t('cases.stage') }}</label>
-                            <select id="stage" v-model="form.stage" class="form-select">
+                            <label for="current_stage_id" class="block text-sm font-medium mb-2">{{ $t('cases.stage') }}</label>
+                            <select id="current_stage_id" v-model="form.current_stage_id" class="form-select">
                                 <option :value="null">{{ $t('cases.no_stage') }}</option>
-                                <option v-for="opt in CASE_STAGE_OPTIONS" :key="opt.value" :value="opt.value">
-                                    {{ $t(opt.label) }}
+                                <option
+                                    v-for="stage in workflowStages"
+                                    :key="stage.id"
+                                    :value="stage.id"
+                                >
+                                    {{ stage.name }}
                                 </option>
                             </select>
                         </div>
@@ -272,10 +270,45 @@
 
                 <!-- Lifecycle / Tasks Section -->
                 <div class="mt-6">
-                    <h6 class="text-base font-semibold text-[#3b3f5c] dark:text-white-light mb-4 border-b border-[#e0e6ed] dark:border-[#1b2e4b] pb-2">
-                        {{ $t('cases.lifecycle_title') }}
-                    </h6>
-                    <LifecycleChecklist v-model="form.tasks" :readonly="false" />
+                    <div class="flex items-center justify-between border-b border-[#e0e6ed] dark:border-[#1b2e4b] pb-2 mb-4">
+                        <div class="flex items-center gap-4">
+                            <button
+                                type="button"
+                                class="text-base font-semibold pb-1 border-b-2"
+                                :class="activeBoardTab === 'board'
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-[#3b3f5c] dark:text-white-light'"
+                                @click="activeBoardTab = 'board'"
+                            >
+                                {{ $t('cases.lifecycle_title') }}
+                            </button>
+                            <button
+                                type="button"
+                                class="text-base font-semibold pb-1 border-b-2 flex items-center gap-1"
+                                :class="activeBoardTab === 'trash'
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-[#3b3f5c] dark:text-white-light'"
+                                @click="activeBoardTab = 'trash'"
+                            >
+                                <icon-trash class="w-4 h-4" />
+                                {{ $t('cases.task.trash_tab') }}
+                            </button>
+                        </div>
+                    </div>
+                    <TaskBoard
+                        v-if="currentCase && activeBoardTab === 'board'"
+                        ref="taskBoardRef"
+                        :case-id="currentCase.id"
+                        :stages="workflowStages.map(s => ({ id: s.id, name: s.name, sort_order: s.sort_order, color: stageColorById[s.id] }))"
+                        :tasks="currentCase.tasks ?? []"
+                        :editable="true"
+                        @progress-updated="(p) => { form.progress = p }"
+                        @delete-template-task-request="onDeleteTemplateTaskRequest"
+                    />
+                    <TrashTab
+                        v-else-if="currentCase && activeBoardTab === 'trash'"
+                        :case-id="currentCase.id"
+                    />
                 </div>
 
                 <!-- Actions -->
@@ -295,6 +328,16 @@
             <h3 class="text-lg font-semibold text-gray-600 mb-2">{{ $t('cases.not_found') }}</h3>
             <router-link to="/cases" class="btn btn-primary mt-4">{{ $t('cases.back_to_list') }}</router-link>
         </div>
+
+        <!-- Todo Core delete confirmation -->
+        <TodoCoreConfirmationModal
+            :show="showTodoCoreDeleteModal"
+            scenario="remove_from_existing"
+            :tasks-affected="todoCoreDeleteTasksAffected"
+            :consultant-name="todoCoreDeleteConsultantName"
+            @confirm="onTodoCoreDeleteConfirm"
+            @cancel="onTodoCoreDeleteCancel"
+        />
     </div>
 </template>
 
@@ -307,10 +350,14 @@ import { useCaseStore } from '@/stores/case';
 import { useCompanionStore } from '@/stores/companion';
 import { useNotification } from '@/composables/useNotification';
 import type { UpdateCaseData, ImportantDate, CaseTask, CaseStage, IrccStatus, FinalResult, ServiceType } from '@/types/case';
-import { CASE_STAGE_OPTIONS, IRCC_STATUS_OPTIONS, FINAL_RESULT_OPTIONS, SERVICE_TYPE_OPTIONS } from '@/types/case';
+import { IRCC_STATUS_OPTIONS, FINAL_RESULT_OPTIONS, SERVICE_TYPE_OPTIONS } from '@/types/case';
 import type { Companion } from '@/types/companion';
 import DateManager from '@/components/DateManager.vue';
-import LifecycleChecklist from '@/components/LifecycleChecklist.vue';
+import TaskBoard from '@/components/cases/board/TaskBoard.vue';
+import TrashTab from '@/components/cases/board/TrashTab.vue';
+import TodoCoreConfirmationModal from '@/components/cases/TodoCoreConfirmationModal.vue';
+import IconTrash from '@/components/icon/icon-trash.vue';
+import type { WorkflowTask } from '@/types/workflow';
 import userService from '@/services/userService';
 import { usePermissions } from '@/composables/usePermissions';
 import type { StaffMember } from '@/types/wizard';
@@ -329,7 +376,7 @@ useMeta({ title: 'Edit Case' });
 
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const caseStore = useCaseStore();
 const companionStore = useCompanionStore();
 const { success, error } = useNotification();
@@ -344,12 +391,82 @@ const languageOptions = computed(() => [
     { value: 'fr', label: t('common.french') },
 ]);
 
+// Workflow stages derived from the case's workflow_snapshot
+const workflowStages = computed(() => {
+    const snapshot = currentCase.value?.workflow_snapshot;
+    if (!snapshot?.stages) return [];
+    void locale.value;
+    return snapshot.stages
+        .slice()
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map((s) => ({
+            id: s.id,
+            name: s.name ?? `Stage ${s.sort_order + 1}`,
+            sort_order: s.sort_order,
+        }));
+});
+
+const stageColorById = computed<Record<number, string>>(() => {
+    const map: Record<number, string> = {};
+    const snapshot = currentCase.value?.workflow_snapshot;
+    if (snapshot?.stages) {
+        for (const s of snapshot.stages) {
+            map[s.id] = (s as any).color ?? '#4361ee';
+        }
+    }
+    return map;
+});
+
+const activeBoardTab = ref<'board' | 'trash'>('board');
+
+// Todo Core delete confirmation state
+const taskBoardRef = ref<InstanceType<typeof TaskBoard> | null>(null);
+const showTodoCoreDeleteModal = ref(false);
+const pendingDeleteTask = ref<WorkflowTask | null>(null);
+const pendingDeleteCascade = ref<string | undefined>(undefined);
+const todoCoreDeleteTasksAffected = ref<{ id?: number; subject: string; assignedToName?: string; dueDate?: string }[]>([]);
+const todoCoreDeleteConsultantName = ref<string>('');
+
+function onDeleteTemplateTaskRequest(task: WorkflowTask) {
+    pendingDeleteTask.value = task;
+    pendingDeleteCascade.value = undefined;
+    todoCoreDeleteTasksAffected.value = [{
+        id: task.id,
+        subject: task.subject,
+        assignedToName: task.assignee?.name,
+        dueDate: task.due_date ?? undefined,
+    }];
+    todoCoreDeleteConsultantName.value =
+        task.assignee?.name ?? currentCase.value?.assigned_user?.name ?? '';
+    showTodoCoreDeleteModal.value = true;
+}
+
+async function onTodoCoreDeleteConfirm(payload: { cascadeStrategy?: string }) {
+    pendingDeleteCascade.value = payload.cascadeStrategy;
+    showTodoCoreDeleteModal.value = false;
+    if (pendingDeleteTask.value && taskBoardRef.value) {
+        await taskBoardRef.value.performTemplateTaskDelete(
+            pendingDeleteTask.value.id,
+            payload.cascadeStrategy,
+        );
+        success(t('todo_core.success_removed'));
+    }
+    pendingDeleteTask.value = null;
+    pendingDeleteCascade.value = undefined;
+}
+
+function onTodoCoreDeleteCancel() {
+    showTodoCoreDeleteModal.value = false;
+    pendingDeleteTask.value = null;
+    pendingDeleteCascade.value = undefined;
+}
+
 
 const isLoading = ref(true);
 const isSubmitting = ref(false);
 const errors = reactive<Record<string, string>>({});
 
-const form = reactive<UpdateCaseData & { important_dates: ImportantDate[]; tasks: CaseTask[] }>({
+const form = reactive<UpdateCaseData & { important_dates: ImportantDate[]; tasks: CaseTask[]; current_stage_id: number | null }>({
     status: 'active',
     priority: 'medium',
     progress: 0,
@@ -362,6 +479,7 @@ const form = reactive<UpdateCaseData & { important_dates: ImportantDate[]; tasks
     assigned_to: null,
     companion_ids: [],
     stage: null as CaseStage | null,
+    current_stage_id: null as number | null,
     ircc_status: null as IrccStatus | null,
     final_result: null as FinalResult | null,
     ircc_code: '',
@@ -380,13 +498,6 @@ watch(selectedCompanionIds, (ids) => {
     form.companion_ids = [...ids];
 }, { deep: true });
 
-// Auto-calculate progress from tasks when tasks have entries
-watch(() => form.tasks, (tasks) => {
-    if (tasks.length > 0) {
-        const completed = tasks.filter(t => t.is_completed).length;
-        form.progress = Math.round((completed / tasks.length) * 100);
-    }
-}, { deep: true });
 
 const currentCase = computed(() => caseStore.currentCase);
 
@@ -404,17 +515,12 @@ const handleSubmit = async () => {
 
     try {
         const caseId = parseInt(route.params.id as string);
+        const { tasks: _tasks, ...formWithoutTasks } = form;
         const payload: UpdateCaseData & { important_dates: ImportantDate[] } = {
-            ...form,
+            ...formWithoutTasks,
             ircc_code: form.ircc_code || null,
             contract_number: form.contract_number || null,
             fees: canViewFees.value ? form.fees : undefined,
-            case_tasks: form.tasks.map((t, idx) => ({
-                label: t.label,
-                is_completed: t.is_completed,
-                is_custom: t.is_custom,
-                sort_order: idx,
-            })),
         };
         await caseStore.updateCase(caseId, payload);
         success(t('cases.updated_successfully'));
@@ -456,7 +562,8 @@ onMounted(async () => {
             form.contract_number = currentCase.value.contract_number ?? '';
             form.service_type = currentCase.value.service_type ?? 'fee_based';
             form.fees = currentCase.value.fees ?? null;
-            form.tasks = currentCase.value.tasks?.map(t => ({ ...t })) ?? [];
+            form.current_stage_id = currentCase.value.current_stage_id ?? null;
+            form.tasks = [];
 
             // Load staff members (include current assignee even if inactive)
             isLoadingStaff.value = true;

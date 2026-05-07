@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Tenant;
+use Database\Seeders\DefaultWorkflowsSeeder;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class TenantService
 {
@@ -110,7 +112,7 @@ class TenantService
      */
     public function create(array $data): Tenant
     {
-        return Tenant::create([
+        $tenant = Tenant::create([
             'name' => $data['name'],
             'slug' => $data['slug'],
             'settings' => [
@@ -125,5 +127,17 @@ class TenantService
             ],
             'is_active' => $data['is_active'] ?? true,
         ]);
+
+        // Seed default workflow stages + task templates for the new tenant
+        try {
+            (new DefaultWorkflowsSeeder())->seedForTenant($tenant->id);
+        } catch (\Throwable $e) {
+            Log::error('TenantService: Failed to seed default workflows', [
+                'tenant_id' => $tenant->id,
+                'error'     => $e->getMessage(),
+            ]);
+        }
+
+        return $tenant;
     }
 }

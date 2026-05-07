@@ -30,6 +30,7 @@ class CaseRepository implements CaseRepositoryInterface
             'caseType:id,name,code,category',
             'assignedTo:id,name,email',
             'importantDates',
+            'currentCaseStage.translations',
         ]);
 
         // Apply filters
@@ -59,6 +60,10 @@ class CaseRepository implements CaseRepositoryInterface
 
         if (! empty($filters['stage'])) {
             $query->byStage($filters['stage']);
+        }
+
+        if (! empty($filters['current_case_stage_id'])) {
+            $query->where('current_case_stage_id', $filters['current_case_stage_id']);
         }
 
         if (! empty($filters['ircc_status'])) {

@@ -51,6 +51,8 @@ class StoreCaseRequest extends FormRequest
             'case_tasks.*.is_completed' => ['sometimes', 'boolean'],
             'case_tasks.*.is_custom' => ['sometimes', 'boolean'],
             'case_tasks.*.sort_order' => ['sometimes', 'integer', 'min:0', 'max:255'],
+            'excluded_template_ids' => ['sometimes', 'array'],
+            'excluded_template_ids.*' => ['integer', 'exists:task_templates,id'],
             'service_type' => ['sometimes', Rule::in([
                 ImmigrationCase::SERVICE_TYPE_PRO_BONO,
                 ImmigrationCase::SERVICE_TYPE_FEE_BASED,

@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('clients', function (Blueprint $table) {
+            $table->dropIndex(['tenant_id', 'passport_number']);
             $table->dropColumn([
                 'passport_number',
                 'passport_issue_date',

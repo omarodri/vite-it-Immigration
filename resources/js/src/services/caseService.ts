@@ -54,6 +54,7 @@ const caseService = {
         if (filters.status) params.append('status', filters.status);
         if (filters.priority) params.append('priority', filters.priority);
         if (filters.stage) params.append('stage', filters.stage);
+        if (filters.current_case_stage_id) params.append('current_case_stage_id', filters.current_case_stage_id.toString());
         if (filters.case_type_id) params.append('case_type_id', filters.case_type_id.toString());
         if (filters.assigned_to) params.append('assigned_to', filters.assigned_to.toString());
         if (filters.client_id) params.append('client_id', filters.client_id.toString());

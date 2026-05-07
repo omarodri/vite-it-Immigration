@@ -130,10 +130,10 @@
 
                 <!-- Stage Filter -->
                 <div class="w-44">
-                    <select v-model="stageFilter" class="form-select" aria-label="Filter by stage" @change="applyFilters">
+                    <select v-model="stageIdFilter" class="form-select" aria-label="Filter by stage" @change="applyFilters">
                         <option value="">{{ $t('cases.all_stages') }}</option>
-                        <option v-for="opt in CASE_STAGE_OPTIONS" :key="opt.value" :value="opt.value">
-                            {{ $t(opt.label) }}
+                        <option v-for="opt in stageFilterOptions" :key="opt.id" :value="opt.id">
+                            {{ opt.name }}
                         </option>
                     </select>
                 </div>
@@ -288,10 +288,10 @@
 
                         <!-- Stage Column -->
                         <template #stage="data">
-                            <span v-if="data.value.stage"
-                                :class="`badge badge-outline-${CASE_STAGE_OPTIONS.find(o => o.value === data.value.stage)?.color ?? 'dark'}`"
-                                class="text-xs">
-                                {{ $t(CASE_STAGE_OPTIONS.find(o => o.value === data.value.stage)?.label ?? data.value.stage) }}
+                            <span v-if="data.value.current_case_stage?.name_resolved"
+                                class="badge badge-outline-dark text-xs"
+                                :style="{ borderColor: data.value.current_case_stage.color ?? undefined, color: data.value.current_case_stage.color ?? undefined }">
+                                {{ data.value.current_case_stage.name_resolved }}
                             </span>
                             <span v-else class="text-gray-400 text-xs">---</span>
                         </template>
@@ -517,8 +517,7 @@ import { useNotification } from '@/composables/useNotification';
 import { useDebounce } from '@/composables/useDebounce';
 import { formatDate } from '@/utils/formatters';
 import { useListPersistence } from '@/composables/useListPersistence';
-import type { ImmigrationCase, CaseStatus, CasePriority, CaseStage, ImportantDate } from '@/types/case';
-import { CASE_STAGE_OPTIONS } from '@/types/case';
+import type { ImmigrationCase, CaseStatus, CasePriority, ImportantDate } from '@/types/case';
 import { useCaseColumnChooser } from '@/composables/useCaseColumnChooser';
 
 // Icons
@@ -549,7 +548,7 @@ const showColumnChooser = ref(false);
 const searchQuery = ref('');
 const statusFilter = ref('active');
 const priorityFilter = ref('');
-const stageFilter = ref('');
+const stageIdFilter = ref<number | ''>('');
 const caseTypeFilter = ref<number | ''>('');
 const perPage = ref(10);
 const currentPage = ref(1);
@@ -560,7 +559,7 @@ const { restore: restoreFilters, persist: persistFilters, clear: clearPersistedF
     searchQuery,
     statusFilter,
     priorityFilter,
-    stageFilter,
+    stageIdFilter,
     caseTypeFilter,
     sortColumn,
     sortDirection,
@@ -571,7 +570,23 @@ const { restore: restoreFilters, persist: persistFilters, clear: clearPersistedF
 const initialLoading = ref(true);
 
 // Computed
-const hasActiveFilters = computed(() => !!searchQuery.value || !!statusFilter.value || !!priorityFilter.value || !!caseTypeFilter.value || !!stageFilter.value);
+const hasActiveFilters = computed(() => !!searchQuery.value || !!statusFilter.value || !!priorityFilter.value || !!caseTypeFilter.value || !!stageIdFilter.value);
+
+const stageFilterOptions = computed(() => {
+    const seen = new Map<number, { id: number; name: string; color: string }>();
+    for (const c of caseStore.cases) {
+        if (c.current_case_stage && c.current_case_stage.id) {
+            if (!seen.has(c.current_case_stage.id)) {
+                seen.set(c.current_case_stage.id, {
+                    id: c.current_case_stage.id,
+                    name: c.current_case_stage.name_resolved ?? String(c.current_case_stage.id),
+                    color: c.current_case_stage.color ?? '#3b3f5c',
+                });
+            }
+        }
+    }
+    return Array.from(seen.values());
+});
 const showSkeleton = computed(() => initialLoading.value && caseStore.cases.length === 0);
 const showEmptyState = computed(() => !caseStore.isLoading && !initialLoading.value && caseStore.cases.length === 0);
 
@@ -657,7 +672,7 @@ const clearFilters = () => {
     searchQuery.value = '';
     statusFilter.value = '';
     priorityFilter.value = '';
-    stageFilter.value = '';
+    stageIdFilter.value = '';
     caseTypeFilter.value = '';
     currentPage.value = 1;
     fetchCases();
@@ -696,7 +711,7 @@ const fetchCases = async () => {
             search: searchQuery.value || undefined,
             status: (statusFilter.value as CaseStatus) || undefined,
             priority: (priorityFilter.value as CasePriority) || undefined,
-            stage: (stageFilter.value as CaseStage) || undefined,
+            current_case_stage_id: (stageIdFilter.value as number) || undefined,
             case_type_id: caseTypeFilter.value || undefined,
             sort_by: sortColumn.value,
             sort_direction: sortDirection.value,
@@ -710,7 +725,7 @@ const fetchCases = async () => {
                 search: searchQuery.value || undefined,
                 status: (statusFilter.value as CaseStatus) || undefined,
                 priority: (priorityFilter.value as CasePriority) || undefined,
-                stage: (stageFilter.value as CaseStage) || undefined,
+                current_case_stage_id: (stageIdFilter.value as number) || undefined,
                 case_type_id: caseTypeFilter.value || undefined,
                 sort_by: sortColumn.value,
                 sort_direction: sortDirection.value,

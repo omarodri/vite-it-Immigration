@@ -1,5 +1,14 @@
 <template>
     <div>
+        <!-- Todo Core Confirmation Modal -->
+        <TodoCoreConfirmationModal
+            :show="showTodoCoreModal"
+            scenario="wizard_create"
+            :tasks-affected="todoCoreTasksAffected"
+            @confirm="confirmTodoCoreAndSubmit"
+            @cancel="cancelTodoCoreConfirmation"
+        />
+
         <!-- Breadcrumb -->
         <ul class="flex space-x-2 rtl:space-x-reverse mb-5">
             <li>
@@ -82,6 +91,7 @@ import { useMeta } from '@/composables/use-meta';
 import { useCaseWizard } from '@/composables/useCaseWizard';
 import { useNotification } from '@/composables/useNotification';
 import WizardProgress from './components/WizardProgress.vue';
+import TodoCoreConfirmationModal from '@/components/cases/TodoCoreConfirmationModal.vue';
 import IconArrowLeft from '@/components/icon/icon-arrow-left.vue';
 import IconArrowForward from '@/components/icon/icon-arrow-forward.vue';
 import IconCircleCheck from '@/components/icon/icon-circle-check.vue';
@@ -113,7 +123,17 @@ useMeta({ title: t('wizard.title') });
 
 const notification = useNotification();
 const wizard = useCaseWizard();
-const { state, steps, canGoNext, canGoPrev, isLastStep, goToStep, nextStep, prevStep, submit, loadFromSession, hasUnsavedChanges } = wizard;
+const {
+    state, steps, canGoNext, canGoPrev, isLastStep,
+    goToStep, nextStep, prevStep, submit, loadFromSession, hasUnsavedChanges,
+    showTodoCoreModal, confirmTodoCoreAndSubmit, cancelTodoCoreConfirmation,
+} = wizard;
+
+const todoCoreTasksAffected = computed(() =>
+    state.selectedTasks
+        .filter((t) => !t.is_custom && t.key && !state.excludedTemplateIds.some((id) => String(id) === t.key))
+        .map((t) => ({ id: t.key ? parseInt(t.key) : undefined, subject: t.label }))
+);
 
 // Provide wizard to child components
 provide('wizard', wizard);

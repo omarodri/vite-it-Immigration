@@ -5,7 +5,7 @@
                 <div class="flex justify-between items-center px-4 py-3">
                     <TenantLogo />
                     <a
-                        href="javascript:;"
+                        href="#"
                         class="collapse-icon w-8 h-8 rounded-full flex items-center hover:bg-gray-500/10 dark:hover:bg-dark-light/10 dark:text-white-light transition duration-300 rtl:rotate-180 hover:text-primary"
                         aria-label="Toggle sidebar"
                         @click="store.toggleSidebar()"
@@ -25,7 +25,7 @@
                     <ul class="relative font-semibold space-y-0.5 p-4 py-0">
 
                         <!-- Admin Section (visible only for users with permission) -->
-                        <template v-if="canViewUsers || canViewRoles || canUpdateSettings">
+                        <template v-if="canViewUsers || canViewRoles || canUpdateSettings || canViewWorkflows">
                             <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
                                 <icon-minus class="w-4 h-5 flex-none hidden" />
                                 <span>{{ $t('sidebar.admin') }}</span>
@@ -49,6 +49,16 @@
                                                 <icon-lock-dots class="group-hover:!text-primary shrink-0" />
                                                 <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
                                                     {{ $t('sidebar.roles') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                    <li v-if="canViewWorkflows" class="nav-item">
+                                        <router-link to="/admin/workflows" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-scrumboard class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('workflow.title') }}
                                                 </span>
                                             </div>
                                         </router-link>
@@ -957,6 +967,11 @@
     const canViewUsers = computed(() => authStore.hasPermission('users.view'));
     const canViewRoles = computed(() => authStore.hasPermission('roles.view'));
     const canUpdateSettings = computed(() => authStore.hasPermission('settings.update'));
+    // Workflow admin module is gated by role (admin|super-admin) to align with backend route middleware.
+    // Otherwise users with workflows.view permission but no role would hit 401 on the admin endpoints.
+    const canViewWorkflows = computed(() =>
+        authStore.hasPermission('workflows.view') || (authStore.hasRole('admin') || authStore.hasRole('super-admin'))
+    );
 
     // Check if user has permission to view CRM sections
     const canViewClients = computed(() => authStore.hasPermission('clients.view'));

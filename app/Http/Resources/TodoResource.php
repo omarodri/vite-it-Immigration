@@ -24,6 +24,9 @@ class TodoResource extends JsonResource
                 'name' => $this->assignedTo->name,
                 'avatar_url' => $this->assignedTo->profile?->avatar_url,
             ] : null),
+            'is_core'          => (bool) $this->is_core,
+            'task_id'          => $this->task_id,
+            'task_template_id' => $this->task_template_id,
             'case' => $this->whenLoaded('immigrationCase', fn () => $this->immigrationCase ? [
                 'id'          => $this->immigrationCase->id,
                 'case_number' => $this->immigrationCase->case_number ?? $this->immigrationCase->id,
