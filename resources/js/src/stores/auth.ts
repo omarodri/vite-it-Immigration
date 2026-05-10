@@ -124,6 +124,11 @@ export const useAuthStore = defineStore('auth', {
                 const tenantStore = useTenantStore();
                 await tenantStore.fetchTenant();
 
+                // Restore any timer that was running before this session
+                const { useTimesheetStore } = await import('@/stores/useTimesheetStore');
+                const timesheetStore = useTimesheetStore();
+                timesheetStore.fetchActiveTimer();
+
                 return response;
             } catch (error: any) {
                 this.error = error.response?.data?.message || 'Login failed';
@@ -161,6 +166,11 @@ export const useAuthStore = defineStore('auth', {
                 const { useTenantStore } = await import('@/stores/tenant');
                 const tenantStore = useTenantStore();
                 tenantStore.clearTenant();
+
+                // Clear timesheet state so the next user does not see the previous user's timer
+                const { useTimesheetStore } = await import('@/stores/useTimesheetStore');
+                const timesheetStore = useTimesheetStore();
+                timesheetStore.clearAll();
             } catch (error: any) {
                 console.error('Logout error:', error);
             } finally {
@@ -181,6 +191,11 @@ export const useAuthStore = defineStore('auth', {
                 if (!tenantStore.isLoaded) {
                     await tenantStore.fetchTenant();
                 }
+
+                // Restore any active timer the user had running on a previous session.
+                const { useTimesheetStore } = await import('@/stores/useTimesheetStore');
+                const timesheetStore = useTimesheetStore();
+                timesheetStore.fetchActiveTimer();
             } catch (error) {
                 this.user = null;
                 this.isAuthenticated = false;
@@ -313,6 +328,11 @@ export const useAuthStore = defineStore('auth', {
                     const { useTenantStore } = await import('@/stores/tenant');
                     const tenantStore = useTenantStore();
                     await tenantStore.fetchTenant();
+
+                    // Restore any active timer the user had running
+                    const { useTimesheetStore } = await import('@/stores/useTimesheetStore');
+                    const timesheetStore = useTimesheetStore();
+                    timesheetStore.fetchActiveTimer();
                 }
                 return response;
             } catch (error: any) {

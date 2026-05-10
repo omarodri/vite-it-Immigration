@@ -364,14 +364,22 @@
                                                 </p>
                                             </td>
                                             <td class="w-1">
-                                                <router-link
-                                                    v-if="task.case"
-                                                    :to="`/cases/${task.case.id}`"
-                                                    class="badge badge-outline-info text-xs whitespace-nowrap"
-                                                    @click.stop
-                                                >
-                                                    #{{ task.case.case_number }}
-                                                </router-link>
+                                                <div class="flex items-center gap-1.5">
+                                                    <router-link
+                                                        v-if="task.case"
+                                                        :to="`/cases/${task.case.id}`"
+                                                        class="badge badge-outline-info text-xs whitespace-nowrap"
+                                                        @click.stop
+                                                    >
+                                                        #{{ task.case.case_number }}
+                                                    </router-link>
+                                                    <TimeDisplay
+                                                        v-if="task.case && (task as any).total_time_seconds"
+                                                        :seconds="(task as any).total_time_seconds"
+                                                        size="sm"
+                                                        :show-icon="true"
+                                                    />
+                                                </div>
                                             </td>
                                             <td class="w-1">
                                                 <div class="flex items-center justify-between w-max">
@@ -406,6 +414,15 @@
                                                                             <a href="javascript:;" @click="cloneTask(task)">
                                                                                 <icon-copy class="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" />
                                                                                 {{ $t('todo_clone') }}
+                                                                            </a>
+                                                                        </li>
+                                                                        <li v-if="task.case && hasTimeLogPermission">
+                                                                            <a href="javascript:;" @click="openTimeLogForTodo(task)">
+                                                                                <svg class="w-4.5 h-4.5 ltr:mr-2 rtl:ml-2 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                                                                    <circle cx="12" cy="12" r="10" />
+                                                                                    <polyline points="12 6 12 12 16 14" />
+                                                                                </svg>
+                                                                                {{ $t('timesheet.log_time') }}
                                                                             </a>
                                                                         </li>
                                                                         <li>
@@ -654,6 +671,16 @@
                     </div>
                 </Dialog>
             </TransitionRoot>
+
+            <!-- Timesheet modal for the selected todo's case -->
+            <TimeLogModal
+                v-if="timeLogContext"
+                :is-open="showTimeLogModal"
+                :case-id="timeLogContext.caseId"
+                :tasks="[]"
+                @close="closeTimeLogModal"
+                @logged="onTimeLogged"
+            />
         </div>
     </div>
 </template>
@@ -691,10 +718,39 @@
     import IconX from '@/components/icon/icon-x.vue';
     import UserAvatar from '@/components/UserAvatar.vue';
 
+    // Timesheet integration
+    import TimeDisplay from '@/components/timesheet/TimeDisplay.vue';
+    import TimeLogModal from '@/components/timesheet/TimeLogModal.vue';
+    import { usePermissions } from '@/composables/usePermissions';
+    import type { TimeLog } from '@/types/timesheet';
+
     useMeta({ title: 'Todolist' });
     const { t } = useI18n();
     const store = useAppStore();
     const todoStore = useTodoStore();
+
+    // Timesheet
+    const { can } = usePermissions();
+    const hasTimeLogPermission = computed(() => can('time_logs.create'));
+    const showTimeLogModal = ref(false);
+    const timeLogContext = ref<{ caseId: number; todoId: number } | null>(null);
+
+    function openTimeLogForTodo(task: Todo) {
+        if (!task.case?.id) return;
+        timeLogContext.value = { caseId: task.case.id, todoId: task.id };
+        showTimeLogModal.value = true;
+    }
+
+    function closeTimeLogModal() {
+        showTimeLogModal.value = false;
+        timeLogContext.value = null;
+    }
+
+    function onTimeLogged(_log: TimeLog) {
+        // Optionally refresh todos so the displayed total updates if the API
+        // returns it on the todo resource. This keeps cost cheap (no full refetch).
+        closeTimeLogModal();
+    }
 
     const defaultParams = {
         id: null as number | null,

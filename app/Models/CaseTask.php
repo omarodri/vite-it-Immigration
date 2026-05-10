@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CaseTask extends Model
 {
@@ -32,5 +33,13 @@ class CaseTask extends Model
     public function immigrationCase(): BelongsTo
     {
         return $this->belongsTo(ImmigrationCase::class, 'case_id');
+    }
+
+    /**
+     * Get the time logs associated with this task.
+     */
+    public function timeLogs(): HasMany
+    {
+        return $this->hasMany(TimeLog::class, 'case_task_id');
     }
 }

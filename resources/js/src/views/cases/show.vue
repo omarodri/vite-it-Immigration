@@ -120,6 +120,30 @@
                             {{ $t(`cases.${currentCase.priority}`) }}
                         </span>
                     </div>
+
+                    <!-- Time tracking summary -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="flex items-center gap-2 px-3 py-1.5 rounded-md border border-[#e0e6ed] dark:border-[#1b2e4b] bg-white-light/40 dark:bg-[#0e1726]">
+                            <span class="text-xs text-gray-500 dark:text-white-light">{{ $t('timesheet.total_time') }}:</span>
+                            <TimeDisplay
+                                :seconds="currentCase.total_time_spent_seconds ?? 0"
+                                :is-running="!!timesheetStore.activeTimer && timesheetStore.activeTimer.case_id === currentCase.id"
+                                size="md"
+                            />
+                        </div>
+                        <button
+                            v-can="'time_logs.create'"
+                            type="button"
+                            class="btn btn-outline-primary gap-1 btn-sm"
+                            @click="showTimeModal = true"
+                        >
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            {{ $t('timesheet.log_time') }}
+                        </button>
+                    </div>
                 </div>
 
                 <div class="flex flex-row flex-nowrap items-center gap-4 mt-4 min-w-0">
@@ -445,6 +469,11 @@
 
                     <!-- Documents Tab -->
                     <CaseDocumentsTab v-else-if="activeTab === 'documents'" :case-id="currentCase.id" />
+
+                    <!-- Time Tab -->
+                    <div v-else-if="activeTab === 'time'">
+                        <TimeLogList :case-id="currentCase.id" />
+                    </div>
                 </div>
             </div>
 
@@ -480,6 +509,16 @@
             :companion="viewingCompanion"
             :can-edit="false"
             @close="showCompanionView = false; viewingCompanion = null"
+        />
+
+        <!-- Timesheet Modal -->
+        <TimeLogModal
+            v-if="currentCase"
+            :is-open="showTimeModal"
+            :case-id="currentCase.id"
+            :todos="timeLogTodoOptions"
+            @close="showTimeModal = false"
+            @logged="onTimeLogged"
         />
     </div>
 </template>
@@ -518,6 +557,13 @@ import IconEye from '@/components/icon/icon-eye.vue';
 import CompanionViewModal from '@/components/companions/CompanionViewModal.vue';
 import type { Companion } from '@/types/companion';
 
+// Timesheet
+import { useTimesheetStore } from '@/stores/useTimesheetStore';
+import TimeDisplay from '@/components/timesheet/TimeDisplay.vue';
+import TimeLogModal from '@/components/timesheet/TimeLogModal.vue';
+import TimeLogList from '@/components/timesheet/TimeLogList.vue';
+import type { TimeLog } from '@/types/timesheet';
+
 useMeta({ title: 'Case Details' });
 
 const route = useRoute();
@@ -530,6 +576,10 @@ const { confirm: confirmDialog, success, error } = useNotification();
 const isLoading = ref(true);
 const activeTab = ref('info');
 const isAdvancingStage = ref(false);
+
+// Timesheet state (definitions that depend on currentCase live below the currentCase computed)
+const timesheetStore = useTimesheetStore();
+const showTimeModal = ref(false);
 
 function resolveStageName(translations: TranslationsByField | undefined): string {
     if (!translations?.name) return '';
@@ -588,10 +638,28 @@ const tabs = computed(() => [
     { id: 'events', label: 'cases.tab_events' },
     { id: 'todos', label: 'cases.tab_todos' },
     { id: 'invoices', label: 'cases.tab_invoices' },
+    { id: 'time', label: 'timesheet.time_history' },
     { id: 'timeline', label: 'cases.tab_timeline' },
 ]);
 
 const currentCase = computed(() => caseStore.currentCase);
+
+// Build the task list passed to the time-log modal so the user can attribute time
+// to a specific workflow task.
+const timeLogTodoOptions = computed(() => {
+    const caseId = currentCase.value?.id;
+    if (!caseId) return [];
+    return todoStore.todos
+        .filter((todo) => Number(todo.case_id) === Number(caseId))
+        .map((todo) => ({ id: todo.id, title: todo.title }));
+});
+
+function onTimeLogged(log: TimeLog) {
+    if (currentCase.value) {
+        const prev = Number(currentCase.value.total_time_spent_seconds ?? 0);
+        currentCase.value.total_time_spent_seconds = prev + (log.duration_seconds ?? 0);
+    }
+}
 
 // Helper functions
 const getInitials = (firstName: string, lastName: string): string => {
@@ -721,6 +789,10 @@ onMounted(async () => {
     const caseId = parseInt(route.params.id as string);
     try {
         await caseStore.fetchCase(caseId);
+        // Load todos for this case so TimeLogModal can list them as options
+        todoStore.fetchTodos({ case_id: caseId });
+        // Load active timer (may belong to this case or another) to keep the header in sync
+        timesheetStore.fetchActiveTimer();
     } catch (err) {
         error(t('cases.failed_to_load'));
     } finally {

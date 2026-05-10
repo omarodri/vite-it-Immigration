@@ -49,6 +49,7 @@ class ImmigrationCase extends Model
         'root_external_folder_id',
         'folder_sync_status',
         'folder_synced_at',
+        'total_time_spent_seconds',
     ];
 
     protected $casts = [
@@ -297,6 +298,22 @@ class ImmigrationCase extends Model
     public function documentFolders(): HasMany
     {
         return $this->hasMany(DocumentFolder::class, 'case_id');
+    }
+
+    /**
+     * Get the time logs for this case.
+     */
+    public function timeLogs(): HasMany
+    {
+        return $this->hasMany(TimeLog::class, 'case_id');
+    }
+
+    /**
+     * Get total time spent on this case as a formatted string ("Xh YYm" / "Ym").
+     */
+    public function getTotalTimeSpentFormattedAttribute(): string
+    {
+        return TimeLog::formatSeconds((int) ($this->total_time_spent_seconds ?? 0));
     }
 
     /**

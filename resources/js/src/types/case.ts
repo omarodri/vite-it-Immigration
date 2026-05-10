@@ -119,6 +119,10 @@ export interface ImmigrationCase {
     // Lifecycle Tasks (workflow-driven)
     tasks?: WorkflowTask[];
 
+    // Timesheet (cached aggregate; updated by TimeLogObserver on the backend)
+    total_time_spent_seconds?: number;
+    total_time_spent_formatted?: string;
+
     // Workflow
     current_stage_id: number | null;
     current_case_stage_id: number | null;

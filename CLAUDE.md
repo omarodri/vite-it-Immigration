@@ -68,6 +68,7 @@ Domain / Service Layer (app/Services/)
   Case/     — CaseService, CaseTaskService, CaseInvoiceService
   Client/   — ClientService
   Companion/ — CompanionService
+  Timesheet/ — TimeLogService (startTimer, stopTimer, logManual, getLogsForCase, getActiveTimerForUser)
   Document/ — DocumentService, FolderService, CloudDocumentSyncService,
                CaseFolderSyncService, DocumentAuditService, StorageQuotaService
   Storage/  — StorageProviderFactory, LocalStorageProvider, OneDriveProvider,
@@ -82,19 +83,21 @@ Domain / Service Layer (app/Services/)
   Root:     — TenantService, OAuthTokenService, OAuthCredentialService,
                LegalDocumentService, TwoFactorService
 
-Data Layer (app/Models/) — 23 models
+Data Layer (app/Models/) — 24 models
   Core:    User, Tenant, UserProfile
   Domain:  Client, Companion, ImmigrationCase, CaseTask, CaseInvoice,
            CaseType, CaseImportantDate, Document, DocumentFolder,
            LegalDocument, Event, CalendarSyncStatus
   System:  OauthToken, Activity, BackupLog, LoginAttempt, InvitationCode
   Kanban:  ScrumColumn, ScrumTask, Todo
+  Timesheet: TimeLog
 
 Cross-cutting
-  Observers (app/Observers/) — 5 observers
+  Observers (app/Observers/) — 6 observers
       ClientObserver, CompanionObserver, CaseObserver — cascade soft-delete
       ImmigrationCaseObserver — cascade soft-delete for case children
       EventSyncObserver       — triggers SyncEventToCalendarJob on save/delete
+      TimeLogObserver         — updates total_time_spent_seconds cache on cases (atomic delta UPDATE)
   Jobs (app/Jobs/) — 5 jobs
       SyncEventToCalendarJob  — push local event to Google/Outlook
       PullCalendarEventsJob   — pull events from all connected calendars (every 15 min)
@@ -108,7 +111,7 @@ Cross-cutting
 
 ### Frontend Layer Architecture
 ```
-State (resources/js/src/stores/) — 15 Pinia stores
+State (resources/js/src/stores/) — 16 Pinia stores
   useAppStore       — theme, locale, layout, sidebar, RTL
   useAuthStore      — login/logout flow
   useUserStore      — authenticated user + loaded permissions
@@ -117,8 +120,9 @@ State (resources/js/src/stores/) — 15 Pinia stores
   useDocumentStore, useDashboardStore, useTenantStore
   useRoleStore, useProfileStore, useScrumStore
   useTodoStore, useTrashStore, useListFilters
+  useTimesheetStore — active timer, case log cache, CRUD for time_logs
 
-Services (resources/js/src/services/) — 20 services
+Services (resources/js/src/services/) — 21 services
   api.ts              — axios instance; 401 → logout+clear state;
                         419 (CSRF expired) → auto-refresh + retry
   authService, twoFactorService, userService, profileService
@@ -127,6 +131,7 @@ Services (resources/js/src/services/) — 20 services
   tenantService, roleService, oauthService
   scrumService, todoService, trashService
   searchService, dashboardService, backupService
+  timesheetService    — startTimer, stopTimer, createManualLog, getCaseLogs, getActiveTimer
   calendarSyncService — getStatus, getRedirectUrl, disconnect
 
 Routing (resources/js/src/router/index.ts) — 60+ routes

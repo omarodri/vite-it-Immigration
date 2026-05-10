@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\TenantController;
+use App\Http\Controllers\Api\TimeLogController;
 use App\Http\Controllers\Api\Admin\BackupController as AdminBackupController;
 use App\Http\Controllers\Api\Admin\TaskTemplateController as AdminTaskTemplateController;
 use App\Http\Controllers\Api\Admin\TenantController as AdminTenantController;
@@ -274,6 +275,17 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
         Route::post('/{provider}/disconnect', [UserCalendarOAuthController::class, 'disconnect'])
             ->whereIn('provider', ['google', 'microsoft']);
     });
+
+    // Timesheet
+    Route::prefix('cases/{case}')->group(function () {
+        Route::get('time-logs',              [TimeLogController::class, 'index']);
+        Route::post('time-logs',             [TimeLogController::class, 'store']);
+        Route::post('time-logs/start',       [TimeLogController::class, 'start']);
+        Route::patch('time-logs/{log}/stop', [TimeLogController::class, 'stop']);
+        Route::put('time-logs/{log}',        [TimeLogController::class, 'update']);
+        Route::delete('time-logs/{log}',     [TimeLogController::class, 'destroy']);
+    });
+    Route::get('me/active-timer', [TimeLogController::class, 'activeTimer']);
 
     // Trash / Recycle Bin
     Route::prefix('trash')->group(function () {

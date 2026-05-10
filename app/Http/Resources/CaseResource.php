@@ -71,6 +71,10 @@ class CaseResource extends JsonResource
             'closed_at' => $this->closed_at?->format('Y-m-d'),
             'closure_notes' => $this->closure_notes,
 
+            // Timesheet aggregates
+            'total_time_spent_seconds' => (int) ($this->total_time_spent_seconds ?? 0),
+            'total_time_spent_formatted' => $this->total_time_spent_formatted ?? '0m',
+
             // Timestamps
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

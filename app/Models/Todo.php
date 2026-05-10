@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Todo extends Model
@@ -52,6 +53,11 @@ class Todo extends Model
     public function taskTemplate(): BelongsTo
     {
         return $this->belongsTo(TaskTemplate::class, 'task_template_id');
+    }
+
+    public function timeLogs(): HasMany
+    {
+        return $this->hasMany(TimeLog::class, 'todo_id');
     }
 
     public function scopeByStatus(Builder $query, string $status): Builder

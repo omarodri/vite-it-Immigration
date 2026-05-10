@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\ImmigrationCase;
 use App\Models\Task;
 use App\Models\TaskTemplate;
+use App\Models\TimeLog;
 use App\Models\Todo;
 use App\Models\WorkflowStage;
 use App\Observers\CaseObserver;
@@ -16,6 +17,7 @@ use App\Observers\CompanionObserver;
 use App\Observers\EventSyncObserver;
 use App\Observers\ImmigrationCaseObserver;
 use App\Observers\TaskWorkflowObserver;
+use App\Observers\TimeLogObserver;
 use App\Observers\TodoObserver;
 use App\Policies\TaskTemplatePolicy;
 use App\Policies\WorkflowStagePolicy;
@@ -46,6 +48,7 @@ class AppServiceProvider extends ServiceProvider
         ImmigrationCase::observe(CaseObserver::class);
         ImmigrationCase::observe(ImmigrationCaseObserver::class);
         Task::observe(TaskWorkflowObserver::class);
+        TimeLog::observe(TimeLogObserver::class);
         Todo::observe(TodoObserver::class);
 
         Gate::policy(WorkflowStage::class, WorkflowStagePolicy::class);
