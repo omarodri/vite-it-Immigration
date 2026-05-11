@@ -60,6 +60,32 @@
                             <p class="text-base font-bold leading-normal text-white-dark">Enter your email and password to login</p>
                         </div>
                         <form class="space-y-5 dark:text-white" @submit.prevent="handleSubmit">
+                            <!-- Account security locked alert -->
+                            <div v-if="lockedBanner" class="flex items-start gap-3 rounded p-3.5 text-danger bg-danger-light dark:bg-danger-dark-light" role="alert">
+                                <span class="mt-0.5 shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                </span>
+                                <div>
+                                    <p class="font-semibold">{{ $t('session.account_locked') }}</p>
+                                    <p class="text-sm">{{ $t('session.account_locked_detail') }}</p>
+                                    <p v-if="lockedUntil" class="mt-1 text-xs opacity-75">
+                                        {{ $t('session.account_locked_until', { time: lockedUntil }) }}
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- Session revoked alert -->
+                            <div v-if="kickedOutMessage" class="flex items-start gap-3 rounded p-3.5 text-warning bg-warning-light dark:bg-warning-dark-light">
+                                <span class="mt-0.5 shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                </span>
+                                <div>
+                                    <p class="font-semibold">{{ kickedOutMessage }}</p>
+                                    <p class="text-sm">{{ $t('session.kicked_out_detail') }}</p>
+                                    <p v-if="kickedOutAt" class="mt-1 text-xs opacity-75">
+                                        {{ $t('session.kicked_out_at', { time: new Date(kickedOutAt).toLocaleString() }) }}
+                                    </p>
+                                </div>
+                            </div>
                             <!-- Error Alert -->
                             <div v-if="errorMessage" class="flex items-center p-3.5 rounded text-danger bg-danger-light dark:bg-danger-dark-light">
                                 <span class="ltr:pr-2 rtl:pl-2">{{ errorMessage }}</span>
@@ -190,13 +216,14 @@
     </div>
 </template>
 <script lang="ts" setup>
-    import { computed, reactive, ref } from 'vue';
+    import { computed, onMounted, reactive, ref } from 'vue';
     import { useI18n } from 'vue-i18n';
     import { useVuelidate } from '@vuelidate/core';
     import { required, email } from '@vuelidate/validators';
     import appSetting from '@/app-setting';
     import { useAppStore } from '@/stores/index';
     import { useAuthStore } from '@/stores/auth';
+    import { useSessionStore } from '@/stores/useSessionStore';
     import { useRouter } from 'vue-router';
     import { useMeta } from '@/composables/use-meta';
 
@@ -214,6 +241,31 @@
     const router = useRouter();
     const store = useAppStore();
     const authStore = useAuthStore();
+    const sessionStore = useSessionStore();
+    const { t } = useI18n();
+
+    // Kicked-out banner (set when another device logged in and revoked this session)
+    const kickedOutMessage = ref<string | null>(null);
+    const kickedOutAt = ref<string | null>(null);
+
+    // Account security locked banner
+    const lockedBanner = ref<boolean>(false);
+    const lockedUntil  = ref<string | null>(null);
+
+    onMounted(() => {
+        if (sessionStore.kickedOut) {
+            kickedOutMessage.value = t('session.kicked_out');
+            kickedOutAt.value = sessionStore.kickedOutAt;
+            sessionStore.consume();
+        }
+        if (sessionStore.accountLocked) {
+            lockedBanner.value = true;
+            lockedUntil.value = sessionStore.accountLockedUntil
+                ? new Date(sessionStore.accountLockedUntil).toLocaleTimeString()
+                : null;
+            sessionStore.consumeLock();
+        }
+    });
 
     // Form state
     const form = reactive({

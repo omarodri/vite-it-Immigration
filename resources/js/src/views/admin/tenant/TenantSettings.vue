@@ -121,6 +121,30 @@
                     </div>
                 </div>
 
+                <!-- Max Timer Duration -->
+                <div>
+                    <label for="max_timer_duration" class="block text-sm font-medium mb-1">
+                        {{ $t('tenant.max_timer_duration') }}
+                    </label>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                        {{ $t('tenant.max_timer_duration_description') }}
+                    </p>
+                    <div class="flex items-center gap-3">
+                        <input
+                            id="max_timer_duration"
+                            v-model.number="form.max_timer_duration"
+                            type="number"
+                            min="15"
+                            max="1440"
+                            class="form-input w-32"
+                        />
+                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ $t('tenant.minutes') }}</span>
+                    </div>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        {{ $t('tenant.max_timer_duration_hint') }}
+                    </p>
+                </div>
+
                 <!-- Show Theme Customizer -->
                 <div>
                     <label class="block text-sm font-medium mb-2">{{ $t('tenant.show_customizer') }}</label>
@@ -194,6 +218,7 @@ const form = reactive({
     language: 'es',
     name_format: 'first_last' as 'first_last' | 'last_first',
     show_customizer: true,
+    max_timer_duration: 120,
 });
 
 const loadData = async () => {
@@ -208,6 +233,7 @@ const loadData = async () => {
             form.language = tenantStore.tenant.preferences?.language ?? 'es';
             form.name_format = (tenantStore.tenant.preferences?.name_format ?? 'first_last') as 'first_last' | 'last_first';
             form.show_customizer = tenantStore.tenant.theme?.show_customizer !== false;
+            form.max_timer_duration = tenantStore.tenant.preferences?.max_timer_duration ?? 120;
         }
     } catch (error) {
         console.error('Failed to load tenant data:', error);
@@ -227,6 +253,7 @@ const saveSettings = async () => {
             date_format: form.date_format,
             language: form.language,
             name_format: form.name_format,
+            max_timer_duration: form.max_timer_duration ? parseInt(String(form.max_timer_duration), 10) : null,
         });
 
         // Save show_customizer (theme setting)

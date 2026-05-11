@@ -26,7 +26,10 @@ class TenantService
             'timezone' => $data['timezone'] ?? $settings['timezone'] ?? 'America/Toronto',
             'date_format' => $data['date_format'] ?? $settings['date_format'] ?? 'Y-m-d',
             'language' => $data['language'] ?? $settings['language'] ?? 'es',
-            'name_format' => $data['name_format'] ?? $settings['name_format'] ?? 'first_last',
+            'name_format'        => $data['name_format'] ?? $settings['name_format'] ?? 'first_last',
+            'max_timer_duration' => isset($data['max_timer_duration'])
+                ? (int) $data['max_timer_duration']
+                : ($settings['max_timer_duration'] ?? null),
         ]);
 
         $tenant->settings = $settings;

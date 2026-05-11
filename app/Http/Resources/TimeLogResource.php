@@ -17,6 +17,14 @@ class TimeLogResource extends JsonResource
         return [
             'id'                 => $this->id,
             'case_id'            => $this->case_id,
+            'immigration_case'   => $this->whenLoaded('immigrationCase', fn () => $this->immigrationCase ? [
+                'id'        => $this->immigrationCase->id,
+                'case_code' => $this->immigrationCase->case_number,
+                'client'    => $this->immigrationCase->client ? [
+                    'id'   => $this->immigrationCase->client->id,
+                    'name' => $this->immigrationCase->client->full_name,
+                ] : null,
+            ] : null),
             'todo_id'            => $this->todo_id,
             'user'               => $this->whenLoaded('user', fn () => [
                 'id'   => $this->user->id,

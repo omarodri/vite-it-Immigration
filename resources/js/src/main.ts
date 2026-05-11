@@ -33,6 +33,11 @@ app.use(head);
 import appSetting from "@/app-setting";
 appSetting.init();
 
+// Restore session-revoked state from sessionStorage so the login banner survives a page refresh
+import { useSessionStore } from "@/stores/useSessionStore";
+const sessionStore = useSessionStore();
+sessionStore.hydrateFromStorage();
+
 //vue-i18n
 import i18n from "@/i18n";
 app.use(i18n);

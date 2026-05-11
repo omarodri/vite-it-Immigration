@@ -32,6 +32,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'tenant_id',
         'is_active',
+        'current_session_id',
+        'session_invalidated_at',
+        'security_locked_until',
     ];
 
     /**
@@ -44,6 +47,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
+        'current_session_id',
     ];
 
     /**
@@ -52,11 +56,13 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array<string, string>
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'is_active' => 'boolean',
-        'two_factor_secret' => 'encrypted',
+        'email_verified_at'      => 'datetime',
+        'is_active'              => 'boolean',
+        'two_factor_secret'      => 'encrypted',
         'two_factor_recovery_codes' => 'encrypted:array',
-        'two_factor_confirmed_at' => 'datetime',
+        'two_factor_confirmed_at'   => 'datetime',
+        'session_invalidated_at'    => 'datetime',
+        'security_locked_until'     => 'datetime',
     ];
 
     /**

@@ -7,6 +7,7 @@ use App\Http\Requests\Profile\ChangePasswordRequest;
 use App\Http\Requests\Profile\UpdateProfileRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use OpenApi\Attributes as OA;
@@ -204,6 +205,24 @@ class ProfileController extends Controller
         $user->update([
             'password' => Hash::make($request->password),
         ]);
+
+        // Invalidate all other sessions, keep the current one active
+        $currentSessionId = $request->session()->getId();
+
+        if ($user->current_session_id && $user->current_session_id !== $currentSessionId) {
+            event(new \App\Events\SessionRevoked(
+                victim:            $user,
+                revokingIp:        $request->ip(),
+                revokingUserAgent: $request->userAgent() ?? '',
+                stopReason:        'password_change',
+            ));
+        }
+
+        DB::table('sessions')
+            ->where('user_id', $user->id)
+            ->where('id', '!=', $currentSessionId)
+            ->delete();
+        $user->forceFill(['current_session_id' => $currentSessionId])->saveQuietly();
 
         return response()->json([
             'message' => 'Password changed successfully',

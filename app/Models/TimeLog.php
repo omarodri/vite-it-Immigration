@@ -24,6 +24,7 @@ class TimeLog extends Model
         'description',
         'started_at',
         'ended_at',
+        'stop_reason',
         'source',
     ];
 

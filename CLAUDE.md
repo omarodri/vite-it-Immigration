@@ -62,6 +62,7 @@ HTTP Layer
       TenantMiddleware    — resolves active tenant from request
       ValidateBackupApiKey — protects external backup endpoint
       SecurityHeaders     — CSP / security response headers
+      EnsureSingleSession — validates current session is the authorised one (single-session enforcement)
 
 Domain / Service Layer (app/Services/)
   Auth/     — AuthService, PasswordResetService
@@ -83,35 +84,46 @@ Domain / Service Layer (app/Services/)
   Root:     — TenantService, OAuthTokenService, OAuthCredentialService,
                LegalDocumentService, TwoFactorService
 
-Data Layer (app/Models/) — 24 models
+Data Layer (app/Models/) — 25 models
   Core:    User, Tenant, UserProfile
   Domain:  Client, Companion, ImmigrationCase, CaseTask, CaseInvoice,
            CaseType, CaseImportantDate, Document, DocumentFolder,
            LegalDocument, Event, CalendarSyncStatus
-  System:  OauthToken, Activity, BackupLog, LoginAttempt, InvitationCode
+  System:  OauthToken, Activity, BackupLog, LoginAttempt, InvitationCode,
+           SessionRevocation (security infra — no BelongsToTenant)
   Kanban:  ScrumColumn, ScrumTask, Todo
   Timesheet: TimeLog
 
 Cross-cutting
+  Events (app/Events/):
+      SessionRevoked — fired by establishSingleSession() when a prior session is displaced;
+                       carries victim User, revokingIp, revokingUserAgent, stopReason
+  Listeners (app/Listeners/):
+      StopActiveTimerOnSessionRevoked — sync; stops active TimeLog for the victim
+      LogSessionRevocation            — async (queue: default); writes to session_revocations + ActivityLog
+      DetectKickingAbuse              — async (queue: high); locks account (security_locked_until)
+                                        after ≥5 kicks in 10 min from same victim
   Observers (app/Observers/) — 6 observers
       ClientObserver, CompanionObserver, CaseObserver — cascade soft-delete
       ImmigrationCaseObserver — cascade soft-delete for case children
       EventSyncObserver       — triggers SyncEventToCalendarJob on save/delete
       TimeLogObserver         — updates total_time_spent_seconds cache on cases (atomic delta UPDATE)
-  Jobs (app/Jobs/) — 5 jobs
-      SyncEventToCalendarJob  — push local event to Google/Outlook
-      PullCalendarEventsJob   — pull events from all connected calendars (every 15 min)
-      SyncCaseFolderStructure — sync folder tree to cloud storage
-      GenerateTenantBackupJob — backup tenant data
-      ScanDocumentForVirus    — antivirus scan on upload
+  Jobs (app/Jobs/) — 6 jobs
+      SyncEventToCalendarJob      — push local event to Google/Outlook
+      PullCalendarEventsJob       — pull events from all connected calendars (every 15 min)
+      SyncCaseFolderStructure     — sync folder tree to cloud storage
+      GenerateTenantBackupJob     — backup tenant data
+      ScanDocumentForVirus        — antivirus scan on upload
+      AutoStopExpiredTimersJob    — auto-stop orphaned timers per tenant (every 1 min, ShouldBeUnique)
   Scheduler (routes/console.php):
-      trash:purge --days=30   → daily at 03:00
-      PullCalendarEventsJob   → every 15 minutes
+      trash:purge --days=30       → daily at 03:00
+      PullCalendarEventsJob       → every 15 minutes
+      AutoStopExpiredTimersJob    → every 1 minute (stops timers > tenant.settings.max_timer_duration)
 ```
 
 ### Frontend Layer Architecture
 ```
-State (resources/js/src/stores/) — 16 Pinia stores
+State (resources/js/src/stores/) — 17 Pinia stores
   useAppStore       — theme, locale, layout, sidebar, RTL
   useAuthStore      — login/logout flow
   useUserStore      — authenticated user + loaded permissions
@@ -120,7 +132,9 @@ State (resources/js/src/stores/) — 16 Pinia stores
   useDocumentStore, useDashboardStore, useTenantStore
   useRoleStore, useProfileStore, useScrumStore
   useTodoStore, useTrashStore, useListFilters
-  useTimesheetStore — active timer, case log cache, CRUD for time_logs
+  useTimesheetStore — active timer, case log cache, CRUD for time_logs; BroadcastChannel('timesheet') for multi-tab sync
+  useSessionStore   — kicked-out banner state (session_revoked) + account_locked state (account_security_locked);
+                      sessionStorage persistence for both; BroadcastChannel('session') for multi-tab propagation
 
 Services (resources/js/src/services/) — 21 services
   api.ts              — axios instance; 401 → logout+clear state;
@@ -172,8 +186,22 @@ Every business model uses `BelongsToTenant` trait, which registers a global Eloq
 - Auth via HttpOnly cookies + CSRF token. **Not Bearer tokens.**
 - `api.ts` calls `/sanctum/csrf-cookie` before login.
 - On 419 (CSRF expired): interceptor auto-refreshes cookie and retries the request.
-- On 401: clears `useUserStore` + `usePermissionStore`, then `router.push('/auth/login')`.
+- On 401 `reason: 'session_revoked'`: session was kicked by a new login on another device — sets `useSessionStore.kickedOut`, shows banner on login page, clears all stores.
+- On 401 (generic): clears auth state and redirects to login.
 - **Never store auth tokens in Pinia or localStorage.**
+
+### Single Active Session per User (Spec 53)
+- `SESSION_DRIVER=database` — `sessions` table stores all active sessions.
+- `users.current_session_id` column — points to the one valid session. Set via `AuthService::establishSingleSession()` on every successful login (after `session()->regenerate()`).
+- `EnsureSingleSession` middleware — applied to ALL authenticated route groups; responds 401 + `reason: 'session_revoked'` if the session ID doesn't match `current_session_id`.
+- **2FA timing:** `establishSingleSession()` is called AFTER 2FA verification, never before. An attacker with only credentials (no TOTP code) cannot kick a legitimate user.
+- **Timer safety:** `stopActiveTimerForRevokedSession()` auto-stops any running `TimeLog` before invalidating the session. `AutoStopExpiredTimersJob` is the fallback (runs every minute).
+- **Multi-tab:** `BroadcastChannel('session')` propagates the kick to all tabs of the same browser instantly.
+- `users.current_session_id` is in `$hidden` — never exposed in API responses.
+- `users.security_locked_until` — set by `DetectKickingAbuse` listener when ≥5 kicks detected in 10 min; `EnsureSingleSession` enforces it with 401 + `reason: 'account_security_locked'`.
+- Password change invalidates all other sessions but keeps the current one active.
+- **Event-driven side effects (Spec 54):** `establishSingleSession()` fires `SessionRevoked` event → `StopActiveTimerOnSessionRevoked` (sync), `LogSessionRevocation` (async, queue: default), `DetectKickingAbuse` (async, queue: high).
+- `session_revocations` table stores each kick event for abuse detection queries (no BelongsToTenant).
 
 ### Permissions: Spatie Laravel-Permission
 - Format: `resource.action` (e.g. `cases.create`, `documents.delete`)

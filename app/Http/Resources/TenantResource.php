@@ -40,10 +40,13 @@ class TenantResource extends JsonResource
 
             // Preferences
             'preferences' => [
-                'timezone' => $settings['timezone'] ?? 'America/Toronto',
-                'date_format' => $settings['date_format'] ?? 'Y-m-d',
-                'language' => $settings['language'] ?? 'es',
-                'name_format' => $settings['name_format'] ?? 'first_last',
+                'timezone'           => $settings['timezone'] ?? 'America/Toronto',
+                'date_format'        => $settings['date_format'] ?? 'Y-m-d',
+                'language'           => $settings['language'] ?? 'es',
+                'name_format'        => $settings['name_format'] ?? 'first_last',
+                'max_timer_duration' => isset($settings['max_timer_duration'])
+                    ? (int) $settings['max_timer_duration']
+                    : null,
             ],
 
             // Theme

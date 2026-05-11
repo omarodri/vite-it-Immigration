@@ -20,6 +20,7 @@ interface TenantPreferences {
     date_format: string;
     language: string;
     name_format: 'first_last' | 'last_first';
+    max_timer_duration: number | null;
 }
 
 interface TenantIntegrations {
@@ -87,6 +88,7 @@ export const useTenantStore = defineStore('tenant', {
             date_format: 'Y-m-d',
             language: 'es',
             name_format: 'first_last',
+            max_timer_duration: 120,
         },
 
         nameFormat: (state): 'first_last' | 'last_first' =>
@@ -124,7 +126,7 @@ export const useTenantStore = defineStore('tenant', {
             }
         },
 
-        async updateSettings(settings: Partial<TenantCompany & TenantPreferences & { name: string; name_format: 'first_last' | 'last_first' }>) {
+        async updateSettings(settings: Partial<TenantCompany & TenantPreferences & { name: string; name_format: 'first_last' | 'last_first'; max_timer_duration?: number | null }>) {
             this.loading = true;
             this.error = null;
 

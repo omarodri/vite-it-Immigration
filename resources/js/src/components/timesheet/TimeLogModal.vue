@@ -10,6 +10,7 @@ import { durationToSeconds, formatStopwatch } from '@/utils/timeFormat';
 import type { TimeLog } from '@/types/timesheet';
 
 import IconX from '@/components/icon/icon-x.vue';
+import ActiveTimerConflictModal from '@/components/timesheet/ActiveTimerConflictModal.vue';
 
 interface TodoOption {
     id: number;
@@ -44,6 +45,7 @@ const workDate = ref(today());
 const description = ref('');
 const selectedTodoId = ref<number | null>(null);
 const isSubmitting = ref(false);
+const showConflictModal = ref(false);
 
 function selectTodo(id: number | null) {
     selectedTodoId.value = id;
@@ -106,7 +108,10 @@ async function submitManual() {
 }
 
 async function handleStartTimer() {
-    if (timerLockedToOtherCase.value) return;
+    if (timerLockedToOtherCase.value) {
+        showConflictModal.value = true;
+        return;
+    }
     isSubmitting.value = true;
     try {
         await store.startTimer(props.caseId, { todo_id: selectedTodoId.value });
@@ -120,6 +125,10 @@ async function handleStartTimer() {
     } finally {
         isSubmitting.value = false;
     }
+}
+
+function handleConflictStarted() {
+    activeTab.value = 'timer';
 }
 
 async function handleStopTimer() {
@@ -303,9 +312,22 @@ function handleClose() {
                                     </p>
                                 </div>
 
-                                <div v-else-if="timerLockedToOtherCase" class="text-center py-4">
+                                <div v-else-if="timerLockedToOtherCase" class="text-center py-4 space-y-2">
                                     <p class="text-sm text-warning">
                                         {{ t('timesheet.error_active_timer_exists') }}
+                                    </p>
+                                    <p v-if="store.activeTimer?.immigration_case" class="text-xs text-gray-500 dark:text-gray-400">
+                                        <router-link
+                                            :to="`/cases/${store.activeTimer.immigration_case.id}`"
+                                            class="text-primary hover:underline font-medium"
+                                            @click="$emit('close')"
+                                            target="_blank"
+                                        >
+                                            {{ store.activeTimer.immigration_case.case_code }}
+                                        </router-link>
+                                        <span v-if="store.activeTimer.immigration_case.client">
+                                            — {{ store.activeTimer.immigration_case.client.name }}
+                                        </span>
                                     </p>
                                 </div>
 
@@ -331,8 +353,9 @@ function handleClose() {
                                     <button
                                         v-if="!isRunning || activeTimer?.case_id !== props.caseId"
                                         type="button"
-                                        class="btn btn-success gap-2"
-                                        :disabled="isSubmitting || timerLockedToOtherCase"
+                                        class="btn gap-2"
+                                        :class="timerLockedToOtherCase ? 'btn-warning' : 'btn-success'"
+                                        :disabled="isSubmitting"
                                         @click="handleStartTimer"
                                     >
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -360,4 +383,12 @@ function handleClose() {
             </div>
         </Dialog>
     </TransitionRoot>
+
+    <ActiveTimerConflictModal
+        :show="showConflictModal"
+        :new-case-id="props.caseId"
+        :new-todo-id="selectedTodoId"
+        @close="showConflictModal = false"
+        @started="handleConflictStarted"
+    />
 </template>

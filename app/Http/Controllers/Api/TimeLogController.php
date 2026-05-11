@@ -50,6 +50,7 @@ class TimeLogController extends Controller
 
     /**
      * POST /api/cases/{case}/time-logs/start
+     * Note: loads immigrationCase.client so the frontend store has full data for the conflict modal.
      */
     public function start(Request $request, ImmigrationCase $case): TimeLogResource
     {
@@ -61,7 +62,7 @@ class TimeLogController extends Controller
             $request->input('todo_id'),
         );
 
-        return new TimeLogResource($log->load(['user', 'todo']));
+        return new TimeLogResource($log->load(['user', 'todo', 'immigrationCase.client']));
     }
 
     /**
@@ -124,5 +125,18 @@ class TimeLogController extends Controller
         }
 
         return new TimeLogResource($log);
+    }
+
+    /**
+     * POST /api/me/active-timer/beacon-stop
+     * Called via navigator.sendBeacon() when the browser tab is closed/hidden.
+     */
+    public function beaconStop(Request $request): JsonResponse
+    {
+        $log = $this->service->getActiveTimerForUser($request->user());
+        if ($log) {
+            $this->service->stopTimer($log->id, $request->user());
+        }
+        return response()->json(['ok' => true]);
     }
 }

@@ -32,7 +32,8 @@ class UpdateTenantSettingsRequest extends FormRequest
             'timezone' => ['sometimes', 'string', 'timezone'],
             'date_format' => ['sometimes', 'string', 'in:Y-m-d,d/m/Y,m/d/Y,d-m-Y'],
             'language' => ['sometimes', 'string', 'in:es,en,fr'],
-            'name_format' => ['sometimes', 'string', 'in:first_last,last_first'],
+            'name_format'        => ['sometimes', 'string', 'in:first_last,last_first'],
+            'max_timer_duration' => ['sometimes', 'integer', 'min:15', 'max:1440'],
         ];
     }
 

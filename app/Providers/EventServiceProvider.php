@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Events\SessionRevoked;
+use App\Listeners\DetectKickingAbuse;
+use App\Listeners\LogSessionRevocation;
+use App\Listeners\StopActiveTimerOnSessionRevoked;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -17,6 +21,11 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         Registered::class => [
             SendEmailVerificationNotification::class,
+        ],
+        SessionRevoked::class => [
+            StopActiveTimerOnSessionRevoked::class,
+            LogSessionRevocation::class,
+            DetectKickingAbuse::class,
         ],
     ];
 

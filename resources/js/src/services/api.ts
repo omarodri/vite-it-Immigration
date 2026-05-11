@@ -10,6 +10,9 @@ interface ApiErrorResponse {
     message?: string;
     error?: string;
     errors?: Record<string, string[]>;
+    reason?: string;
+    revoked_at?: string;
+    locked_until?: string;
 }
 
 // Helper to get CSRF token from cookie
@@ -99,19 +102,46 @@ api.interceptors.response.use(
         const data = error.response.data;
 
         switch (status) {
-            case 401:
-                // Unauthorized - session expired or not authenticated
+            case 401: {
+                // Unauthorized - session expired, revoked, or not authenticated
                 if (!isRedirectingToLogin) {
                     const currentRoute = router.currentRoute.value.name;
                     if (currentRoute !== 'boxed-signin' && currentRoute !== 'cover-login') {
                         isRedirectingToLogin = true;
+
+                        const reason = data?.reason;
+
+                        // Snapshot active timer before clearing state (defensive — backend already
+                        // stopped it, but this guards against race conditions)
+                        try {
+                            const { useTimesheetStore } = await import('@/stores/useTimesheetStore');
+                            const timesheetStore = useTimesheetStore();
+                            if (timesheetStore.activeTimer) {
+                                timesheetStore.persistOfflineSnapshot();
+                            }
+                            timesheetStore.clearLocal();
+                        } catch { /* ignore */ }
+
                         // Clear auth state FIRST so the router guest-guard
                         // doesn't bounce us back to home (isAuthenticated && to.meta.guest)
                         const { useAuthStore } = await import('@/stores/auth');
                         const authStore = useAuthStore();
                         authStore.$patch({ user: null, isAuthenticated: false });
 
-                        notification.warning(t('api_errors.session_expired'));
+                        if (reason === 'session_revoked') {
+                            // Store kick info for the login page banner and broadcast to other tabs
+                            const { useSessionStore, broadcastSessionRevoked } = await import('@/stores/useSessionStore');
+                            const sessionStore = useSessionStore();
+                            sessionStore.setKickedOut({ revokedAt: data?.revoked_at ?? null });
+                            broadcastSessionRevoked(data?.revoked_at ?? null);
+                        } else if (reason === 'account_security_locked') {
+                            // Account temporarily locked due to kicking abuse detection
+                            const { useSessionStore } = await import('@/stores/useSessionStore');
+                            const sessionStore = useSessionStore();
+                            sessionStore.setAccountLocked({ lockedUntil: data?.locked_until ?? null });
+                        } else {
+                            notification.warning(t('api_errors.session_expired'));
+                        }
 
                         router.push({ name: 'boxed-signin' }).finally(() => {
                             isRedirectingToLogin = false;
@@ -119,6 +149,7 @@ api.interceptors.response.use(
                     }
                 }
                 return Promise.reject(error);
+            }
 
 
             case 403:

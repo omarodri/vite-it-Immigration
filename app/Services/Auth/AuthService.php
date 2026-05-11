@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth;
 
+use App\Events\SessionRevoked;
 use App\Models\InvitationCode;
 use App\Models\LoginAttempt;
 use App\Models\User;
@@ -9,6 +10,7 @@ use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Services\TwoFactorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -93,6 +95,7 @@ class AuthService
 
         if ($request->hasSession()) {
             $request->session()->regenerate();
+            $this->establishSingleSession($user);
         }
 
         return ['user' => $this->loadUserWithPermissions($user)];
@@ -149,6 +152,7 @@ class AuthService
 
         Auth::login($user);
         $request->session()->regenerate();
+        $this->establishSingleSession($user);
 
         activity('auth')
             ->causedBy($user)
@@ -182,6 +186,39 @@ class AuthService
     public function getAuthenticatedUser(User $user): User
     {
         return $this->loadUserWithPermissions($user);
+    }
+
+    /**
+     * Marks the current session as the only valid one and invalidates all prior sessions.
+     * Must be called AFTER session()->regenerate() and AFTER 2FA verification when applicable.
+     */
+    public function establishSingleSession(User $user): void
+    {
+        $newSessionId   = session()->getId();
+        $revokingIp     = request()->ip();
+        $revokingAgent  = request()->userAgent() ?? '';
+
+        $hadPreviousSession = $user->current_session_id
+            && $user->current_session_id !== $newSessionId;
+
+        if ($hadPreviousSession) {
+            event(new SessionRevoked(
+                victim:            $user,
+                revokingIp:        $revokingIp,
+                revokingUserAgent: $revokingAgent,
+                stopReason:        'new_login',
+            ));
+        }
+
+        DB::table('sessions')
+            ->where('user_id', $user->id)
+            ->where('id', '!=', $newSessionId)
+            ->delete();
+
+        $user->forceFill([
+            'current_session_id'     => $newSessionId,
+            'session_invalidated_at' => now(),
+        ])->saveQuietly();
     }
 
     private function loadUserWithPermissions(User $user): User

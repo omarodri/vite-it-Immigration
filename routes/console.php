@@ -21,3 +21,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('trash:purge --days=30')->daily()->at('03:00');
 Schedule::job(new \App\Jobs\PullCalendarEventsJob)->everyFifteenMinutes();
+Schedule::job(new \App\Jobs\AutoStopExpiredTimersJob)->everyMinute()->withoutOverlapping();

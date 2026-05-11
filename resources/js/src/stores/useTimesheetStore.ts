@@ -13,6 +13,22 @@ import type {
     TimeLogPaginationMeta,
 } from '@/types/timesheet';
 
+const timesheetChannel = typeof BroadcastChannel !== 'undefined'
+    ? new BroadcastChannel('timesheet')
+    : null;
+
+function broadcastTimer(type: 'started' | 'stopped', timer?: unknown): void {
+    try {
+        timesheetChannel?.postMessage(
+            type === 'started'
+                ? { type, timer: JSON.parse(JSON.stringify(timer)) }
+                : { type }
+        );
+    } catch {
+        // BroadcastChannel is best-effort — never break the main flow
+    }
+}
+
 interface TimesheetState {
     activeTimer: TimeLog | null;
     caseLogs: Record<number, TimeLog[]>;
@@ -60,6 +76,7 @@ export const useTimesheetStore = defineStore('timesheet', {
             try {
                 const res = await timesheetService.startTimer(caseId, payload);
                 this.activeTimer = res.data.data;
+                broadcastTimer('started', this.activeTimer);
                 return res.data.data as TimeLog;
             } finally {
                 this.isLoading = false;
@@ -75,6 +92,7 @@ export const useTimesheetStore = defineStore('timesheet', {
                 const res = await timesheetService.stopTimer(caseId, logId);
                 const stopped: TimeLog = res.data.data;
                 this.activeTimer = null;
+                broadcastTimer('stopped');
                 await this.fetchCaseLogs(caseId);
                 return stopped;
             } finally {
@@ -125,6 +143,36 @@ export const useTimesheetStore = defineStore('timesheet', {
             this.activeTimer = null;
             this.caseLogs = {};
             this.caseLogsMeta = {};
+            broadcastTimer('stopped');
+        },
+
+        clearLocal(): void {
+            // Clear in-memory state without broadcasting — used during session revocation
+            // where broadcasting has already been handled by useSessionStore
+            this.activeTimer = null;
+            this.caseLogs = {};
+            this.caseLogsMeta = {};
+        },
+
+        persistOfflineSnapshot(): void {
+            if (!this.activeTimer) return;
+            try {
+                sessionStorage.setItem('timer_offline_snapshot', JSON.stringify({
+                    timeLogId:  this.activeTimer.id,
+                    caseId:     this.activeTimer.case_id,
+                    startedAt:  this.activeTimer.started_at,
+                    snapshotAt: new Date().toISOString(),
+                    reason:     'session_revoked',
+                }));
+            } catch { /* sessionStorage is best-effort */ }
+        },
+
+        initBroadcast(): void {
+            if (!timesheetChannel) return;
+            timesheetChannel.onmessage = (ev: MessageEvent) => {
+                if (ev.data.type === 'started') this.activeTimer = ev.data.timer;
+                if (ev.data.type === 'stopped') this.activeTimer = null;
+            };
         },
     },
 });

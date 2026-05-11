@@ -73,7 +73,7 @@ Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 've
     ->name('verification.verify');
 
 // Protected routes (authentication required) with API rate limiting and tenant scope
-Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:api', 'tenant', 'ensure.single.session'])->group(function () {
     // Global Search
     Route::get('/search', GlobalSearchController::class)->middleware('throttle:60,1');
 
@@ -286,6 +286,7 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
         Route::delete('time-logs/{log}',     [TimeLogController::class, 'destroy']);
     });
     Route::get('me/active-timer', [TimeLogController::class, 'activeTimer']);
+    Route::post('me/active-timer/beacon-stop', [TimeLogController::class, 'beaconStop']);
 
     // Trash / Recycle Bin
     Route::prefix('trash')->group(function () {
@@ -303,7 +304,7 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant'])->group(function ()
 });
 
 // Super-admin tenant management routes
-Route::prefix('admin/tenants')->middleware(['auth:sanctum', 'role:super-admin'])->group(function () {
+Route::prefix('admin/tenants')->middleware(['auth:sanctum', 'role:super-admin', 'ensure.single.session'])->group(function () {
     Route::get('/', [AdminTenantController::class, 'index']);
     Route::post('/', [AdminTenantController::class, 'store']);
     Route::get('/stats', [AdminTenantController::class, 'stats']);
@@ -314,7 +315,7 @@ Route::prefix('admin/tenants')->middleware(['auth:sanctum', 'role:super-admin'])
 });
 
 // Backup routes — UI (admin)
-Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin|super-admin'])->group(function () {
+Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin|super-admin', 'ensure.single.session'])->group(function () {
     Route::post('/tenants/{id}/backup', [AdminBackupController::class, 'run'])->where('id', '[0-9]+');
     Route::get('/tenants/{id}/backups', [AdminBackupController::class, 'index'])->where('id', '[0-9]+');
     Route::get('/backups/{logId}/download', [AdminBackupController::class, 'download'])->where('logId', '[0-9]+');
@@ -327,7 +328,7 @@ Route::post('/admin/backup/run', [AdminBackupController::class, 'runExternal'])
 
 // Workflow management routes (admin)
 Route::prefix('admin/workflow')
-    ->middleware(['auth:sanctum', 'tenant', 'permission:workflows.view'])
+    ->middleware(['auth:sanctum', 'tenant', 'permission:workflows.view', 'ensure.single.session'])
     ->group(function () {
         Route::get('/case-types/{caseType}/stages', [AdminWorkflowStageController::class, 'index']);
         Route::post('/case-types/{caseType}/stages', [AdminWorkflowStageController::class, 'store']);

@@ -2,6 +2,7 @@
     <header class="z-40" :class="{ dark: store.semidark && store.menu === 'horizontal' }">
         <div class="shadow-sm">
             <div class="relative bg-white flex w-full items-center px-5 py-2.5 dark:bg-[#0e1726]">
+                <!-- Logo -->
                 <div class="horizontal-logo flex lg:hidden justify-between items-center ltr:mr-2 rtl:ml-2 shrink-0">
                     <router-link to="/" class="main-logo flex items-center shrink-0">
                         <img class="w-8 ltr:-ml-1 rtl:-mr-1 inline" src="/assets/images/logo.svg" alt="" />
@@ -10,7 +11,8 @@
                             ></span
                         >
                     </router-link>
-
+                    <!-- End Logo -->
+                    <!-- toggleSidebar -->
                     <a
                         href="#"
                         class="collapse-icon flex-none dark:text-[#d0d2d6] hover:text-primary dark:hover:text-primary flex lg:hidden ltr:ml-2 rtl:mr-2 p-2 rounded-full bg-white-light/40 dark:bg-dark/40 hover:bg-white-light/90 dark:hover:bg-dark/60"
@@ -70,6 +72,29 @@
                         </button>
                     </div>
                     
+                    <!-- Active Timer Indicator -->
+                    <div v-if="timesheetStore.hasActiveTimer">
+                        <router-link
+                            :to="`/cases/${timesheetStore.activeTimer!.immigration_case?.id ?? timesheetStore.activeTimer!.case_id}`"
+                            :class="[
+                                'flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold transition-colors',
+                                timerExceedsThreshold
+                                    ? 'bg-warning/10 hover:bg-warning/20 text-warning animate-pulse'
+                                    : 'bg-success/10 hover:bg-success/20 text-success'
+                            ]"
+                            :title="$t('timer.active_indicator_tooltip')"
+                        >
+                            <span class="relative flex h-2.5 w-2.5">
+                                <span :class="['animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', timerExceedsThreshold ? 'bg-warning' : 'bg-success']"></span>
+                                <span :class="['relative inline-flex rounded-full h-2.5 w-2.5', timerExceedsThreshold ? 'bg-warning' : 'bg-success']"></span>
+                            </span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="hidden sm:inline tabular-nums text-xs font-bold">{{ elapsedDisplay }}</span>
+                        </router-link>
+                    </div>
+
                     <!-- Theme -->
                     <div>
                         <a
@@ -859,7 +884,7 @@
 </template>
 
 <script lang="ts" setup>
-    import { ref, onMounted, computed, reactive, watch } from 'vue';
+    import { ref, onMounted, onUnmounted, computed, reactive, watch } from 'vue';
     import { useI18n } from 'vue-i18n';
 
     import appSetting from '@/app-setting';
@@ -888,6 +913,9 @@
     import IconMail from '@/components/icon/icon-mail.vue';
     import IconLockDots from '@/components/icon/icon-lock-dots.vue';
     import IconLogout from '@/components/icon/icon-logout.vue';
+    import { useTimesheetStore } from '@/stores/useTimesheetStore';
+    import { useTenantStore } from '@/stores/tenant';
+    import Swal from 'sweetalert2';
     import IconMenuDashboard from '@/components/icon/menu/icon-menu-dashboard.vue';
     import IconCaretDown from '@/components/icon/icon-caret-down.vue';
     import IconMenuApps from '@/components/icon/menu/icon-menu-apps.vue';
@@ -908,8 +936,64 @@
     const router = useRouter();
     const search = ref(false);
 
+    const timesheetStore = useTimesheetStore();
+    const tenantStore = useTenantStore();
+
+    // Active timer display
+    const nowMs = ref(Date.now());
+    let displayTick: ReturnType<typeof setInterval>;
+    let syncPoll: ReturnType<typeof setInterval>;
+
+    onMounted(() => {
+        displayTick = setInterval(() => (nowMs.value = Date.now()), 1000);
+        syncPoll = setInterval(() => {
+            if (timesheetStore.hasActiveTimer) timesheetStore.fetchActiveTimer();
+        }, 60_000);
+    });
+
+    onUnmounted(() => {
+        clearInterval(displayTick);
+        clearInterval(syncPoll);
+    });
+
+    const elapsedDisplay = computed(() => {
+        const t = timesheetStore.activeTimer;
+        if (!t?.started_at) return '00:00';
+        const sec = Math.max(0, Math.floor((nowMs.value - new Date(t.started_at).getTime()) / 1000));
+        const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+        const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+        return `${h}:${m}`;
+    });
+
+    const timerExceedsThreshold = computed(() => {
+        const t = timesheetStore.activeTimer;
+        const maxMin = tenantStore.tenant?.preferences?.max_timer_duration;
+        if (!t?.started_at || !maxMin) return false;
+        const elapsedMin = (nowMs.value - new Date(t.started_at).getTime()) / 60_000;
+        return elapsedMin >= maxMin;
+    });
+
     // Logout handler
     const handleLogout = async () => {
+        if (timesheetStore.hasActiveTimer) {
+            const result = await Swal.fire({
+                title: i18n.t('timer.logout_warning_title'),
+                text: i18n.t('timer.logout_warning_text'),
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e7515a',
+                cancelButtonColor: '#805dca',
+                confirmButtonText: i18n.t('timer.stop_and_logout'),
+                cancelButtonText: i18n.t('cancel'),
+                reverseButtons: true,
+            });
+            if (!result.isConfirmed) return;
+            try {
+                await timesheetStore.stopTimer();
+            } catch {
+                // Server-side scheduler will clean up if stop fails
+            }
+        }
         await authStore.logout();
         router.push('/auth/boxed-signin');
     };

@@ -1,6 +1,11 @@
 export interface TimeLog {
     id: number;
     case_id: number;
+    immigration_case?: {
+        id: number;
+        case_code: string;
+        client: { id: number; name: string } | null;
+    } | null;
     todo_id: number | null;
     user: {
         id: number;

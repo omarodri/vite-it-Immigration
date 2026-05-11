@@ -49,9 +49,9 @@ class TimeLogService
     /**
      * Stop a running timer; computes elapsed seconds and persists.
      */
-    public function stopTimer(int $timeLogId, User $user): TimeLog
+    public function stopTimer(int $timeLogId, User $user, string $reason = 'manual'): TimeLog
     {
-        return DB::transaction(function () use ($timeLogId, $user) {
+        return DB::transaction(function () use ($timeLogId, $user, $reason) {
             $log = TimeLog::lockForUpdate()->findOrFail($timeLogId);
 
             abort_if($log->user_id !== $user->id, 403, "Cannot stop another user's timer.");
@@ -63,6 +63,7 @@ class TimeLogService
             $log->update([
                 'ended_at'         => $endedAt,
                 'duration_seconds' => $duration,
+                'stop_reason'      => $reason,
             ]);
 
             return $log->fresh();
@@ -144,7 +145,7 @@ class TimeLogService
     {
         return TimeLog::byUser($user->id)
             ->running()
-            ->with(['immigrationCase', 'todo'])
+            ->with(['immigrationCase.client', 'todo', 'user'])
             ->first();
     }
 

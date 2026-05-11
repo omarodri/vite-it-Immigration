@@ -87,10 +87,13 @@
     import { useTenantStore } from '@/stores/tenant';
     import { useAuthStore } from '@/stores/auth';
     import { useInactivityTimer } from '@/composables/useInactivityTimer';
+    import { useTimesheetStore } from '@/stores/useTimesheetStore';
+    import { registerBeaconStop } from '@/composables/useBeaconStop';
 
     const store = useAppStore();
     const tenantStore = useTenantStore();
     const authStore = useAuthStore();
+    const timesheetStore = useTimesheetStore();
     const router = useRouter();
     const showTopButton = ref(false);
 
@@ -102,6 +105,8 @@
 
     onMounted(() => {
         startInactivityTimer();
+        timesheetStore.initBroadcast();
+        registerBeaconStop();
         window.onscroll = () => {
             if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
                 showTopButton.value = true;
