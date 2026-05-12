@@ -207,6 +207,10 @@ class FolderService
 
         if (empty($selection)) {
             Log::info('FolderService: Empty folder selection, case created without folders', ['case_id' => $case->id]);
+            // Mark the case as processed so the Documents tab does not auto-create
+            // default folders later — distinguishes "user chose no folders" from
+            // "legacy case that was never initialized."
+            $case->update(['folder_sync_status' => 'synced']);
             return;
         }
 

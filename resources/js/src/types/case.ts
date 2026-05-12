@@ -12,7 +12,7 @@ import type { WorkflowSnapshot, WorkflowStage, WorkflowTask } from './workflow';
 
 export type CaseStatus = 'active' | 'inactive' | 'archived' | 'closed';
 export type CasePriority = 'urgent' | 'high' | 'medium' | 'low';
-export type CaseTypeCategory = 'category.temporary_residence' | 'category.permanent_residence' | 'category.refugee' | 'category.citizenship';
+export type CaseTypeCategory = 'category.temporary_residence' | 'category.permanent_residence' | 'category.refugee' | 'category.citizenship' | 'category.other';
 
 export type CaseStage =
     | 'initial_consultation'
@@ -428,9 +428,9 @@ export const CASE_PRIORITY_LABELS_ES: Record<CasePriority, string> = {
     low: 'Baja',
 };
 
-export const CASE_TYPE_CATEGORY_LABELS_ES: Record<CaseTypeCategory, string> = {
-    'category.temporary_residence': 'Residencia Temporal',
-    'category.permanent_residence': 'Residencia Permanente',
-    'category.refugee': 'Refugio/Asilo',
-    'category.citizenship': 'Ciudadanía',
-};
+// export const CASE_TYPE_CATEGORY_LABELS_ES: Record<CaseTypeCategory, string> = {
+//     'category.temporary_residence': 'Residencia Temporal',
+//     'category.permanent_residence': 'Residencia Permanente',
+//     'category.refugee': 'Refugio/Asilo',
+//     'category.citizenship': 'Ciudadanía',
+// };

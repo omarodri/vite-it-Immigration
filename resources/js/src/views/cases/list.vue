@@ -33,7 +33,7 @@
             <div class="panel bg-gradient-to-r from-blue-500 to-blue-400">
                 <div class="flex justify-between">
                     <div class="text-white">
-                        <p class="text-lg font-semibold">{{ caseStore.statistics?.upcoming_hearings ?? 0 }}</p>
+                        <p class="text-lg font-semibold">{{ caseStore.statistics?.upcoming_deadlines ?? 0 }}</p>
                         <p class="text-sm opacity-80">{{ $t('cases.upcoming_hearings') }}</p>
                     </div>
                     <icon-calendar class="w-10 h-10 text-white opacity-50" />

@@ -25,8 +25,30 @@ class CaseImportantDateFactory extends Factory
             'label' => $this->faker->randomElement([
                 'Fecha de inicio', 'Fecha limite legal', 'Fecha de envio IRCC', 'Fecha de decision',
             ]),
-            'due_date' => $this->faker->optional(0.7)->dateTimeBetween('now', '+6 months')?->format('Y-m-d'),
+            'due_date' => $this->faker->dateTimeBetween('-30 days', '+30 days')->format('Y-m-d'),
             'sort_order' => $this->faker->numberBetween(0, 5),
+            'calendar_event_id' => null,
         ];
+    }
+
+    public function overdue(): self
+    {
+        return $this->state(fn () => [
+            'due_date' => now()->subDays(random_int(1, 25))->toDateString(),
+        ]);
+    }
+
+    public function today(): self
+    {
+        return $this->state(fn () => [
+            'due_date' => now()->toDateString(),
+        ]);
+    }
+
+    public function upcoming(int $days = 7): self
+    {
+        return $this->state(fn () => [
+            'due_date' => now()->addDays($days)->toDateString(),
+        ]);
     }
 }

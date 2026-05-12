@@ -19,7 +19,6 @@ export interface ColumnConfig {
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
-    { field: 'case_code',    titleKey: 'case.code',             visible: true,  locked: false, width: '160px' },
     { field: 'case_number',  titleKey: 'cases.case_number',    visible: true,  locked: true,  width: '140px' },
     { field: 'client',       titleKey: 'cases.client',          visible: true,  locked: true,  width: '200px' },
     { field: 'case_type',    titleKey: 'cases.case_type',       visible: true,  locked: false, width: '150px' },

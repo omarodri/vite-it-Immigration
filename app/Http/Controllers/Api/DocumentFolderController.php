@@ -116,6 +116,16 @@ class DocumentFolderController extends Controller
 
         // Step 1: Create DB folders if none exist
         if ($existingCount === 0) {
+            $case->refresh();
+            // folder_sync_status is set synchronously by FolderService when the wizard
+            // runs (even for an empty selection). A non-null value means the case was
+            // already processed — the user deliberately chose no folders; respect that.
+            if ($case->folder_sync_status !== null) {
+                return response()->json([
+                    'message' => 'No folders configured for this case.',
+                    'folders_count' => 0,
+                ]);
+            }
             $this->folderService->createDefaultStructure($case);
             $existingCount = DocumentFolder::where('case_id', $case->id)->count();
         }

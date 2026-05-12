@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\ScrumColumnController;
 use App\Http\Controllers\Api\ScrumTaskController;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\ExpirationAlertController;
+use App\Http\Controllers\Api\ImportantDateAlertController;
 use App\Http\Controllers\Api\LegalDocumentController;
 use App\Http\Controllers\Api\TodoController;
 use App\Http\Controllers\Api\TrashController;
@@ -205,6 +206,10 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant', 'ensure.single.sess
 
     // Expiration Alerts routes
     Route::get('/expiration-alerts', [ExpirationAlertController::class, 'index']);
+
+    // Important Date Alerts routes
+    Route::get('/important-date-alerts', [ImportantDateAlertController::class, 'index']);
+    Route::post('/important-date-alerts/{id}/link-event', [ImportantDateAlertController::class, 'linkEvent']);
 
     // Role management routes
     Route::get('/roles', [RoleController::class, 'index']);

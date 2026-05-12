@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\CaseImportantDate;
 use App\Models\Client;
 use App\Models\Companion;
 use App\Models\Event;
@@ -19,6 +20,7 @@ use App\Observers\ImmigrationCaseObserver;
 use App\Observers\TaskWorkflowObserver;
 use App\Observers\TimeLogObserver;
 use App\Observers\TodoObserver;
+use App\Policies\CaseImportantDatePolicy;
 use App\Policies\TaskTemplatePolicy;
 use App\Policies\WorkflowStagePolicy;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -53,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::policy(WorkflowStage::class, WorkflowStagePolicy::class);
         Gate::policy(TaskTemplate::class, TaskTemplatePolicy::class);
+        Gate::policy(CaseImportantDate::class, CaseImportantDatePolicy::class);
 
         $this->configureRateLimiting();
     }

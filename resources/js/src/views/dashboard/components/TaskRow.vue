@@ -24,6 +24,13 @@ function formatDate(dateStr: string | null): string {
     const date = new Date(dateStr + 'T00:00:00');
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
+
+function isOverdue(dateStr: string | null): boolean {
+    if (!dateStr) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return new Date(dateStr + 'T00:00:00') < today;
+}
 </script>
 
 <template>
@@ -36,7 +43,7 @@ function formatDate(dateStr: string | null): string {
             <span v-if="task.tag" class="badge badge-outline-primary text-xs text-wrap">{{ task.tag }}</span>
             <span v-else class="text-gray-400">--</span>
         </td>
-        <td class="whitespace-nowrap text-xs">{{ formatDate(task.due_date) }}</td>
+        <td class="whitespace-nowrap text-xs" :class="{ 'text-danger font-semibold': isOverdue(task.due_date) }">{{ formatDate(task.due_date) }}</td>
         <td class="whitespace-nowrap">
             <router-link
                 v-if="task.case"

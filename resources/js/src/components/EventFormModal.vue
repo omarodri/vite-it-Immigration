@@ -313,7 +313,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     'update:show': [boolean];
-    'saved': [];
+    'saved': [eventId?: number];
     'deleted': [];
 }>();
 
@@ -353,6 +353,10 @@ const { captureSnapshot, handleClose, forceClose } = useModalGuard(
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
+    if (props.show) {
+        populateForm();
+        captureSnapshot();
+    }
     await loadAssignees();
 });
 
@@ -509,14 +513,16 @@ async function saveEvent() {
             location:       params.value.location || null,
         };
 
+        let savedEventId: number | undefined = params.value.id ?? undefined;
         if (params.value.id) {
             await api.put(`/events/${params.value.id}`, payload);
         } else {
-            await api.post('/events', payload);
+            const res = await api.post('/events', payload);
+            savedEventId = res.data?.data?.id ?? res.data?.id ?? undefined;
         }
 
         showMessage(t('calendar.event_saved'));
-        emit('saved');
+        emit('saved', savedEventId);
         forceClose();
     } catch (err: any) {
         const msg = err.response?.data?.message ?? t('calendar.save_failed');

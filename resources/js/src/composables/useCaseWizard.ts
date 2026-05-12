@@ -273,9 +273,7 @@ export function useCaseWizard() {
                 excluded_template_ids: state.excludedTemplateIds.length > 0
                     ? state.excludedTemplateIds
                     : undefined,
-                folders: state.folders.selected.length > 0
-                    ? state.folders.selected
-                    : undefined,
+                folders: state.folders.selected,
             };
 
             const response = await caseService.createCase(payload);

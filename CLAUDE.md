@@ -56,8 +56,8 @@ Browser  →  /api/*  →  TenantMiddleware (resolves tenant)
 ### Backend Layer Architecture
 ```
 HTTP Layer
-  Controllers (app/Http/Controllers/Api/) — 32 controllers
-      ↕ Resources (app/Http/Resources/) — 19 resources, map models to JSON
+  Controllers (app/Http/Controllers/Api/) — 33 controllers
+      ↕ Resources (app/Http/Resources/) — 20 resources, map models to JSON
   Middleware:
       TenantMiddleware    — resolves active tenant from request
       ValidateBackupApiKey — protects external backup endpoint
@@ -124,7 +124,7 @@ Cross-cutting
 
 ### Frontend Layer Architecture
 ```
-State (resources/js/src/stores/) — 17 Pinia stores
+State (resources/js/src/stores/) — 18 Pinia stores
   useAppStore       — theme, locale, layout, sidebar, RTL
   useAuthStore      — login/logout flow
   useUserStore      — authenticated user + loaded permissions
@@ -136,8 +136,9 @@ State (resources/js/src/stores/) — 17 Pinia stores
   useTimesheetStore — active timer, case log cache, CRUD for time_logs; BroadcastChannel('timesheet') for multi-tab sync
   useSessionStore   — kicked-out banner state (session_revoked) + account_locked state (account_security_locked);
                       sessionStorage persistence for both; BroadcastChannel('session') for multi-tab propagation
+  useImportantDatesStore — Spec 57; 60-day milestone radar, filters, optimistic calendar linking
 
-Services (resources/js/src/services/) — 22 services
+Services (resources/js/src/services/) — 23 services
   api.ts              — axios instance; 401 → logout+clear state;
                         419 (CSRF expired) → auto-refresh + retry
   authService, twoFactorService, userService, profileService
@@ -149,6 +150,7 @@ Services (resources/js/src/services/) — 22 services
   timesheetService         — startTimer, stopTimer, createManualLog, getCaseLogs, getActiveTimer
   calendarSyncService      — getStatus, getRedirectUrl, disconnect
   caseFolderTemplateService — getDefaults() with SPA-session cache; feeds the Spec 56 wizard step
+  importantDateAlertService — Spec 57; list(filters, page), linkEvent(dateId, eventId)
 
 Routing (resources/js/src/router/index.ts) — 60+ routes
   Route meta guards: requiresAuth, requiresVerified, permission, role, guest
@@ -179,6 +181,8 @@ Every business model uses `BelongsToTenant` trait, which registers a global Eloq
 `TenantMiddleware` resolves the tenant from the request (subdomain or header) and binds it to the container. The `tenant` middleware alias is applied to all authenticated API routes.
 
 **Why Global Scope instead of RLS or separate DBs:** MySQL doesn't support RLS natively. Separate DBs would make migrations, backups, and connection pooling complex at this scale. Eloquent global scope gives sufficient isolation without infrastructure changes.
+
+**Exception — `CaseImportantDate` (Spec 57):** This model intentionally lacks `BelongsToTenant` and `tenant_id`. Multi-tenant isolation is enforced via an explicit JOIN on `cases.tenant_id` in every query. Never use `CaseImportantDate::find($id)` directly in a controller — always go through `ImportantDateAlertController` (alerts) or the case detail flow which scopes via the parent `ImmigrationCase`. A `CaseImportantDatePolicy` enforces cross-tenant ownership checks at the policy layer.
 
 ---
 
@@ -310,7 +314,10 @@ Always use `StorageService` (which wraps providers in `ResilientStorageProvider`
 ### G10. `unplugin-vue-i18n` rejects angle brackets `<>` as HTML in locale messages
 If an i18n JSON value contains `<` or `>`, the Vite build fails with "Detected HTML in message". Escape them using Vue I18n literal interpolation: `{'<'}` and `{'>'}`. Example in `wizard.step_folders.invalid_chars`. Never use `&lt;`/`&gt;` (would show literally) or raw `<`/`>`.
 
-### G11. Case Creation Wizard has 7 steps (Spec 56)
+### G11. `ImmigrationCase` uses `protected $table = 'cases'` — not `immigration_cases`
+The Eloquent model `ImmigrationCase` maps to the physical table `cases` in MySQL. Any raw SQL, `DB::table()`, or hardcoded JOIN string must use `'cases'`, not `'immigration_cases'`. Eloquent relations resolve correctly via the model, but string-based JOINs in query builders will fail with "Table not found" if the wrong name is used. (Discovered in Spec 57 `ImportantDateAlertController`.)
+
+### G12. Case Creation Wizard has 7 steps (Spec 56)
 Steps: 1=CaseType, 2=Client, 3=Companions, 4=Details, **5=Folders** (new — dynamic folder selection), 6=Checklist, 7=Summary. `isLastStep === 7`, `canGoNext: step < 7`. Wizard state includes `folders.selected: CaseFolderInput[]` persisted in sessionStorage. `FolderService::createDefaultStructure()` is a backward-compatible alias for `createSelectedStructure($case, null)` — existing callers unchanged.
 
 ---
@@ -345,8 +352,8 @@ Steps: 1=CaseType, 2=Client, 3=Companions, 4=Details, **5=Folders** (new — dyn
     ├── main.ts                 # Entry point
     ├── App.vue                 # Root (layout switching)
     ├── router/index.ts         # 60+ routes with permission/role guards
-    ├── stores/                 # 15 Pinia stores
-    ├── services/               # 20 API service modules
+    ├── stores/                 # 18 Pinia stores
+    ├── services/               # 23 API service modules
     ├── composables/            # usePermissions, useMeta, useDebounce, ...
     ├── views/                  # Page components
     │   ├── apps/calendar.vue   # FullCalendar with Google/Outlook source badges
