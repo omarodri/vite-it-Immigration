@@ -56,7 +56,7 @@ Browser  →  /api/*  →  TenantMiddleware (resolves tenant)
 ### Backend Layer Architecture
 ```
 HTTP Layer
-  Controllers (app/Http/Controllers/Api/) — 31 controllers
+  Controllers (app/Http/Controllers/Api/) — 32 controllers
       ↕ Resources (app/Http/Resources/) — 19 resources, map models to JSON
   Middleware:
       TenantMiddleware    — resolves active tenant from request
@@ -70,8 +70,9 @@ Domain / Service Layer (app/Services/)
   Client/   — ClientService
   Companion/ — CompanionService
   Timesheet/ — TimeLogService (startTimer, stopTimer, logManual, getLogsForCase, getActiveTimerForUser)
-  Document/ — DocumentService, FolderService, CloudDocumentSyncService,
-               CaseFolderSyncService, DocumentAuditService, StorageQuotaService
+  Document/ — DocumentService, FolderService (createSelectedStructure — Spec 56),
+               FolderNameValidator (Spec 56 — validates folder names: forbidden chars, reserved Windows names),
+               CloudDocumentSyncService, CaseFolderSyncService, DocumentAuditService, StorageQuotaService
   Storage/  — StorageProviderFactory, LocalStorageProvider, OneDriveProvider,
                GoogleDriveProvider, SharePointProvider, MicrosoftGraphBaseProvider,
                ResilientStorageProvider (circuit breaker), CircuitBreaker
@@ -136,7 +137,7 @@ State (resources/js/src/stores/) — 17 Pinia stores
   useSessionStore   — kicked-out banner state (session_revoked) + account_locked state (account_security_locked);
                       sessionStorage persistence for both; BroadcastChannel('session') for multi-tab propagation
 
-Services (resources/js/src/services/) — 21 services
+Services (resources/js/src/services/) — 22 services
   api.ts              — axios instance; 401 → logout+clear state;
                         419 (CSRF expired) → auto-refresh + retry
   authService, twoFactorService, userService, profileService
@@ -145,8 +146,9 @@ Services (resources/js/src/services/) — 21 services
   tenantService, roleService, oauthService
   scrumService, todoService, trashService
   searchService, dashboardService, backupService
-  timesheetService    — startTimer, stopTimer, createManualLog, getCaseLogs, getActiveTimer
-  calendarSyncService — getStatus, getRedirectUrl, disconnect
+  timesheetService         — startTimer, stopTimer, createManualLog, getCaseLogs, getActiveTimer
+  calendarSyncService      — getStatus, getRedirectUrl, disconnect
+  caseFolderTemplateService — getDefaults() with SPA-session cache; feeds the Spec 56 wizard step
 
 Routing (resources/js/src/router/index.ts) — 60+ routes
   Route meta guards: requiresAuth, requiresVerified, permission, role, guest
@@ -305,6 +307,12 @@ If pull jobs ever run on multiple workers concurrently (parallel queue), the sta
 ### G9. Cloud storage operations may fail silently without ResilientStorageProvider
 Always use `StorageService` (which wraps providers in `ResilientStorageProvider`) rather than calling provider classes directly.
 
+### G10. `unplugin-vue-i18n` rejects angle brackets `<>` as HTML in locale messages
+If an i18n JSON value contains `<` or `>`, the Vite build fails with "Detected HTML in message". Escape them using Vue I18n literal interpolation: `{'<'}` and `{'>'}`. Example in `wizard.step_folders.invalid_chars`. Never use `&lt;`/`&gt;` (would show literally) or raw `<`/`>`.
+
+### G11. Case Creation Wizard has 7 steps (Spec 56)
+Steps: 1=CaseType, 2=Client, 3=Companions, 4=Details, **5=Folders** (new — dynamic folder selection), 6=Checklist, 7=Summary. `isLastStep === 7`, `canGoNext: step < 7`. Wizard state includes `folders.selected: CaseFolderInput[]` persisted in sessionStorage. `FolderService::createDefaultStructure()` is a backward-compatible alias for `createSelectedStructure($case, null)` — existing callers unchanged.
+
 ---
 
 ## Project Structure
@@ -312,7 +320,7 @@ Always use `StorageService` (which wraps providers in `ResilientStorageProvider`
 ```
 ├── app/
 │   ├── Http/
-│   │   ├── Controllers/Api/    # 31 controllers (+ Admin/ subdirectory)
+│   │   ├── Controllers/Api/    # 32 controllers (+ Admin/ subdirectory)
 │   │   ├── Middleware/         # TenantMiddleware, ValidateBackupApiKey, SecurityHeaders, ...
 │   │   └── Resources/          # 19 API resources
 │   ├── Jobs/                   # 5 async jobs

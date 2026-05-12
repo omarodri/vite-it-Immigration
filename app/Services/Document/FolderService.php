@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\DocumentFolder;
 use App\Models\ImmigrationCase;
 use App\Models\Tenant;
+use App\Services\Document\FolderNameValidator;
 use App\Services\Storage\StorageProviderFactory;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -180,92 +181,166 @@ class FolderService
     }
 
     /**
-     * Create default folder structure for a case.
-     *
-     * For local storage, also creates physical directories synchronously
-     * so they are available immediately without depending on a queue worker.
+     * Backward-compatible alias — callers (tests, imports) continue working.
      */
     public function createDefaultStructure(ImmigrationCase $case): void
     {
-        // Guard: skip if folders already exist for this case
+        $this->createSelectedStructure($case, null);
+    }
+
+    /**
+     * Create folder structure for a case based on wizard selection.
+     * If $folders is null, falls back to the full default catalog (backward compatibility).
+     *
+     * @param  array<int,array{name:string,category:?string,is_custom?:bool}>|null  $folders
+     */
+    public function createSelectedStructure(ImmigrationCase $case, ?array $folders = null): void
+    {
         if (DocumentFolder::where('case_id', $case->id)->exists()) {
-            Log::info('FolderService: Default folders already exist, skipping', [
-                'case_id' => $case->id,
-            ]);
+            Log::info('FolderService: Folders already exist, skipping', ['case_id' => $case->id]);
             return;
         }
 
-        $defaultFolders = [
-            ['name' => 'Admision', 'category' => Document::CATEGORY_ADMISSION],
-            ['name' => 'Archivo', 'category' => Document::CATEGORY_ARCHIVE],
-            ['name' => 'Audiencias', 'category' => Document::CATEGORY_HEARING],
-            ['name' => 'Cartas', 'category' => Document::CATEGORY_LETTERS],
-            ['name' => 'Comunicaciones', 'category' => Document::CATEGORY_COMMUNICATION],
-            ['name' => 'Contabilidad', 'category' => Document::CATEGORY_ACCOUNTING],
-            ['name' => 'Contrato', 'category' => Document::CATEGORY_CONTRACT],
-            ['name' => 'Documentos', 'category' => Document::CATEGORY_DOCUMENTS],
-            ['name' => 'Enlaces', 'category' => Document::CATEGORY_LINKS],
-            ['name' => 'Evidencia', 'category' => Document::CATEGORY_EVIDENCE],
-            ['name' => 'Formularios', 'category' => Document::CATEGORY_FORMS],
-            ['name' => 'Historial', 'category' => Document::CATEGORY_HISTORY],
-            ['name' => 'Otros', 'category' => Document::CATEGORY_OTHER],
-            ['name' => 'Questionarios', 'category' => Document::CATEGORY_QUESTIONARY],
-        ];
+        $selection = $folders !== null
+            ? $this->normalizeSelection($folders)
+            : $this->defaultCatalogSelection();
 
-        // Determine if local storage — create physical dirs synchronously
-        $tenant = $case->tenant ?? Tenant::find($case->tenant_id);
-        $isLocal = !$tenant || !in_array($tenant->storage_type ?? 'local', ['onedrive', 'google_drive', 'sharepoint'], true);
-        $rootPath = $tenant && $tenant->base_folder_path
+        if (empty($selection)) {
+            Log::info('FolderService: Empty folder selection, case created without folders', ['case_id' => $case->id]);
+            return;
+        }
+
+        $tenant    = $case->tenant ?? Tenant::find($case->tenant_id);
+        $isLocal   = !$tenant || !in_array($tenant->storage_type ?? 'local', ['onedrive', 'google_drive', 'sharepoint'], true);
+        $rootPath  = $tenant && $tenant->base_folder_path
             ? "tenants/{$case->tenant_id}/{$tenant->base_folder_path}/cases/{$case->case_number}"
             : "tenants/{$case->tenant_id}/cases/{$case->case_number}";
 
-        Log::info('FolderService: Creating default folder structure', [
-            'case_id' => $case->id,
-            'case_number' => $case->case_number,
-            'tenant_id' => $case->tenant_id,
+        Log::info('FolderService: Creating selected folder structure', [
+            'case_id'      => $case->id,
+            'case_number'  => $case->case_number,
+            'tenant_id'    => $case->tenant_id,
             'storage_type' => $tenant?->storage_type ?? 'local',
-            'is_local' => $isLocal,
+            'is_local'     => $isLocal,
+            'folder_count' => count($selection),
         ]);
 
         if ($isLocal) {
             Storage::disk('local')->makeDirectory($rootPath);
         }
 
-        $created = 0;
-        foreach ($defaultFolders as $index => $folderData) {
-            $folderPath = $rootPath . '/' . $folderData['name'];
+        $created    = 0;
+        $seenLower  = [];
+
+        foreach ($selection as $index => $folderData) {
+            $name  = trim($folderData['name']);
+            $lower = mb_strtolower($name);
+
+            if (isset($seenLower[$lower])) {
+                Log::warning('FolderService: Duplicate folder name in selection, skipping', [
+                    'case_id' => $case->id, 'name' => $name,
+                ]);
+                continue;
+            }
+            $seenLower[$lower] = true;
+
+            if (!FolderNameValidator::isValid($name)) {
+                Log::warning('FolderService: Invalid folder name in selection, skipping', [
+                    'case_id' => $case->id, 'name' => $name,
+                ]);
+                continue;
+            }
+
+            $folderPath = $rootPath . '/' . $name;
 
             if ($isLocal) {
                 Storage::disk('local')->makeDirectory($folderPath);
             }
 
             DocumentFolder::create([
-                'tenant_id' => $case->tenant_id,
-                'case_id' => $case->id,
-                'parent_id' => null,
-                'name' => $folderData['name'],
-                'sort_order' => $index,
-                'is_default' => true,
-                'category' => $folderData['category'],
+                'tenant_id'   => $case->tenant_id,
+                'case_id'     => $case->id,
+                'parent_id'   => null,
+                'name'        => $name,
+                'sort_order'  => $index,
+                'is_default'  => !($folderData['is_custom'] ?? false),
+                'category'    => $folderData['category'] ?? null,
                 'external_id' => $isLocal ? $folderPath : null,
                 'sync_status' => $isLocal ? 'synced' : 'pending',
-                'synced_at' => $isLocal ? now() : null,
+                'synced_at'   => $isLocal ? now() : null,
             ]);
             $created++;
         }
 
-        if ($isLocal) {
+        if ($isLocal && $created > 0) {
             $case->update([
                 'root_external_folder_id' => $rootPath,
-                'folder_sync_status' => 'synced',
-                'folder_synced_at' => now(),
+                'folder_sync_status'      => 'synced',
+                'folder_synced_at'        => now(),
             ]);
         }
 
-        Log::info('FolderService: Default folder structure created', [
-            'case_id' => $case->id,
+        Log::info('FolderService: Folder structure created', [
+            'case_id'         => $case->id,
             'folders_created' => $created,
         ]);
+    }
+
+    /**
+     * @param  array<int,array<string,mixed>>  $folders
+     * @return array<int,array{name:string,category:?string,is_custom:bool}>
+     */
+    private function normalizeSelection(array $folders): array
+    {
+        $maxTotal = (int) config('case_folders.validation.max_total_per_case', 30);
+
+        return collect($folders)
+            ->take($maxTotal)
+            ->map(fn ($f) => [
+                'name'      => (string) ($f['name'] ?? ''),
+                'category'  => isset($f['category']) ? (string) $f['category'] : null,
+                'is_custom' => (bool) ($f['is_custom'] ?? false),
+            ])
+            ->filter(fn ($f) => $f['name'] !== '')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Build a selection from the full catalog using Spanish names (backward-compatible behavior).
+     *
+     * @return array<int,array{name:string,category:string,is_custom:bool}>
+     */
+    private function defaultCatalogSelection(): array
+    {
+        $defaults = config('case_folders.defaults', []);
+
+        $spanish = [
+            'admission'     => 'Admision',
+            'archive'       => 'Archivo',
+            'hearing'       => 'Audiencias',
+            'letters'       => 'Cartas',
+            'communication' => 'Comunicaciones',
+            'accounting'    => 'Contabilidad',
+            'contract'      => 'Contrato',
+            'documents'     => 'Documentos',
+            'links'         => 'Enlaces',
+            'evidence'      => 'Evidencia',
+            'forms'         => 'Formularios',
+            'history'       => 'Historial',
+            'other'         => 'Otros',
+            'questionary'   => 'Questionarios',
+        ];
+
+        return collect($defaults)
+            ->filter(fn ($d) => ($d['enabled_by_default'] ?? true) === true)
+            ->map(fn ($d) => [
+                'name'      => $spanish[$d['key']] ?? ucfirst((string) $d['key']),
+                'category'  => $d['category'] ?? null,
+                'is_custom' => false,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

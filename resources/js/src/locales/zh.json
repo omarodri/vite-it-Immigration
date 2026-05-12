@@ -289,5 +289,11 @@
     "session.timer_preserved": "登出前已自动保存您的活动计时器。",
     "session.account_locked": "账户已被临时锁定",
     "session.account_locked_detail": "检测到来自不同设备的登录尝试次数过多。请稍后再试。",
-    "session.account_locked_until": "账户将于 {time} 解锁"
+    "session.account_locked_until": "账户将于 {time} 解锁",
+    "case.code": "代码",
+    "case.code_copied": "代码已复制到剪贴板",
+    "case.code_preview_note": "最终编号在保存时分配",
+    "case.legacy_no_code": "旧案例",
+    "case_type.abbreviation": "缩写",
+    "case_type.abbreviation_help": "案例标识符中使用的2字母代码（例如SP、WK）"
 }

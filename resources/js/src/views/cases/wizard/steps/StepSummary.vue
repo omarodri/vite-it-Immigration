@@ -205,7 +205,7 @@
                         type="button"
                         class="btn btn-primary mt-1"
                         :aria-label="`${$t('wizard.edit')} ${$t('wizard.step6.checklist')}`"
-                        @click="wizard.goToStep(5)"
+                        @click="wizard.goToStep(6)"
                     >
                         {{ $t('wizard.edit') }}
                     </button>
@@ -219,6 +219,45 @@
                         </span>
                     </li>
                 </ul>
+            </section>
+
+            <!-- Folder Structure Section -->
+            <section class="prose bg-[#f1f2f3] px-4 sm:px-8 py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="folders-heading">
+                <div class="flex justify-between items-center mb-4">
+                    <h4 id="folders-heading" class="font-semibold text-gray-900 dark:text-white">
+                        {{ $t('wizard.step_folders.title') }}
+                    </h4>
+                    <button
+                        type="button"
+                        class="btn btn-primary mt-1"
+                        :aria-label="`${$t('wizard.edit')} ${$t('wizard.step_folders.title')}`"
+                        @click="wizard.goToStep(5)"
+                    >
+                        {{ $t('wizard.edit') }}
+                    </button>
+                </div>
+
+                <div v-if="!wizard.state.folders?.selected?.length" class="text-warning text-sm">
+                    {{ $t('wizard.step_folders.no_folders_warning') }}
+                </div>
+                <div v-else>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                        {{ $t('wizard.step_folders.total_selected', { n: wizard.state.folders.selected.length }) }}
+                    </p>
+                    <ul class="grid grid-cols-2 md:grid-cols-3 gap-1 text-sm">
+                        <li
+                            v-for="f in wizard.state.folders.selected"
+                            :key="f.name"
+                            class="flex items-center gap-1"
+                        >
+                            <svg class="w-4 h-4 text-warning shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+                            <span class="truncate">{{ f.name }}</span>
+                            <span v-if="f.is_custom" class="ml-1 badge badge-outline-secondary text-xs shrink-0">
+                                {{ $t('wizard.step_folders.custom_tag') }}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
             </section>
 
             <!-- Confirmation Message -->

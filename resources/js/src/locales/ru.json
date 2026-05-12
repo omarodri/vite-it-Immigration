@@ -289,5 +289,11 @@
     "session.timer_preserved": "Ваш активный таймер был автоматически сохранён перед отключением.",
     "session.account_locked": "Аккаунт временно заблокирован",
     "session.account_locked_detail": "Обнаружено слишком много попыток входа с разных устройств. Попробуйте позже.",
-    "session.account_locked_until": "Аккаунт разблокирован в {time}"
+    "session.account_locked_until": "Аккаунт разблокирован в {time}",
+    "case.code": "Код",
+    "case.code_copied": "Код скопирован в буфер обмена",
+    "case.code_preview_note": "Окончательный номер присваивается при сохранении",
+    "case.legacy_no_code": "Устаревшее дело",
+    "case_type.abbreviation": "Аббревиатура",
+    "case_type.abbreviation_help": "2-буквенный код для идентификаторов дел (напр. SP, WK)"
 }

@@ -289,5 +289,11 @@
     "session.timer_preserved": "Din aktiva tidtagning sparades automatiskt innan utloggningen.",
     "session.account_locked": "Kontot är tillfälligt låst",
     "session.account_locked_detail": "För många inloggningsförsök från olika enheter har registrerats. Försök igen senare.",
-    "session.account_locked_until": "Kontot låst upp kl. {time}"
+    "session.account_locked_until": "Kontot låst upp kl. {time}",
+    "case.code": "Kod",
+    "case.code_copied": "Kod kopierad till urklipp",
+    "case.code_preview_note": "Det slutliga numret tilldelas vid sparande",
+    "case.legacy_no_code": "Legacy-ärende",
+    "case_type.abbreviation": "Förkortning",
+    "case_type.abbreviation_help": "2-bokstavskod för ärendeidentifierare (t.ex. SP, WK)"
 }

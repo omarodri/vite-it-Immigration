@@ -2,7 +2,6 @@
 
 namespace App\Repositories\Contracts;
 
-use App\Models\CaseType;
 use App\Models\ImmigrationCase;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -50,10 +49,10 @@ interface CaseRepositoryInterface
     public function countByPriority(string $priority): int;
 
     /**
-     * Get the next sequence number for a case type, year (2-digit) and last-name slug.
-     * Scope: (year2, type_code, last_name_slug) — e.g. pattern '26-RT-RODR-%'
+     * Get the next global sequence number for a tenant.
+     * Derives the MAX from the last numeric segment of all existing case_numbers.
      */
-    public function getNextSequence(CaseType $caseType, string $year2, string $lastNameSlug): int;
+    public function getNextSequence(int $tenantId): int;
 
     /**
      * Check if a case number already exists.

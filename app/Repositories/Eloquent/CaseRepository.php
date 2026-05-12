@@ -2,7 +2,6 @@
 
 namespace App\Repositories\Eloquent;
 
-use App\Models\CaseType;
 use App\Models\ImmigrationCase;
 use App\Repositories\Contracts\CaseRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -171,32 +170,22 @@ class CaseRepository implements CaseRepositoryInterface
     }
 
     /**
-     * Get the next sequence number for a case type, year (2-digit) and last-name slug.
-     * Scope: (year2, type_code, last_name_slug) — e.g. pattern '26-RT-RODR-%'
+     * Get the next global sequence number for a tenant (Spec 55).
      *
-     * Database-agnostic: uses PHP-side MAX extraction to support MySQL and SQLite.
-     * Considers soft-deleted cases to avoid sequence gaps on restore.
+     * Scope: all cases for the tenant, including soft-deleted ones.
+     * Extracts the numeric last segment of each case_number to find the MAX,
+     * so legacy case_numbers with the old scoped format are handled transparently.
+     * withTrashed() prevents a deleted case from freeing its number for reuse.
      */
-    public function getNextSequence(CaseType $caseType, string $year2, string $lastNameSlug): int
+    public function getNextSequence(int $tenantId): int
     {
-        $pattern = "{$year2}-{$caseType->code}-{$lastNameSlug}-%";
+        $max = ImmigrationCase::withTrashed()
+            ->where('tenant_id', $tenantId)
+            ->get()
+            ->map(fn ($case) => (int) last(explode('-', (string) $case->case_number)))
+            ->max();
 
-        $caseNumbers = ImmigrationCase::withTrashed()
-            ->where('case_number', 'like', $pattern)
-            ->pluck('case_number');
-
-        if ($caseNumbers->isEmpty()) {
-            return 1;
-        }
-
-        // Extract the last numeric segment (sequence) and return max + 1
-        $maxSequence = $caseNumbers->map(function ($caseNumber) {
-            $parts = explode('-', $caseNumber);
-
-            return (int) end($parts);
-        })->max();
-
-        return $maxSequence + 1;
+        return (int) ($max ?? 0) + 1;
     }
 
     /**

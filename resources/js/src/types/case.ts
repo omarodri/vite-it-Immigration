@@ -213,6 +213,37 @@ export interface CreateCaseData {
     service_type?: ServiceType;
     contract_number?: string | null;
     fees?: number | null;
+    folders?: CaseFolderInput[];
+}
+
+// =============================================
+// Folder Templates (Spec 56)
+// =============================================
+
+export interface FolderTemplate {
+    key: string;
+    i18n_key: string;
+    category: string | null;
+    enabled_by_default: boolean;
+}
+
+export interface FolderValidationConfig {
+    name_max_length: number;
+    forbidden_chars: string[];
+    reserved_names: string[];
+    max_custom_per_case: number;
+    max_total_per_case: number;
+}
+
+export interface FolderTemplateResponse {
+    data: FolderTemplate[];
+    validation: FolderValidationConfig;
+}
+
+export interface CaseFolderInput {
+    name: string;
+    category: string | null;
+    is_custom: boolean;
 }
 
 export interface UpdateCaseData {

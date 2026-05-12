@@ -289,5 +289,11 @@
     "session.timer_preserved": "Ihre aktive Zeitmessung wurde vor der Abmeldung automatisch gespeichert.",
     "session.account_locked": "Konto vorübergehend gesperrt",
     "session.account_locked_detail": "Es wurden zu viele Anmeldeversuche von verschiedenen Geräten erkannt. Bitte versuchen Sie es später erneut.",
-    "session.account_locked_until": "Konto entsperrt um {time}"
+    "session.account_locked_until": "Konto entsperrt um {time}",
+    "case.code": "Code",
+    "case.code_copied": "Code in die Zwischenablage kopiert",
+    "case.code_preview_note": "Die endgültige Nummer wird beim Speichern vergeben",
+    "case.legacy_no_code": "Legacy-Fall",
+    "case_type.abbreviation": "Abkürzung",
+    "case_type.abbreviation_help": "2-Buchstaben-Code für Fallkennungen (z.B. SP, WK)"
 }

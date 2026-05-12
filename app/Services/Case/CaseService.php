@@ -61,6 +61,10 @@ class CaseService
      */
     public function createCase(array $data): ImmigrationCase
     {
+        // Extract folder selection before the transaction — used after case creation
+        $foldersInput = array_key_exists('folders', $data) ? $data['folders'] : null;
+        unset($data['folders']);
+
         $case = DB::transaction(function () use ($data) {
             // Extract companion_ids before creating the case
             $companionIds = $data['companion_ids'] ?? [];
@@ -127,7 +131,7 @@ class CaseService
 
         // Step 1: Create folder records in the DB (fast, no external calls).
         try {
-            $this->folderService->createDefaultStructure($case);
+            $this->folderService->createSelectedStructure($case, $foldersInput);
         } catch (\Throwable $e) {
             Log::error('CaseService: Failed to create default folder structure', [
                 'case_id' => $case->id,
@@ -353,10 +357,10 @@ class CaseService
     /**
      * Generate a unique case number.
      * Format: {YY}-{TYPE_CODE}-{LAST4}-{SEQUENCE4}
-     * Example: 26-RT-RODR-0060
+     * Example: 26-RT-RODR-0042
      *
-     * The consecutive is scoped to (year2 + type_code + last_name_slug) so two
-     * clients with the same 4-letter slug share the same counter, which is correct.
+     * NNNN is a global per-tenant counter (Spec 55): a single monotonic integer
+     * that advances regardless of case type or client last name.
      * A retry loop with up to 5 attempts handles race conditions; after that an
      * exception is raised so the transaction rolls back cleanly.
      */
@@ -364,7 +368,7 @@ class CaseService
     {
         $year2        = date('y');
         $lastNameSlug = CaseCodeHelper::normalizeLastName($client->last_name);
-        $sequence     = $this->caseRepository->getNextSequence($caseType, $year2, $lastNameSlug);
+        $sequence     = $this->caseRepository->getNextSequence(Auth::user()->tenant_id);
 
         $caseNumber = sprintf('%s-%s-%s-%04d', $year2, $caseType->code, $lastNameSlug, $sequence);
 

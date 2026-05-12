@@ -14,6 +14,7 @@ class DashboardCaseResource extends JsonResource
         return [
             'id'             => $this->id,
             'case_number'    => $this->case_number,
+            'case_code'      => $this->case_code,
             'status'         => $this->status,
             'priority'       => $this->priority,
             'priority_label' => $this->priority_label,

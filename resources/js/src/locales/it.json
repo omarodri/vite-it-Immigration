@@ -289,5 +289,11 @@
     "session.timer_preserved": "Il tuo cronometro attivo è stato salvato automaticamente prima della disconnessione.",
     "session.account_locked": "Account temporaneamente bloccato",
     "session.account_locked_detail": "Sono stati rilevati troppi tentativi di accesso da dispositivi diversi. Riprova più tardi.",
-    "session.account_locked_until": "Account sbloccato alle {time}"
+    "session.account_locked_until": "Account sbloccato alle {time}",
+    "case.code": "Codice",
+    "case.code_copied": "Codice copiato negli appunti",
+    "case.code_preview_note": "Il numero definitivo viene assegnato al salvataggio",
+    "case.legacy_no_code": "Pratica legacy",
+    "case_type.abbreviation": "Abbreviazione",
+    "case_type.abbreviation_help": "Codice 2 lettere per gli identificatori di pratica (es. SP, WK)"
 }

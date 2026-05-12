@@ -3,7 +3,7 @@
  * Interfaces for the Case Creation Wizard
  */
 
-import type { CasePriority, ImportantDate, ServiceType } from './case';
+import type { CasePriority, ImportantDate, ServiceType, CaseFolderInput } from './case';
 
 // =============================================
 // Wizard Task Item
@@ -30,6 +30,9 @@ export interface WizardState {
     caseDetails: CaseDetailsForm;
     isSubmitting: boolean;
     errors: Record<string, string[]>;
+    folders: {
+        selected: CaseFolderInput[];
+    };
 }
 
 export interface CaseDetailsForm {
@@ -77,12 +80,13 @@ export const DEFAULT_CASE_DETAILS: CaseDetailsForm = {
 };
 
 export const WIZARD_STEPS: Omit<WizardStep, 'isValid' | 'isCompleted'>[] = [
-    { id: 1, key: 'case_type', title: 'wizard.step1.title', icon: 'folder' },
-    { id: 2, key: 'client', title: 'wizard.step2.title', icon: 'user' },
-    { id: 3, key: 'companions', title: 'wizard.step3.title', icon: 'users' },
-    { id: 4, key: 'details', title: 'wizard.step4.title', icon: 'file-text' },
-    { id: 5, key: 'checklist', title: 'wizard.step5_checklist.title', icon: 'list' },
-    { id: 6, key: 'summary', title: 'wizard.step6.title', icon: 'check-circle' },
+    { id: 1, key: 'case_type',  title: 'wizard.step1.title',           icon: 'folder' },
+    { id: 2, key: 'client',     title: 'wizard.step2.title',           icon: 'user' },
+    { id: 3, key: 'companions', title: 'wizard.step3.title',           icon: 'users' },
+    { id: 4, key: 'details',    title: 'wizard.step4.title',           icon: 'file-text' },
+    { id: 5, key: 'folders',    title: 'wizard.step_folders.title',    icon: 'folder' },
+    { id: 6, key: 'checklist',  title: 'wizard.step5_checklist.title', icon: 'list' },
+    { id: 7, key: 'summary',    title: 'wizard.step6.title',           icon: 'check-circle' },
 ];
 
 // =============================================

@@ -289,5 +289,11 @@
     "session.timer_preserved": "Az aktív időmérője automatikusan mentésre került a kijelentkezés előtt.",
     "session.account_locked": "A fiók átmenetileg zárolva",
     "session.account_locked_detail": "Túl sok bejelentkezési kísérlet érkezett különböző eszközökről. Kérjük, próbálja újra később.",
-    "session.account_locked_until": "A fiók feloldva: {time}"
+    "session.account_locked_until": "A fiók feloldva: {time}",
+    "case.code": "Kód",
+    "case.code_copied": "A kód vágólapra másolva",
+    "case.code_preview_note": "A végleges szám mentéskor kerül hozzárendelésre",
+    "case.legacy_no_code": "Régi ügy",
+    "case_type.abbreviation": "Rövidítés",
+    "case_type.abbreviation_help": "2 betűs kód az ügyek azonosítóihoz (pl. SP, WK)"
 }

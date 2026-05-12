@@ -289,5 +289,11 @@
     "session.timer_preserved": "Din aktive tidtager blev automatisk gemt inden aflogning.",
     "session.account_locked": "Konto midlertidigt låst",
     "session.account_locked_detail": "Der er registreret for mange loginforsøg fra forskellige enheder. Prøv igen senere.",
-    "session.account_locked_until": "Konto låst op kl. {time}"
+    "session.account_locked_until": "Konto låst op kl. {time}",
+    "case.code": "Kode",
+    "case.code_copied": "Kode kopieret til udklipsholder",
+    "case.code_preview_note": "Det endelige nummer tildeles ved lagring",
+    "case.legacy_no_code": "Legacy sag",
+    "case_type.abbreviation": "Forkortelse",
+    "case_type.abbreviation_help": "2-bogstavs kode til sagsidentifikatorer (f.eks. SP, WK)"
 }

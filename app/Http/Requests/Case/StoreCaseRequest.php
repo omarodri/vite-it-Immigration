@@ -59,6 +59,22 @@ class StoreCaseRequest extends FormRequest
             ])],
             'contract_number' => ['nullable', 'string', 'max:50'],
             'fees' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+
+            // Folder selection (optional — if absent, backend falls back to full catalog)
+            'folders'             => ['sometimes', 'array', 'max:30'],
+            'folders.*.name'      => [
+                'required_with:folders',
+                'string',
+                'max:100',
+                'not_regex:/[<>:"\/\\\\|?*]/u',
+                'not_regex:/^\.+\s*$/u',
+            ],
+            'folders.*.category'  => ['nullable', 'string', Rule::in([
+                'admission', 'archive', 'hearing', 'letters', 'communication',
+                'accounting', 'contract', 'documents', 'links', 'evidence',
+                'forms', 'history', 'other', 'questionary',
+            ])],
+            'folders.*.is_custom' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -114,6 +130,39 @@ class StoreCaseRequest extends FormRequest
                 $invalidIds = array_diff($this->companion_ids, $validCompanionIds);
                 if (! empty($invalidIds)) {
                     $validator->errors()->add('companion_ids', 'One or more selected companions do not belong to this client.');
+                }
+            }
+
+            // Validate folder names: reserved names, case-insensitive duplicates, custom count cap
+            $folders = (array) $this->input('folders', []);
+            if (!empty($folders)) {
+                $reserved   = (array) config('case_folders.validation.reserved_names', []);
+                $maxCustom  = (int) config('case_folders.validation.max_custom_per_case', 10);
+                $seenLower  = [];
+                $customCount = 0;
+
+                foreach ($folders as $i => $f) {
+                    $name = trim((string) ($f['name'] ?? ''));
+                    if ($name === '') continue;
+
+                    $base = mb_strtoupper(pathinfo($name, PATHINFO_FILENAME));
+                    if (in_array($base, $reserved, true)) {
+                        $validator->errors()->add("folders.{$i}.name", 'This folder name is reserved by the operating system.');
+                    }
+
+                    $lower = mb_strtolower($name);
+                    if (isset($seenLower[$lower])) {
+                        $validator->errors()->add("folders.{$i}.name", 'Duplicate folder name.');
+                    }
+                    $seenLower[$lower] = $i;
+
+                    if (!empty($f['is_custom'])) {
+                        $customCount++;
+                    }
+                }
+
+                if ($customCount > $maxCustom) {
+                    $validator->errors()->add('folders', "Maximum {$maxCustom} custom folders allowed.");
                 }
             }
         });

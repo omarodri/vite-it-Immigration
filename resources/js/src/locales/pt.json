@@ -289,5 +289,11 @@
     "session.timer_preserved": "Seu cronômetro ativo foi salvo automaticamente antes da desconexão.",
     "session.account_locked": "Conta temporariamente bloqueada",
     "session.account_locked_detail": "Foram detectadas muitas tentativas de login de diferentes dispositivos. Tente novamente mais tarde.",
-    "session.account_locked_until": "Conta desbloqueada às {time}"
+    "session.account_locked_until": "Conta desbloqueada às {time}",
+    "case.code": "Código",
+    "case.code_copied": "Código copiado para a área de transferência",
+    "case.code_preview_note": "O número definitivo é atribuído ao salvar",
+    "case.legacy_no_code": "Processo legacy",
+    "case_type.abbreviation": "Abreviatura",
+    "case_type.abbreviation_help": "Código de 2 letras para identificadores de processo (ex. SP, WK)"
 }

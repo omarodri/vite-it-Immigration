@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CaseController;
+use App\Http\Controllers\Api\CaseFolderTemplateController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\CaseInvoiceController;
 use App\Http\Controllers\Api\CaseStageController;
@@ -114,6 +115,10 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant', 'ensure.single.sess
     // Case Types routes (read-only)
     Route::get('/case-types', [CaseTypeController::class, 'index']);
     Route::get('/case-types/{caseType}', [CaseTypeController::class, 'show']);
+
+    // Folder catalog (static, no permission required beyond auth)
+    Route::get('case-folders/defaults', [CaseFolderTemplateController::class, 'index'])
+        ->name('case-folders.defaults');
 
     // Case management routes
     Route::get('/cases/statistics', [CaseController::class, 'statistics']);

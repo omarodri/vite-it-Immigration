@@ -289,5 +289,11 @@
     "session.timer_preserved": "تم حفظ المؤقت النشط تلقائيًا قبل تسجيل الخروج.",
     "session.account_locked": "تم قفل الحساب مؤقتًا",
     "session.account_locked_detail": "تم اكتشاف عدد كبير من محاولات تسجيل الدخول من أجهزة مختلفة. يُرجى المحاولة مجددًا لاحقًا.",
-    "session.account_locked_until": "سيُفتح الحساب في {time}"
+    "session.account_locked_until": "سيُفتح الحساب في {time}",
+    "case.code": "الرمز",
+    "case.code_copied": "تم نسخ الرمز إلى الحافظة",
+    "case.code_preview_note": "يُخصَّص الرقم النهائي عند الحفظ",
+    "case.legacy_no_code": "ملف قديم",
+    "case_type.abbreviation": "الاختصار",
+    "case_type.abbreviation_help": "رمز من حرفين يُستخدم في معرّفات الملفات (مثل SP، WK)"
 }

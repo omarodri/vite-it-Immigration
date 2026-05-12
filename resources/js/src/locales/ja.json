@@ -289,5 +289,11 @@
     "session.timer_preserved": "セッション終了前にアクティブなタイマーが自動的に保存されました。",
     "session.account_locked": "アカウントが一時的にロックされました",
     "session.account_locked_detail": "異なるデバイスからのログイン試行が多すぎることが検出されました。後でもう一度お試しください。",
-    "session.account_locked_until": "アカウントは {time} にロック解除されます"
+    "session.account_locked_until": "アカウントは {time} にロック解除されます",
+    "case.code": "コード",
+    "case.code_copied": "コードをクリップボードにコピーしました",
+    "case.code_preview_note": "確定番号は保存時に割り当てられます",
+    "case.legacy_no_code": "レガシーケース",
+    "case_type.abbreviation": "略語",
+    "case_type.abbreviation_help": "ケース識別子に使用する2文字コード（例：SP、WK）"
 }

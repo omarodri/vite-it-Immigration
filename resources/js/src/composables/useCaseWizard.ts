@@ -10,7 +10,7 @@ import caseService from '@/services/caseService';
 import { useNotification } from './useNotification';
 import type { WizardState, WizardStep, CaseDetailsForm, WizardTaskItem } from '@/types/wizard';
 import { WIZARD_STEPS } from '@/types/wizard';
-import type { ImmigrationCase, CreateCaseData } from '@/types/case';
+import type { ImmigrationCase, CreateCaseData, CaseFolderInput } from '@/types/case';
 
 const STORAGE_KEY = 'case_wizard_state';
 
@@ -39,6 +39,9 @@ const createDefaultState = (): WizardState => ({
     },
     isSubmitting: false,
     errors: {},
+    folders: {
+        selected: [] as CaseFolderInput[],
+    },
 });
 
 export function useCaseWizard() {
@@ -63,7 +66,7 @@ export function useCaseWizard() {
 
     // Navigation computed
     const canGoNext = computed(() => {
-        return isStepValid(state.currentStep) && state.currentStep < 6;
+        return isStepValid(state.currentStep) && state.currentStep < 7;
     });
 
     const canGoPrev = computed(() => {
@@ -71,7 +74,7 @@ export function useCaseWizard() {
     });
 
     const isLastStep = computed(() => {
-        return state.currentStep === 6;
+        return state.currentStep === 7;
     });
 
     const currentStepKey = computed(() => {
@@ -93,9 +96,12 @@ export function useCaseWizard() {
                 // Details are optional
                 return true;
             case 5:
-                // Checklist is optional
+                // Folders — empty selection is allowed (user warned but can continue)
                 return true;
             case 6:
+                // Checklist is optional
+                return true;
+            case 7:
                 // Summary - all previous steps must be valid
                 return isStepValid(1) && isStepValid(2);
             default:
@@ -105,7 +111,7 @@ export function useCaseWizard() {
 
     // Navigation methods
     function goToStep(step: number): void {
-        if (step >= 1 && step <= 6) {
+        if (step >= 1 && step <= 7) {
             // Can only go forward if current step is valid
             if (step > state.currentStep && !isStepValid(state.currentStep)) {
                 return;
@@ -175,6 +181,7 @@ export function useCaseWizard() {
                 selectedTasks: state.selectedTasks,
                 caseDetails: state.caseDetails,
                 excludedTemplateIds: state.excludedTemplateIds,
+                folders: state.folders,
             };
             sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         } catch (e) {
@@ -195,6 +202,9 @@ export function useCaseWizard() {
                 state.excludedTemplateIds = data.excludedTemplateIds || [];
                 if (data.caseDetails) {
                     Object.assign(state.caseDetails, data.caseDetails);
+                }
+                if (data.folders) {
+                    Object.assign(state.folders, data.folders);
                 }
                 return true;
             }
@@ -263,6 +273,9 @@ export function useCaseWizard() {
                 excluded_template_ids: state.excludedTemplateIds.length > 0
                     ? state.excludedTemplateIds
                     : undefined,
+                folders: state.folders.selected.length > 0
+                    ? state.folders.selected
+                    : undefined,
             };
 
             const response = await caseService.createCase(payload);
@@ -272,7 +285,7 @@ export function useCaseWizard() {
             notification.success(t('wizard.success.case_created'));
 
             // Navigate to the created case
-            router.push({ name: 'cases-show', params: { id: response.data.id } });
+            router.push({ name: 'cases-show', params: { id: response.data.id }, query: { just_created: '1' } });
 
             return response.data;
         } catch (error: any) {

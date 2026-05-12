@@ -289,5 +289,11 @@
     "session.timer_preserved": "Twój aktywny stoper został automatycznie zapisany przed wylogowaniem.",
     "session.account_locked": "Konto tymczasowo zablokowane",
     "session.account_locked_detail": "Wykryto zbyt wiele prób logowania z różnych urządzeń. Spróbuj ponownie później.",
-    "session.account_locked_until": "Konto odblokowane o {time}"
+    "session.account_locked_until": "Konto odblokowane o {time}",
+    "case.code": "Kod",
+    "case.code_copied": "Kod skopiowany do schowka",
+    "case.code_preview_note": "Ostateczny numer zostanie przypisany po zapisaniu",
+    "case.legacy_no_code": "Sprawa legacy",
+    "case_type.abbreviation": "Skrót",
+    "case_type.abbreviation_help": "2-literowy kod dla identyfikatorów spraw (np. SP, WK)"
 }

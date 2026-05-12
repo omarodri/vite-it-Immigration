@@ -289,5 +289,11 @@
     "session.timer_preserved": "Το ενεργό χρονόμετρό σας αποθηκεύτηκε αυτόματα πριν την αποσύνδεση.",
     "session.account_locked": "Ο λογαριασμός κλειδώθηκε προσωρινά",
     "session.account_locked_detail": "Εντοπίστηκαν πολλές απόπειρες σύνδεσης από διαφορετικές συσκευές. Δοκιμάστε ξανά αργότερα.",
-    "session.account_locked_until": "Ο λογαριασμός ξεκλειδώθηκε στις {time}"
+    "session.account_locked_until": "Ο λογαριασμός ξεκλειδώθηκε στις {time}",
+    "case.code": "Κωδικός",
+    "case.code_copied": "Ο κωδικός αντιγράφηκε στο πρόχειρο",
+    "case.code_preview_note": "Ο οριστικός αριθμός αποδίδεται κατά την αποθήκευση",
+    "case.legacy_no_code": "Παλαιά υπόθεση",
+    "case_type.abbreviation": "Συντομογραφία",
+    "case_type.abbreviation_help": "2γράμματος κωδικός για αναγνωριστικά υποθέσεων (π.χ. SP, WK)"
 }

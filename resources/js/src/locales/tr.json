@@ -289,5 +289,11 @@
     "session.timer_preserved": "Aktif sayacınız oturum kapatılmadan önce otomatik olarak kaydedildi.",
     "session.account_locked": "Hesap geçici olarak kilitlendi",
     "session.account_locked_detail": "Farklı cihazlardan çok fazla giriş denemesi tespit edildi. Lütfen daha sonra tekrar deneyin.",
-    "session.account_locked_until": "Hesap {time} itibarıyla açıldı"
+    "session.account_locked_until": "Hesap {time} itibarıyla açıldı",
+    "case.code": "Kod",
+    "case.code_copied": "Kod panoya kopyalandı",
+    "case.code_preview_note": "Kesin numara kaydedildiğinde atanır",
+    "case.legacy_no_code": "Eski dosya",
+    "case_type.abbreviation": "Kısaltma",
+    "case_type.abbreviation_help": "Dosya tanımlayıcılarında kullanılan 2 harfli kod (örn. SP, WK)"
 }
