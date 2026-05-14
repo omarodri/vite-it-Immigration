@@ -6,6 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **VITE-IT Immigration** is a **SaaS multi-tenant system** for immigration case management. It allows law firms to manage clients, companions, immigration cases, documents (with cloud storage), a shared event calendar (with bidirectional Google/Outlook sync), a Scrum board, to-do lists, and expiration alerts. It uses a **Single Page Application (SPA)** architecture: Laravel 12 serves the initial HTML and acts as an API server; Vue 3.5 handles all client-side routing and UI.
 
+## Protocolo de Carga de Contexto
+
+Antes de implementar cualquier spec o feature, leer en este orden:
+1. `spec/INDEX.md` — identifica el spec y sus dependencias (columna "Relacionados")
+2. `PATTERNS.md` — confirma los patrones técnicos aplicables
+3. `MEMORY.md` — revisa decisiones recientes y deuda técnica activa
+4. El spec específico completo: `spec/<NN>_<nombre>.md`
+
+Al completar un feature: actualizar `MEMORY.md` (agregar entrada en "Implementaciones Recientes") y cambiar el estado en `spec/INDEX.md` (`PEND`/`PART` → `DONE`).
+
+Atajo: `/load-context` ejecuta este protocolo automáticamente.
+
 ## Common Commands
 
 ```bash
@@ -446,10 +458,7 @@ Define in `routes/console.php` using `Schedule::`. Queue worker must be running 
 
 ## Internationalization
 
-16 languages: English (en), Spanish (es), French (fr), German (de), Italian (it), Portuguese (pt), Russian (ru), Polish (pl), Turkish (tr), Japanese (ja), Chinese (zh), Greek (el), Hungarian (hu), Danish (da), Swedish (sv), Arabic (ae).
-
-Arabic (ae) automatically enables RTL layout.
-
+3 languages: English (en), Spanish (es), French (fr)
 Translation files: `resources/js/src/locales/*.json` — **FLAT keys only.**
 
 ---
