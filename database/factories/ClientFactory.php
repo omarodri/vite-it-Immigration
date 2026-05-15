@@ -54,7 +54,6 @@ class ClientFactory extends Factory
             'entry_point' => fake()->optional(0.6)->randomElement(['airport', 'land_border', 'green_path']),
             'iuc' => fake()->optional(0.5)->numerify('##########'),
             'status' => fake()->randomElement(['prospect', 'active', 'inactive', 'archived']),
-            'is_primary_applicant' => true,
         ];
     }
 

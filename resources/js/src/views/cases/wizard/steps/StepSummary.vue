@@ -57,58 +57,85 @@
                 </div>
             </section>
 
-            <!-- Client Section -->
+            <!-- Client Info (contract holder) -->
             <section class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="client-heading">
                 <div class="flex justify-between items-center mb-4">
                     <h4 id="client-heading" class="font-semibold text-gray-900 dark:text-white">
-                        {{ $t('wizard.step6.client') }}
+                        {{ $t('wizard.step6.client_info') }}
                     </h4>
-                    <button
-                        type="button"
-                        class="btn btn-primary mt-1"
-                        :aria-label="`${$t('wizard.edit')} ${$t('wizard.step6.client')}`"
-                        @click="wizard.goToStep(2)"
-                    >
+                    <button type="button" class="btn btn-primary mt-1" @click="wizard.goToStep(2)">
                         {{ $t('wizard.edit') }}
                     </button>
                 </div>
                 <div v-if="selectedClient" class="flex items-center gap-4">
-                    <div
-                        class="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold text-lg">
+                    <div class="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold text-lg">
                         {{ selectedClient.initials || getInitials(selectedClient.first_name, selectedClient.last_name) }}
                     </div>
                     <div>
                         <p class="font-medium text-gray-900 dark:text-white">
                             {{ selectedClient.full_name }}
+                            <span v-if="wizard.state.primaryApplicantType === 'client'" class="badge badge-outline-success text-xs ml-2 align-middle">
+                                {{ $t('wizard.step6.also_primary_applicant') }}
+                            </span>
+                        </p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ selectedClient.email || selectedClient.phone || '' }}</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Primary Applicant (only if different from client) -->
+            <section v-if="wizard.state.primaryApplicantType === 'companion' && primaryApplicantCompanion"
+                     class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light"
+                     aria-labelledby="primary-applicant-heading">
+                <div class="flex justify-between items-center mb-4">
+                    <h4 id="primary-applicant-heading" class="font-semibold text-gray-900 dark:text-white">
+                        {{ $t('wizard.step6.primary_applicant') }}
+                    </h4>
+                    <button type="button" class="btn btn-primary mt-1" @click="wizard.goToStep(3)">
+                        {{ $t('wizard.edit') }}
+                    </button>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-semibold">
+                        {{ primaryApplicantCompanion.initials || getInitials(primaryApplicantCompanion.first_name, primaryApplicantCompanion.last_name) }}
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900 dark:text-white">
+                            {{ primaryApplicantCompanion.full_name }}
+                            <span class="badge badge-outline-primary text-xs ml-2 align-middle">
+                                {{ $t('wizard.step6.primary_applicant_badge') }}
+                            </span>
                         </p>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
-                            {{ selectedClient.email || selectedClient.phone || '' }}
+                            {{ primaryApplicantCompanion.relationship_label || primaryApplicantCompanion.relationship }}
                         </p>
                     </div>
                 </div>
             </section>
 
-            <!-- Companions Section -->
+            <!-- Dependents / Companions (excluding primary applicant) -->
             <section class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="companions-heading">
                 <div class="flex justify-between items-center mb-4">
                     <h4 id="companions-heading" class="font-semibold text-gray-900 dark:text-white">
-                        {{ $t('wizard.step6.companions') }}
+                        {{ $t('wizard.step6.dependents') }}
                     </h4>
-                    <button
-                        type="button"
-                        class="btn btn-primary mt-1"
-                        :aria-label="`${$t('wizard.edit')} ${$t('wizard.step6.companions')}`"
-                        @click="wizard.goToStep(3)"
-                    >
+                    <button type="button" class="btn btn-primary mt-1" @click="wizard.goToStep(3)">
                         {{ $t('wizard.edit') }}
                     </button>
                 </div>
-                <div v-if="selectedCompanions.length > 0" class="flex flex-wrap gap-2">
-                    <span
-                        v-for="companion in selectedCompanions"
-                        :key="companion.id"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full"
-                    >
+                <div v-if="dependentCompanions.length > 0 || (wizard.state.primaryApplicantType === 'companion' && wizard.state.clientIsDependent && selectedClient)" class="flex flex-wrap gap-2">
+                    <!-- Client as dependent (only when companion is primary AND client is marked as participant) -->
+                    <span v-if="wizard.state.primaryApplicantType === 'companion' && wizard.state.clientIsDependent && selectedClient"
+                          class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
+                        <span class="w-6 h-6 rounded-full bg-secondary/20 text-secondary text-xs flex items-center justify-center font-medium">
+                            {{ selectedClient.initials || getInitials(selectedClient.first_name, selectedClient.last_name) }}
+                        </span>
+                        <span class="text-sm">{{ selectedClient.full_name }}</span>
+                        <span class="text-xs text-gray-500">({{ $t('wizard.step3.client_label') }})</span>
+                    </span>
+                    <!-- Companion dependents (all selected companions except the primary applicant) -->
+                    <span v-for="companion in dependentCompanions" :key="companion.id"
+                          class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
                         <span class="w-6 h-6 rounded-full bg-secondary/20 text-secondary text-xs flex items-center justify-center font-medium">
                             {{ companion.initials || getInitials(companion.first_name, companion.last_name) }}
                         </span>
@@ -117,7 +144,7 @@
                     </span>
                 </div>
                 <p v-else class="text-gray-500 dark:text-gray-400 text-sm">
-                    {{ $t('wizard.step6.no_companions_selected') }}
+                    {{ $t('wizard.step6.no_dependents') }}
                 </p>
             </section>
 
@@ -313,11 +340,36 @@ const assignedStaff = computed(() => {
 const caseNumberPreview = computed(() => {
     const year2    = new Date().getFullYear().toString().slice(-2);
     const typeCode = selectedCaseType.value?.code ?? '???';
-    const lastName = selectedClient.value?.last_name ?? '';
-    const slug     = lastName
+
+    let lastName = selectedClient.value?.last_name ?? '';
+    if (
+        wizard.state.primaryApplicantType === 'companion' &&
+        wizard.state.primaryApplicantCompanionId
+    ) {
+        const applicant = selectedCompanions.value.find(
+            c => c.id === wizard.state.primaryApplicantCompanionId
+        );
+        if (applicant) lastName = applicant.last_name;
+    }
+
+    const slug = lastName
         ? lastName.toUpperCase().replace(/[^A-Z]/g, '').padEnd(4, 'X').slice(0, 4)
         : '????';
+
     return `${year2}-${typeCode}-${slug}-????`;
+});
+
+const primaryApplicantCompanion = computed(() => {
+    if (wizard.state.primaryApplicantType !== 'companion' || !wizard.state.primaryApplicantCompanionId) {
+        return null;
+    }
+    return selectedCompanions.value.find(c => c.id === wizard.state.primaryApplicantCompanionId) ?? null;
+});
+
+const dependentCompanions = computed(() => {
+    return selectedCompanions.value.filter(
+        c => !(wizard.state.primaryApplicantType === 'companion' && c.id === wizard.state.primaryApplicantCompanionId)
+    );
 });
 
 // Load all data on mount (first time)

@@ -45,7 +45,7 @@ class ClientController extends Controller
         $clients = $this->clientService->listClients(
             $request->only([
                 'search', 'status', 'nationality', 'canada_status',
-                'date_from', 'date_to', 'is_primary_applicant',
+                'date_from', 'date_to',
                 'sort_by', 'sort_direction',
             ]),
             (int) $request->get('per_page', 15)

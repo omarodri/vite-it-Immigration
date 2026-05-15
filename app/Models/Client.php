@@ -54,7 +54,6 @@ class Client extends Model
         'other_status_2',
         // Status
         'status',
-        'is_primary_applicant',
     ];
 
     protected $appends = ['full_name', 'sort_name', 'initials'];
@@ -63,7 +62,6 @@ class Client extends Model
         'date_of_birth' => 'date',
         'status_date' => 'date',
         'arrival_date' => 'date',
-        'is_primary_applicant' => 'boolean',
     ];
 
     /**

@@ -10,6 +10,12 @@
         <!-- Selected Client Card -->
         <div v-if="selectedClient" class="mb-6">
             <ClientCard :client="selectedClient" :show-actions="true" @change="clearSelection" />
+            <div class="mt-3 p-3 bg-info/10 border border-info/20 rounded-lg flex items-start gap-2 text-sm text-info">
+                <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{{ $t('wizard.step2.client_role_note') }}</span>
+            </div>
         </div>
 
         <!-- Search Section (shown when no client selected) -->

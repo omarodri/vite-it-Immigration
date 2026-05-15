@@ -14,6 +14,37 @@
             </button>
         </div>
 
+        <!-- Primary Applicant Selection -->
+        <div v-if="wizard.state.clientId" class="mb-6 p-4 border border-primary/30 rounded-lg bg-primary/5">
+            <h4 class="font-semibold text-gray-900 dark:text-white mb-1">
+                {{ $t('wizard.step3.primary_applicant_title') }}
+                <span class="text-danger ml-1">*</span>
+            </h4>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                {{ $t('wizard.step3.primary_applicant_desc') }}
+            </p>
+            <select
+                v-model="primaryApplicantSelection"
+                class="form-select"
+                :class="{ 'border-danger': validationAttempted && !primaryApplicantSelection }"
+            >
+                <option value="">{{ $t('wizard.step3.select_primary_applicant') }}</option>
+                <option :value="`client:${wizard.state.clientId}`">
+                    {{ selectedClientName }} ({{ $t('wizard.step3.client_label') }})
+                </option>
+                <option
+                    v-for="companion in selectedCompanions"
+                    :key="companion.id"
+                    :value="`companion:${companion.id}`"
+                >
+                    {{ companion.full_name }} — {{ companion.relationship_label || companion.relationship }}
+                </option>
+            </select>
+            <p v-if="validationAttempted && !primaryApplicantSelection" class="text-danger text-sm mt-1">
+                {{ $t('wizard.step3.primary_applicant_required') }}
+            </p>
+        </div>
+
         <!-- Loading State -->
         <div v-if="loading" class="space-y-3">
             <div v-for="i in 3" :key="i" class="animate-pulse">
@@ -49,6 +80,43 @@
                 {{ $t('wizard.step3.description') }}
             </p>
             <legend class="sr-only">{{ $t('wizard.step3.title') }}</legend>
+
+            <!-- Client shown as dependent when a companion is the primary applicant (toggleable) -->
+            <div
+                v-if="wizard.state.primaryApplicantType === 'companion' && selectedClientName"
+                role="checkbox"
+                :aria-checked="wizard.state.clientIsDependent"
+                tabindex="0"
+                class="flex items-center gap-3 p-4 rounded-lg border cursor-pointer select-none transition-colors"
+                :class="wizard.state.clientIsDependent
+                    ? 'border-primary bg-primary/5 dark:bg-primary/10'
+                    : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30 opacity-60'"
+                @click="toggleClientDependent"
+                @keydown.space.prevent="toggleClientDependent"
+                @keydown.enter.prevent="toggleClientDependent"
+            >
+                <!-- Checkbox indicator -->
+                <div
+                    class="shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-colors"
+                    :class="wizard.state.clientIsDependent
+                        ? 'bg-primary border-primary'
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'"
+                >
+                    <svg v-if="wizard.state.clientIsDependent" class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </div>
+                <!-- Avatar -->
+                <div class="shrink-0 w-10 h-10 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-semibold text-sm">
+                    {{ clientInitials }}
+                </div>
+                <!-- Info -->
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-gray-900 dark:text-white text-sm truncate">{{ selectedClientName }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('wizard.step3.client_label') }}</p>
+                </div>
+            </div>
+
             <CompanionCheckbox
                 v-for="companion in companions"
                 :key="companion.id"
@@ -82,6 +150,7 @@ import { ref, computed, inject, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useCompanionStore } from '@/stores/companion';
 import { useNotification } from '@/composables/useNotification';
+import clientService from '@/services/clientService';
 import type { Companion } from '@/types/companion';
 import CompanionCheckbox from '../components/CompanionCheckbox.vue';
 import CompanionFormModal from '@/components/companions/CompanionFormModal.vue';
@@ -100,7 +169,44 @@ const companions = ref<Companion[]>([]);
 const loading = ref(false);
 const showCompanionModal = ref(false);
 
+const validationAttempted = ref(false);
+const selectedClientName = ref('');
+
+// Derived from wizard state — always in sync, no watcher needed
+const primaryApplicantSelection = computed({
+    get(): string {
+        if (wizard.state.primaryApplicantType === 'companion' && wizard.state.primaryApplicantCompanionId) {
+            return `companion:${wizard.state.primaryApplicantCompanionId}`;
+        }
+        if (wizard.state.clientId) {
+            return `client:${wizard.state.clientId}`;
+        }
+        return '';
+    },
+    set(value: string) {
+        if (!value) return;
+        const [type, id] = value.split(':');
+        wizard.state.primaryApplicantType = type as 'client' | 'companion';
+        wizard.state.primaryApplicantCompanionId = type === 'companion' ? parseInt(id) : null;
+        wizard.saveToSession();
+    },
+});
+
 const selectedCount = computed(() => wizard.state.selectedCompanionIds.length);
+
+const selectedCompanions = computed(() =>
+    companions.value.filter(c => wizard.state.selectedCompanionIds.includes(c.id))
+);
+
+const clientInitials = computed(() => {
+    const parts = selectedClientName.value.trim().split(/\s+/);
+    return parts.map(p => p[0] || '').join('').slice(0, 2).toUpperCase();
+});
+
+function toggleClientDependent() {
+    wizard.state.clientIsDependent = !wizard.state.clientIsDependent;
+    wizard.saveToSession();
+}
 
 function isSelected(id: number): boolean {
     return wizard.state.selectedCompanionIds.includes(id);
@@ -167,8 +273,18 @@ watch(
             } finally {
                 loading.value = false;
             }
+
+            try {
+                const response = await clientService.getClient(clientId);
+                const client = (response as any).data || response;
+                selectedClientName.value = client.full_name || `${client.first_name} ${client.last_name}`;
+            } catch (e) {
+                console.error('Failed to load client name:', e);
+            }
+
         } else {
             companions.value = [];
+            selectedClientName.value = '';
         }
     },
     { immediate: true }

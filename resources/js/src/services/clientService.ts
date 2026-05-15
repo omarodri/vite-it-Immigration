@@ -25,9 +25,6 @@ const clientService = {
         if (filters.canada_status) params.append('canada_status', filters.canada_status);
         if (filters.date_from) params.append('date_from', filters.date_from);
         if (filters.date_to) params.append('date_to', filters.date_to);
-        if (filters.is_primary_applicant !== undefined) {
-            params.append('is_primary_applicant', filters.is_primary_applicant ? '1' : '0');
-        }
         if (filters.sort_by) params.append('sort_by', filters.sort_by);
         if (filters.sort_direction) params.append('sort_direction', filters.sort_direction);
         if (filters.per_page) params.append('per_page', filters.per_page.toString());

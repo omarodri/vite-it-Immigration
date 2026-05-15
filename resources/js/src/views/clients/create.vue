@@ -349,17 +349,6 @@
                             </select>
                         </div>
 
-                        <!-- Is Primary Applicant -->
-                        <div class="flex items-center pt-7">
-                            <label class="flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    v-model="form.is_primary_applicant"
-                                    class="form-checkbox text-primary"
-                                />
-                                <span class="ml-2">{{ $t('clients.is_primary_applicant') }}</span>
-                            </label>
-                        </div>
                     </div>
 
                     <!-- Description -->
@@ -521,7 +510,6 @@ const form = reactive({
     arrival_date: '',
     iuc: '',
     status: 'prospect',
-    is_primary_applicant: true,
     description: '',
 });
 

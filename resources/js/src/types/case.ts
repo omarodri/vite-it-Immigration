@@ -99,6 +99,22 @@ export interface ImmigrationCase {
     case_type_id: number;
     assigned_to: number | null;
 
+    // Primary Applicant (Spec 58)
+    primary_applicant_type: 'client' | 'companion';
+    primary_applicant_companion_id: number | null;
+    client_is_participant: boolean;
+    primary_applicant?: {
+        id: number;
+        first_name: string;
+        last_name: string;
+        full_name?: string;
+        initials?: string;
+        email?: string | null;
+        phone?: string | null;
+        relationship?: string;
+        relationship_label?: string;
+    };
+
     // Status & Priority
     status: CaseStatus;
     status_label: string;
@@ -204,6 +220,9 @@ export interface CreateCaseData {
     case_type_id: number;
     assigned_to?: number;
     companion_ids?: number[];
+    primary_applicant_type?: 'client' | 'companion';
+    primary_applicant_companion_id?: number | null;
+    client_is_participant?: boolean;
     priority?: CasePriority;
     language?: string;
     description?: string;

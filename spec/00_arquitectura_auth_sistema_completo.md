@@ -10,7 +10,7 @@
 
 ## 1. Problema
 
-El proyecto Vristo POC necesita evolucionar de un POC basico a una aplicacion enterprise-ready con:
+El proyecto Vite-IT-Immigration necesita evolucionar de un POC basico a una aplicacion enterprise-ready con:
 - Sistema de autenticacion robusto (completado)
 - Roles y permisos
 - Gestion de usuarios (CRUD)

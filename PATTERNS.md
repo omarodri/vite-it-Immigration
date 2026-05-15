@@ -9,7 +9,7 @@
 
 | Artefacto | Patrón | Ejemplo |
 |-----------|--------|---------|
-| Código de expediente | `YY-TT-AAAA-NNNN` | `26-PR-2024-0001` |
+| Código de expediente | `YY-TT-AAAA-NNNN` | `26-PR-RODR-0001` |
 | Rutas API | `kebab-case`, plural | `/api/immigration-cases` |
 | Modelos Eloquent | `PascalCase`, singular | `ImmigrationCase` |
 | Permisos | `resource.action` | `cases.create` |

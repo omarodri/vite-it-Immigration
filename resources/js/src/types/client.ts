@@ -55,7 +55,6 @@ export interface Client {
 
     // Status
     status: ClientStatus;
-    is_primary_applicant: boolean;
 
     // Timestamps
     created_at: string;
@@ -114,7 +113,6 @@ export interface CreateClientData {
 
     // Status
     status?: ClientStatus;
-    is_primary_applicant?: boolean;
 }
 
 export interface UpdateClientData {
@@ -155,7 +153,6 @@ export interface UpdateClientData {
 
     // Status
     status?: ClientStatus;
-    is_primary_applicant?: boolean;
 }
 
 export interface ClientStatistics {
@@ -173,7 +170,6 @@ export interface ClientFilters {
     canada_status?: CanadaStatus;
     date_from?: string;
     date_to?: string;
-    is_primary_applicant?: boolean;
     sort_by?: string;
     sort_direction?: 'asc' | 'desc';
     per_page?: number;

@@ -27,20 +27,27 @@
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <div class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg mt-4">
-                            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                                 <span class="text-lg font-semibold text-primary">
-                                    {{ currentCase.client.initials || getInitials(currentCase.client.first_name, currentCase.client.last_name) }}
+                                    {{ primaryApplicant?.initials || getInitials(primaryApplicant?.first_name ?? '', primaryApplicant?.last_name ?? '') }}
                                 </span>
                             </div>
-                            <div class="flex-1">
-                                <div class="font-semibold">
-                                    <router-link :to="`/clients/${currentCase.client.id}`"
-                                    class="text-primary font-semibold hover:underline text-xl">
-                                    {{ currentCase.client.full_name }}
-                                    </router-link>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-semibold text-xl text-gray-900 dark:text-white truncate">
+                                    {{ primaryApplicant?.full_name }}
+                                    <span class="badge badge-outline-primary text-xs ml-2 align-middle font-normal">
+                                        {{ $t('cases.primary_applicant') }}
+                                    </span>
                                 </div>
-                                <div class="text-sm text-gray-500">{{ currentCase.client.email }}</div>
-                                <!-- <div v-if="currentCase.client.phone" class="text-sm text-gray-500">{{ currentCase.client.phone }}</div> -->
+                                <div class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                                    {{ $t('cases.client') }}:
+                                    <router-link :to="`/clients/${currentCase.client.id}`" class="text-primary hover:underline">
+                                        {{ currentCase.client.full_name }}
+                                    </router-link>
+                                    <span v-if="currentCase.primary_applicant_type === 'client'" class="text-xs text-gray-400 ml-1">
+                                        ({{ $t('cases.client_is_applicant') }})
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -213,114 +220,113 @@
                     <!-- Information Tab -->
                     <div v-if="activeTab === 'info'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- General Information -->
-                        <div class="space-y-4">
-                            <!-- <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.general_info') }}</h3>
-                            <div class="space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">{{ $t('cases.case_number') }}</span>
-                                    <span class="font-medium">{{ currentCase.case_number }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">{{ $t('cases.case_type') }}</span>
-                                    <span>{{ currentCase.case_type?.name || '-' }}</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">{{ $t('cases.status') }}</span>
-                                    <span class="badge" :class="getStatusBadgeClass(currentCase.status)">
-                                        {{ $t(`cases.${currentCase.status}`) }}
-                                    </span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">{{ $t('cases.priority') }}</span>
-                                    <span class="badge" :class="getPriorityBadgeClass(currentCase.priority)">
-                                        {{ $t(`cases.${currentCase.priority}`) }}
-                                    </span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">{{ $t('cases.language') }}</span>
-                                    <span>{{ currentCase.language?.toUpperCase() || '-' }}</span>
-                                </div>
-                                <!-- Stage -->
-                                <!-- <div v-if="currentCase.stage" class="flex items-center justify-between py-1">
-                                    <span class="text-gray-500">{{ $t('cases.stage') }}</span>
-                                    <span :class="`badge badge-outline-${stageColor}`">{{ $t(CASE_STAGE_OPTIONS.find(o => o.value === currentCase.stage)?.label ?? currentCase.stage ?? '') }}</span>
-                                </div> -->
-                                <!-- IRCC Status -->
-                                <!-- <div v-if="currentCase.ircc_status" class="flex items-center justify-between py-1">
-                                    <span class="text-gray-500">{{ $t('cases.ircc_status') }}</span>
-                                    <span :class="`badge badge-outline-${irccColor}`">{{ currentCase.ircc_status_label }}</span>
-                                </div> -->
-                                <!-- Final Result -->
-                                <!-- <div v-if="currentCase.final_result" class="flex items-center justify-between py-1">
-                                    <span class="text-gray-500">{{ $t('cases.final_result') }}</span>
-                                    <span :class="`badge badge-outline-${finalResultColor}`">{{ currentCase.final_result_label }}</span>
-                                </div> -->
-                                <!-- IRCC Code -->
-                                <!-- <div v-if="currentCase.ircc_code" class="flex items-center justify-between py-1">
-                                    <span class="text-gray-500">{{ $t('cases.ircc_code') }}</span>
-                                    <span class="text-sm font-mono font-medium">{{ currentCase.ircc_code }}</span>
-                                </div>
-                            </div> -->
-
-                            <!-- Progress -->
-                            <!-- <div class="pt-4">
-                                <div class="flex justify-between text-sm mb-2">
-                                    <span class="text-gray-500">{{ $t('cases.progress') }}</span>
-                                    <span>{{ currentCase.progress }}%</span>
-                                </div>
-                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                                    <div class="h-3 rounded-full transition-all" :class="getProgressBarClass(currentCase.progress)" :style="{ width: `${currentCase.progress}%` }"></div>
-                                </div>
-                            </div> -->
-
-                            <!-- Client Info -->
-                            <div v-if="currentCase.client" class="space-y-4">
-                                <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.client_info') }}</h3>
+                        <div class="space-y-6">
+                            <!-- Información del Cliente -->
+                            <div v-if="currentCase.client">
+                                <h3 class="font-semibold text-lg dark:text-white-light mb-3">{{ $t('cases.client_info') }}</h3>
                                 <div class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                                    <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                                         <span class="text-lg font-semibold text-primary">
                                             {{ currentCase.client.initials || getInitials(currentCase.client.first_name, currentCase.client.last_name) }}
                                         </span>
                                     </div>
-                                    <div class="flex-1">
-                                        <div class="font-semibold">{{ currentCase.client.full_name }}</div>
-                                        <div class="text-sm text-gray-500">{{ currentCase.client.email }}</div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-semibold text-gray-900 dark:text-white">{{ currentCase.client.full_name }}</div>
+                                        <div v-if="currentCase.client.email" class="text-sm text-gray-500">{{ currentCase.client.email }}</div>
                                         <div v-if="currentCase.client.phone" class="text-sm text-gray-500">{{ currentCase.client.phone }}</div>
                                     </div>
-                                    <router-link :to="`/clients/${currentCase.client.id}`" class="btn btn-sm btn-outline-primary">
+                                    <router-link :to="`/clients/${currentCase.client.id}`" class="btn btn-sm btn-outline-primary shrink-0">
                                         {{ $t('cases.view_client') }}
                                     </router-link>
                                 </div>
                             </div>
 
-                            <!-- Companions -->
-                            <div class="space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <h3 class="font-semibold text-lg dark:text-white-light">
-                                        {{ $t('cases.companions') }}
-                                    </h3>
-                                    <span v-if="currentCase.companions?.length" class="badge badge-outline-secondary">
-                                        {{ currentCase.companions.length }}
+                            <!-- Aplicante Principal (only when a companion heads the application) -->
+                            <div v-if="currentCase.primary_applicant_type === 'companion' && primaryApplicantCompanion">
+                                <h3 class="font-semibold text-lg dark:text-white-light mb-3">{{ $t('cases.primary_applicant') }}</h3>
+                                <div class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                    <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
+                                        <span class="text-lg font-semibold text-secondary">
+                                            {{ primaryApplicantCompanion.initials || getInitials(primaryApplicantCompanion.first_name, primaryApplicantCompanion.last_name) }}
+                                        </span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-semibold text-gray-900 dark:text-white">{{ primaryApplicantCompanion.full_name }}</div>
+                                        <div class="flex flex-wrap items-center gap-2 mt-1">
+                                            <span class="badge badge-outline-secondary text-xs">
+                                                {{ primaryApplicantCompanion.relationship_label || primaryApplicantCompanion.relationship }}
+                                            </span>
+                                            <span v-if="primaryApplicantCompanion.age" class="text-xs text-gray-500">
+                                                · {{ $t('cases.companion_age', { age: primaryApplicantCompanion.age }) }}
+                                            </span>
+                                            <span v-if="primaryApplicantCompanion.nationality" class="text-xs text-gray-500">
+                                                · {{ primaryApplicantCompanion.nationality }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-info p-1.5 shrink-0"
+                                        :title="$t('companions.view_companion')"
+                                        @click="openCompanionView(primaryApplicantCompanion)"
+                                    >
+                                        <icon-eye class="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Dependientes -->
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.companions') }}</h3>
+                                    <span v-if="dependentsCount > 0" class="badge badge-outline-secondary">
+                                        {{ dependentsCount }}
                                     </span>
                                 </div>
 
-                                <p v-if="!currentCase.companions || currentCase.companions.length === 0"
-                                   class="text-sm text-gray-500 italic">
+                                <p v-if="dependentsCount === 0" class="text-sm text-gray-500 italic">
                                     {{ $t('cases.no_companions') }}
                                 </p>
 
                                 <div v-else class="space-y-3">
-                                    <div v-for="companion in currentCase.companions" :key="companion.id"
-                                         class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                    <!-- Client as dependent (only when companion is primary AND client was marked as participant) -->
+                                    <div
+                                        v-if="currentCase.primary_applicant_type === 'companion' && currentCase.client_is_participant && currentCase.client"
+                                        class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+                                    >
+                                        <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                            <span class="text-lg font-semibold text-primary">
+                                                {{ currentCase.client.initials || getInitials(currentCase.client.first_name, currentCase.client.last_name) }}
+                                            </span>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="font-semibold text-gray-900 dark:text-white truncate">{{ currentCase.client.full_name }}</div>
+                                            <div class="mt-1">
+                                                <span class="badge badge-outline-primary text-xs">{{ $t('wizard.step3.client_label') }}</span>
+                                            </div>
+                                        </div>
+                                        <router-link
+                                            :to="`/clients/${currentCase.client.id}`"
+                                            class="btn btn-sm btn-outline-info p-1.5 shrink-0"
+                                            :title="$t('cases.view_client')"
+                                        >
+                                            <icon-eye class="w-4 h-4" />
+                                        </router-link>
+                                    </div>
+
+                                    <!-- Companion dependents (excludes the primary applicant companion) -->
+                                    <div
+                                        v-for="companion in dependentCompanions"
+                                        :key="companion.id"
+                                        class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+                                    >
                                         <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
                                             <span class="text-lg font-semibold text-secondary">
                                                 {{ companion.initials || getInitials(companion.first_name, companion.last_name) }}
                                             </span>
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <div class="font-semibold truncate">
-                                                {{ companion.full_name }}
-                                            </div>
+                                            <div class="font-semibold text-gray-900 dark:text-white truncate">{{ companion.full_name }}</div>
                                             <div class="flex flex-wrap items-center gap-2 mt-1">
                                                 <span class="badge badge-outline-secondary text-xs">
                                                     {{ companion.relationship_label || companion.relationship }}
@@ -345,10 +351,10 @@
                                 </div>
                             </div>
 
-                            <!-- Description -->
-                            <div v-if="currentCase.description" class="pt-4">
-                                <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.description') }}</h3>
-                                <p class="text-gray-600 dark:text-gray-400">{{ currentCase.description }}</p>
+                            <!-- Descripción -->
+                            <div v-if="currentCase.description">
+                                <h3 class="font-semibold text-lg dark:text-white-light mb-2">{{ $t('cases.description') }}</h3>
+                                <p class="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{{ currentCase.description }}</p>
                             </div>
                         </div>
 
@@ -643,6 +649,37 @@ const tabs = computed(() => [
 ]);
 
 const currentCase = computed(() => caseStore.currentCase);
+
+const primaryApplicant = computed(() => {
+    if (!currentCase.value) return null;
+    if (currentCase.value.primary_applicant_type === 'companion' && currentCase.value.primary_applicant) {
+        return currentCase.value.primary_applicant;
+    }
+    return currentCase.value.client;
+});
+
+// Companion who heads the application (null when client is the primary applicant)
+const primaryApplicantCompanion = computed(() => {
+    if (!currentCase.value || currentCase.value.primary_applicant_type !== 'companion') return null;
+    return currentCase.value.companions?.find(
+        c => c.id === currentCase.value!.primary_applicant_companion_id
+    ) ?? null;
+});
+
+// All dependents: companions minus the primary-applicant companion
+const dependentCompanions = computed(() => {
+    if (!currentCase.value?.companions) return [];
+    if (currentCase.value.primary_applicant_type !== 'companion') return currentCase.value.companions;
+    return currentCase.value.companions.filter(c => c.id !== currentCase.value!.primary_applicant_companion_id);
+});
+
+// Total count of dependents shown (client counts only when companion is primary AND client_is_participant)
+const dependentsCount = computed(() => {
+    if (!currentCase.value) return 0;
+    const clientAsDependent =
+        currentCase.value.primary_applicant_type === 'companion' && currentCase.value.client_is_participant ? 1 : 0;
+    return dependentCompanions.value.length + clientAsDependent;
+});
 
 // Build the task list passed to the time-log modal so the user can attribute time
 // to a specific workflow task.

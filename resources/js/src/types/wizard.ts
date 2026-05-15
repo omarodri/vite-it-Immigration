@@ -25,6 +25,9 @@ export interface WizardState {
     caseTypeId: number | null;
     clientId: number | null;
     selectedCompanionIds: number[];
+    primaryApplicantType: 'client' | 'companion';
+    primaryApplicantCompanionId: number | null;
+    clientIsDependent: boolean;
     selectedTasks: WizardTaskItem[];
     excludedTemplateIds: number[];
     caseDetails: CaseDetailsForm;
@@ -68,10 +71,9 @@ export const DEFAULT_CASE_DETAILS: CaseDetailsForm = {
     language: 'es',
     description: '',
     important_dates: [
-        { label: 'Fecha de inicio',     due_date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(), sort_order: 0 },
-        { label: 'Fecha límite legal',  due_date: null, sort_order: 1 },
-        { label: 'Fecha de envío IRCC', due_date: null, sort_order: 2 },
-        { label: 'Fecha de decisión',   due_date: null, sort_order: 3 },
+        { label: 'Fecha límite legal',  due_date: null, sort_order: 0 },
+        { label: 'Fecha de envío IRCC', due_date: null, sort_order: 1 },
+        { label: 'Fecha de decisión',   due_date: null, sort_order: 2 },
     ],
     assigned_to: null,
     service_type: 'fee_based' as ServiceType,

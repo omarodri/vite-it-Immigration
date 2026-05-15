@@ -10,7 +10,7 @@
 
 ## 1. Resumen Ejecutivo
 
-Vristo POC es una aplicación full-stack de administración de ventas que implementa una arquitectura SPA (Single Page Application) moderna. El proyecto combina Laravel 12 como backend API con Vue 3.5 + TypeScript como frontend, utilizando Laravel Sanctum para autenticación basada en cookies de sesión.
+Vite-IT-Immigration es una aplicación full-stack de administración de ventas que implementa una arquitectura SPA (Single Page Application) moderna. El proyecto combina Laravel 12 como backend API con Vue 3.5 + TypeScript como frontend, utilizando Laravel Sanctum para autenticación basada en cookies de sesión.
 
 ### Estado Actual
 

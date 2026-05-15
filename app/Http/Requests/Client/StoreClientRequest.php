@@ -80,7 +80,6 @@ class StoreClientRequest extends FormRequest
 
             // Status
             'status' => ['nullable', Rule::in(['prospect', 'active', 'inactive', 'archived'])],
-            'is_primary_applicant' => ['nullable', 'boolean'],
         ];
     }
 
@@ -109,11 +108,6 @@ class StoreClientRequest extends FormRequest
         // Set default status to prospect if not provided
         if (! $this->has('status')) {
             $this->merge(['status' => 'prospect']);
-        }
-
-        // Set default is_primary_applicant if not provided
-        if (! $this->has('is_primary_applicant')) {
-            $this->merge(['is_primary_applicant' => true]);
         }
     }
 }

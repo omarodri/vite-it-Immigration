@@ -20,6 +20,9 @@ const createDefaultState = (): WizardState => ({
     caseTypeId: null,
     clientId: null,
     selectedCompanionIds: [],
+    primaryApplicantType: 'client' as 'client' | 'companion',
+    primaryApplicantCompanionId: null as number | null,
+    clientIsDependent: true,
     selectedTasks: [] as WizardTaskItem[],
     excludedTemplateIds: [] as number[],
     caseDetails: {
@@ -27,10 +30,9 @@ const createDefaultState = (): WizardState => ({
         language: 'es',
         description: '',
         important_dates: [
-            { label: 'Fecha de inicio',     due_date: new Date().toISOString().split('T')[0], sort_order: 0 },
-            { label: 'Fecha limite legal',  due_date: null, sort_order: 1 },
-            { label: 'Fecha de envio IRCC', due_date: null, sort_order: 2 },
-            { label: 'Fecha de decision',   due_date: null, sort_order: 3 },
+            { label: 'Fecha limite legal',  due_date: null, sort_order: 0 },
+            { label: 'Fecha de envio IRCC', due_date: null, sort_order: 1 },
+            { label: 'Fecha de decision',   due_date: null, sort_order: 2 },
         ],
         assigned_to: null,
         service_type: 'fee_based',
@@ -90,8 +92,10 @@ export function useCaseWizard() {
             case 2:
                 return state.clientId !== null;
             case 3:
-                // Companions are optional
-                return true;
+                return (
+                    state.primaryApplicantType === 'client' ||
+                    (state.primaryApplicantType === 'companion' && state.primaryApplicantCompanionId !== null)
+                );
             case 4:
                 // Details are optional
                 return true;
@@ -146,6 +150,9 @@ export function useCaseWizard() {
         state.clientId = id;
         // Clear companions when client changes
         state.selectedCompanionIds = [];
+        state.primaryApplicantType = 'client';
+        state.primaryApplicantCompanionId = null;
+        state.clientIsDependent = true;
         state.errors = {};
         saveToSession();
     }
@@ -156,6 +163,12 @@ export function useCaseWizard() {
             state.selectedCompanionIds.push(id);
         } else {
             state.selectedCompanionIds.splice(index, 1);
+            // If the removed companion was the primary applicant, revert to client
+            if (state.primaryApplicantType === 'companion' && state.primaryApplicantCompanionId === id) {
+                state.primaryApplicantType = 'client';
+                state.primaryApplicantCompanionId = null;
+                state.clientIsDependent = true;
+            }
         }
         saveToSession();
     }
@@ -178,6 +191,9 @@ export function useCaseWizard() {
                 caseTypeId: state.caseTypeId,
                 clientId: state.clientId,
                 selectedCompanionIds: state.selectedCompanionIds,
+                primaryApplicantType: state.primaryApplicantType,
+                primaryApplicantCompanionId: state.primaryApplicantCompanionId,
+                clientIsDependent: state.clientIsDependent,
                 selectedTasks: state.selectedTasks,
                 caseDetails: state.caseDetails,
                 excludedTemplateIds: state.excludedTemplateIds,
@@ -198,6 +214,9 @@ export function useCaseWizard() {
                 state.caseTypeId = data.caseTypeId || null;
                 state.clientId = data.clientId || null;
                 state.selectedCompanionIds = data.selectedCompanionIds || [];
+                state.primaryApplicantType = data.primaryApplicantType || 'client';
+                state.primaryApplicantCompanionId = data.primaryApplicantCompanionId ?? null;
+                state.clientIsDependent = data.clientIsDependent ?? true;
                 state.selectedTasks = data.selectedTasks || [];
                 state.excludedTemplateIds = data.excludedTemplateIds || [];
                 if (data.caseDetails) {
@@ -258,6 +277,9 @@ export function useCaseWizard() {
                 client_id: state.clientId!,
                 case_type_id: state.caseTypeId!,
                 companion_ids: state.selectedCompanionIds.length > 0 ? state.selectedCompanionIds : undefined,
+                primary_applicant_type: state.primaryApplicantType,
+                primary_applicant_companion_id: state.primaryApplicantCompanionId ?? undefined,
+                client_is_participant: state.clientIsDependent,
                 priority: state.caseDetails.priority,
                 language: state.caseDetails.language || undefined,
                 description: state.caseDetails.description || undefined,

@@ -44,9 +44,6 @@
                                 <span v-if="client.canada_status" class="badge badge-outline-primary">
                                     {{ formatCanadaStatus(client.canada_status) }}
                                 </span>
-                                <span v-if="client.is_primary_applicant" class="badge badge-outline-success">
-                                    {{ $t('clients.primary_applicant') }}
-                                </span>
                             </div>
                         </div>
                     </div>

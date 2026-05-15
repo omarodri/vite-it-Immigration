@@ -45,6 +45,7 @@ class CaseService
     {
         return $case->load([
             'client',
+            'primaryApplicantCompanion',
             'caseType',
             'currentStage.translations',
             'assignedTo.profile',
@@ -87,8 +88,19 @@ class CaseService
             $caseType = $this->caseTypeRepository->findById($data['case_type_id']);
             $client   = Client::findOrFail($data['client_id']);
 
-            // Generate case number with new format: YY-TYPE-LAST4-SEQUENCE
-            $data['case_number'] = $this->generateCaseNumber($caseType, $client);
+            // Resolver apellido del aplicante principal para el código de expediente
+            $primaryApplicantType        = $data['primary_applicant_type'] ?? 'client';
+            $primaryApplicantCompanionId = $data['primary_applicant_companion_id'] ?? null;
+
+            $primaryLastName = $client->last_name;
+            if ($primaryApplicantType === 'companion' && $primaryApplicantCompanionId) {
+                $primaryCompanion = \App\Models\Companion::find($primaryApplicantCompanionId);
+                if ($primaryCompanion) {
+                    $primaryLastName = $primaryCompanion->last_name;
+                }
+            }
+
+            $data['case_number'] = $this->generateCaseNumber($caseType, $primaryLastName);
 
             // Set default values if not provided
             $data['status'] = $data['status'] ?? ImmigrationCase::STATUS_ACTIVE;
@@ -364,10 +376,10 @@ class CaseService
      * A retry loop with up to 5 attempts handles race conditions; after that an
      * exception is raised so the transaction rolls back cleanly.
      */
-    private function generateCaseNumber(CaseType $caseType, Client $client): string
+    private function generateCaseNumber(CaseType $caseType, string $primaryLastName): string
     {
         $year2        = date('y');
-        $lastNameSlug = CaseCodeHelper::normalizeLastName($client->last_name);
+        $lastNameSlug = CaseCodeHelper::normalizeLastName($primaryLastName);
         $sequence     = $this->caseRepository->getNextSequence(Auth::user()->tenant_id);
 
         $caseNumber = sprintf('%s-%s-%s-%04d', $year2, $caseType->code, $lastNameSlug, $sequence);

@@ -46,6 +46,14 @@ class StoreCaseRequest extends FormRequest
             'important_dates.*.sort_order' => ['sometimes', 'integer', 'min:0', 'max:255'],
             'companion_ids' => ['nullable', 'array'],
             'companion_ids.*' => ['integer', 'exists:companions,id'],
+            'primary_applicant_type'         => ['required', 'in:client,companion'],
+            'primary_applicant_companion_id' => [
+                'nullable',
+                'integer',
+                'exists:companions,id',
+                \Illuminate\Validation\Rule::requiredIf(fn () => $this->input('primary_applicant_type') === 'companion'),
+            ],
+            'client_is_participant' => ['sometimes', 'boolean'],
             'case_tasks' => ['sometimes', 'array', 'max:50'],
             'case_tasks.*.label' => ['required_with:case_tasks', 'string', 'max:150'],
             'case_tasks.*.is_completed' => ['sometimes', 'boolean'],
@@ -130,6 +138,17 @@ class StoreCaseRequest extends FormRequest
                 $invalidIds = array_diff($this->companion_ids, $validCompanionIds);
                 if (! empty($invalidIds)) {
                     $validator->errors()->add('companion_ids', 'One or more selected companions do not belong to this client.');
+                }
+            }
+
+            // Validate primary_applicant_companion_id belongs to the case's companions
+            if ($this->input('primary_applicant_type') === 'companion') {
+                $paCompanionId = $this->input('primary_applicant_companion_id');
+                if ($paCompanionId && ! empty($this->companion_ids) && ! in_array($paCompanionId, (array) $this->companion_ids)) {
+                    $validator->errors()->add(
+                        'primary_applicant_companion_id',
+                        'The primary applicant must be one of the selected companions.'
+                    );
                 }
             }
 

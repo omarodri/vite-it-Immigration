@@ -81,7 +81,6 @@ class UpdateClientRequest extends FormRequest
 
             // Status
             'status' => ['sometimes', Rule::in(['prospect', 'active', 'inactive', 'archived'])],
-            'is_primary_applicant' => ['sometimes', 'boolean'],
         ];
     }
 

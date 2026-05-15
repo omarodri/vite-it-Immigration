@@ -22,6 +22,9 @@ class CaseResource extends JsonResource
             'case_number' => $this->case_number,
             'tenant_id' => $this->tenant_id,
             'client_id' => $this->client_id,
+            'primary_applicant_type'            => $this->primary_applicant_type,
+            'primary_applicant_companion_id'    => $this->primary_applicant_companion_id,
+            'client_is_participant'             => (bool) $this->client_is_participant,
             'case_type_id' => $this->case_type_id,
             'assigned_to' => $this->assigned_to,
 
@@ -88,6 +91,28 @@ class CaseResource extends JsonResource
                 'email' => $this->client->email,
                 'phone' => $this->client->phone,
             ]),
+
+            'primary_applicant' => $this->when(
+                $this->relationLoaded('client') || $this->relationLoaded('primaryApplicantCompanion'),
+                function () {
+                    if ($this->primary_applicant_type === 'companion' && $this->relationLoaded('primaryApplicantCompanion') && $this->primaryApplicantCompanion) {
+                        return new CompanionResource($this->primaryApplicantCompanion);
+                    }
+                    if ($this->relationLoaded('client') && $this->client) {
+                        return [
+                            'id'         => $this->client->id,
+                            'first_name' => $this->client->first_name,
+                            'last_name'  => $this->client->last_name,
+                            'full_name'  => $this->client->full_name,
+                            'initials'   => $this->client->initials,
+                            'email'      => $this->client->email,
+                            'phone'      => $this->client->phone,
+                            'type'       => 'client',
+                        ];
+                    }
+                    return null;
+                }
+            ),
 
             'case_type' => $this->whenLoaded('caseType', fn () => new CaseTypeResource($this->caseType)),
 

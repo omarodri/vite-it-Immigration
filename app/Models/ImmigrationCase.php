@@ -50,6 +50,9 @@ class ImmigrationCase extends Model
         'folder_sync_status',
         'folder_synced_at',
         'total_time_spent_seconds',
+        'primary_applicant_type',
+        'primary_applicant_companion_id',
+        'client_is_participant',
     ];
 
     protected $casts = [
@@ -226,6 +229,43 @@ class ImmigrationCase extends Model
     {
         return $this->belongsToMany(Companion::class, 'case_companions', 'case_id', 'companion_id')
             ->withTimestamps();
+    }
+
+    /**
+     * Get the companion designated as primary applicant for this case.
+     */
+    public function primaryApplicantCompanion(): BelongsTo
+    {
+        return $this->belongsTo(Companion::class, 'primary_applicant_companion_id');
+    }
+
+    /**
+     * Return the primary applicant entity: Client if type='client', Companion otherwise.
+     * Falls back to client if the companion record is missing.
+     */
+    public function primaryApplicant(): Client|Companion
+    {
+        if ($this->primary_applicant_type === 'companion' && $this->primary_applicant_companion_id) {
+            return $this->primaryApplicantCompanion ?? $this->client;
+        }
+
+        return $this->client;
+    }
+
+    /**
+     * Full name of the primary applicant (for API resources and views).
+     */
+    public function getPrimaryApplicantNameAttribute(): string
+    {
+        return $this->primaryApplicant()->full_name ?? '';
+    }
+
+    /**
+     * Last name of the primary applicant (used for case number generation).
+     */
+    public function getPrimaryApplicantLastNameAttribute(): string
+    {
+        return $this->primaryApplicant()->last_name ?? '';
     }
 
     /**
