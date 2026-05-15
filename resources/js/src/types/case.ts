@@ -204,6 +204,10 @@ export interface ImmigrationCase {
         nationality?: string;
         date_of_birth?: string;
         gender?: string;
+        email?: string | null;
+        phone?: string | null;
+        already_promoted?: boolean;
+        promoted_to_client_id?: number | null;
     }>;
 
     // Invoices / Account Statement

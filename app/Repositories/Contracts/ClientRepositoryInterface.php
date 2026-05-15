@@ -28,4 +28,8 @@ interface ClientRepositoryInterface
     public function existsByEmailForTenant(string $email, ?int $excludeId = null): bool;
 
     public function existsByPhoneForTenant(string $phone, ?int $excludeId = null): bool;
+
+    public function existsByEmailForTenantWithTrashed(string $email): bool;
+
+    public function existsByPhoneForTenantWithTrashed(string $phone): bool;
 }

@@ -49,7 +49,7 @@ class CaseService
             'caseType',
             'currentStage.translations',
             'assignedTo.profile',
-            'companions',
+            'companions.promotedClient',
             'importantDates',
             'tasks.template.translations',
             'tasks.workflowStage.translations',

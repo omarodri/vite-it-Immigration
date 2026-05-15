@@ -339,14 +339,47 @@
                                                 </span>
                                             </div>
                                         </div>
-                                        <button
-                                            type="button"
-                                            class="btn btn-sm btn-outline-info p-1.5 shrink-0"
-                                            :title="$t('companions.view_companion')"
-                                            @click="openCompanionView(companion)"
-                                        >
-                                            <icon-eye class="w-4 h-4" />
-                                        </button>
+                                        <div class="flex items-center gap-1 shrink-0">
+                                            <router-link
+                                                v-if="companion.already_promoted && companion.promoted_to_client_id"
+                                                :to="{ name: 'clients-show', params: { id: companion.promoted_to_client_id } }"
+                                                class="btn btn-sm btn-outline-info p-1.5"
+                                                :title="$t('companion.promote.tooltip_already_promoted')"
+                                            >
+                                                <icon-user-plus class="w-4 h-4 text-info" />
+                                            </router-link>
+
+                                            <button
+                                                v-else-if="computeLocalEligibility(companion).eligible"
+                                                v-can="'clients.promote_from_companion'"
+                                                type="button"
+                                                class="btn btn-sm btn-outline-success p-1.5"
+                                                :title="$t('companion.promote.tooltip_eligible')"
+                                                @click="handlePromote(companion)"
+                                            >
+                                                <icon-user-plus class="w-4 h-4" />
+                                            </button>
+
+                                            <button
+                                                v-else-if="!companion.already_promoted"
+                                                v-can="'clients.promote_from_companion'"
+                                                type="button"
+                                                class="btn btn-sm p-1.5 opacity-40 cursor-not-allowed"
+                                                :title="$t('companion.promote.tooltip_' + (computeLocalEligibility(companion).reasons[0] ?? 'missing_fields'))"
+                                                disabled
+                                            >
+                                                <icon-user-plus class="w-4 h-4 text-gray-400" />
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-info p-1.5"
+                                                :title="$t('companions.view_companion')"
+                                                @click="openCompanionView(companion)"
+                                            >
+                                                <icon-eye class="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -562,6 +595,7 @@ import IconArrowForward from '@/components/icon/icon-arrow-forward.vue';
 import IconEye from '@/components/icon/icon-eye.vue';
 import CompanionViewModal from '@/components/companions/CompanionViewModal.vue';
 import type { Companion } from '@/types/companion';
+import companionPromotionService from '@/services/companionPromotionService';
 
 // Timesheet
 import { useTimesheetStore } from '@/stores/useTimesheetStore';
@@ -635,6 +669,90 @@ const viewingCompanion = ref<Companion | null>(null);
 const openCompanionView = (companion: Companion) => {
     viewingCompanion.value = companion;
     showCompanionView.value = true;
+};
+
+interface EligibilityResult {
+    eligible: boolean;
+    reasons: string[];
+    alreadyPromoted: boolean;
+}
+
+interface PromotableCompanion {
+    id: number;
+    first_name: string;
+    last_name: string;
+    full_name?: string;
+    email?: string | null;
+    phone?: string | null;
+    date_of_birth?: string | null;
+    age?: number | null;
+    already_promoted?: boolean;
+    promoted_to_client_id?: number | null;
+}
+
+const computeLocalEligibility = (c: PromotableCompanion): EligibilityResult => {
+    if (c.already_promoted) {
+        return { eligible: false, reasons: [], alreadyPromoted: true };
+    }
+    const reasons: string[] = [];
+    if (!c.first_name?.trim())  reasons.push('missing_first_name');
+    if (!c.last_name?.trim())   reasons.push('missing_last_name');
+    if (!c.email?.trim())       reasons.push('missing_email');
+    if (!c.phone?.trim())       reasons.push('missing_phone');
+    if (!c.date_of_birth) {
+        reasons.push('missing_date_of_birth');
+    } else if ((c.age ?? 0) < 22) {
+        reasons.push('underage');
+    }
+    return { eligible: reasons.length === 0, reasons, alreadyPromoted: false };
+};
+
+const handlePromote = async (companion: PromotableCompanion) => {
+    try {
+        const { data } = await companionPromotionService.checkEligibility(companion.id);
+        if (!data.data.eligible) {
+            const firstReason = data.data.reasons[0] ?? 'unknown';
+            await Swal.fire({
+                icon: 'warning',
+                title: t('companion.promote.not_eligible_title'),
+                text: t(`companion.promote.tooltip_${firstReason}`),
+            });
+            return;
+        }
+    } catch {
+        return;
+    }
+
+    const { isConfirmed } = await Swal.fire({
+        icon: 'question',
+        title: t('companion.promote.modal.title', { fullName: companion.full_name ?? `${companion.first_name} ${companion.last_name}` }),
+        html: `<p>${t('companion.promote.modal.body_html')}</p>
+               <p class="mt-2 text-sm text-gray-500">${t('companion.promote.modal.fields_to_copy')}</p>`,
+        showCancelButton: true,
+        confirmButtonText: t('companion.promote.modal.confirm'),
+        cancelButtonText: t('companion.promote.modal.cancel'),
+        confirmButtonColor: '#00ab55',
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+        const { data } = await companionPromotionService.promote(companion.id);
+        await Swal.fire({
+            icon: 'success',
+            title: t('companion.promote.success'),
+            timer: 2000,
+            showConfirmButton: false,
+        });
+        router.push({ name: 'clients-show', params: { id: data.data.id } });
+    } catch (err: any) {
+        const code = err.response?.data?.code ?? 'unknown';
+        Swal.fire({
+            icon: 'error',
+            title: t('companion.promote.error_title'),
+            text: t(`companion.promote.error.${code}`),
+        });
+    }
 };
 
 const tabs = computed(() => [

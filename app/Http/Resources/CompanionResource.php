@@ -41,6 +41,8 @@ class CompanionResource extends JsonResource
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
             'legal_documents' => LegalDocumentResource::collection($this->whenLoaded('legalDocuments')),
+            'already_promoted'      => $this->promotedClient()->exists(),
+            'promoted_to_client_id' => $this->promotedClient()->value('id'),
         ];
     }
 }

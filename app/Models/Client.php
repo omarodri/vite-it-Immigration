@@ -20,6 +20,7 @@ class Client extends Model
     protected $fillable = [
         'tenant_id',
         'user_id',
+        'promoted_from_companion_id',
         // Personal Information
         'first_name',
         'last_name',
@@ -70,6 +71,14 @@ class Client extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * The companion this client was promoted from (if applicable).
+     */
+    public function originatedFromCompanion(): BelongsTo
+    {
+        return $this->belongsTo(Companion::class, 'promoted_from_companion_id');
     }
 
     /**

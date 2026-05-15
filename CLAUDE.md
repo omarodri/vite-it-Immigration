@@ -223,7 +223,7 @@ Every business model uses `BelongsToTenant` trait, which registers a global Eloq
 
 ### Permissions: Spatie Laravel-Permission
 - Format: `resource.action` (e.g. `cases.create`, `documents.delete`)
-- Roles: `super-admin`, `admin`, `attorney`, `paralegal`, `client`
+- Roles: `super-admin`, `admin`, `consultor`, `apoyo`, `contador`, `cliente`, `user`
 - Permissions are seeded via dedicated migrations (not just seeders) so they survive `migrate:fresh` in production.
 - On login, permissions are loaded and cached in `usePermissionStore` (flat boolean map).
 - `v-can="'cases.create'"` and `v-role="'admin'"` directives: **UX only — hide buttons, not security.**

@@ -113,6 +113,14 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant', 'ensure.single.sess
     // Companion management routes (nested under clients)
     Route::apiResource('clients.companions', CompanionController::class);
 
+    // Companion promotion routes (Spec 59)
+    Route::post('companions/{companion}/promote-to-client',
+        [\App\Http\Controllers\Api\ClientPromotionController::class, 'store'])
+        ->name('companions.promote-to-client');
+    Route::get('companions/{companion}/promotion-eligibility',
+        [\App\Http\Controllers\Api\ClientPromotionController::class, 'eligibility'])
+        ->name('companions.promotion-eligibility');
+
     // Case Types routes (read-only)
     Route::get('/case-types', [CaseTypeController::class, 'index']);
     Route::get('/case-types/{caseType}', [CaseTypeController::class, 'show']);

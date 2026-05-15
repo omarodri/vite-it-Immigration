@@ -47,4 +47,13 @@ class CompanionPolicy
     {
         return $user->can('companions.delete') && $companion->tenant_id === $user->tenant_id;
     }
+
+    /**
+     * Determine whether the user can promote this companion to an independent client.
+     */
+    public function promoteToClient(User $user, Companion $companion): bool
+    {
+        return $user->can('clients.promote_from_companion')
+            && $user->tenant_id === $companion->tenant_id;
+    }
 }

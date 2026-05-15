@@ -112,4 +112,16 @@ class ClientRepository implements ClientRepositoryInterface
 
         return $query->exists();
     }
+
+    public function existsByEmailForTenantWithTrashed(string $email): bool
+    {
+        // withTrashed() only bypasses the SoftDeletingScope — TenantScope still applies.
+        return Client::withTrashed()->where('email', $email)->exists();
+    }
+
+    public function existsByPhoneForTenantWithTrashed(string $phone): bool
+    {
+        // withTrashed() only bypasses the SoftDeletingScope — TenantScope still applies.
+        return Client::withTrashed()->where('phone', $phone)->exists();
+    }
 }

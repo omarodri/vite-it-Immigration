@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
@@ -90,6 +91,14 @@ class Companion extends Model
     {
         return $this->morphMany(LegalDocument::class, 'documentable')
                     ->orderBy('sort_order');
+    }
+
+    /**
+     * The client that this companion was promoted to (if any).
+     */
+    public function promotedClient(): HasOne
+    {
+        return $this->hasOne(Client::class, 'promoted_from_companion_id');
     }
 
     /**

@@ -35,6 +35,8 @@ export interface Companion {
     arrival_date: string | null;
     created_at: string;
     updated_at: string;
+    already_promoted?: boolean;
+    promoted_to_client_id?: number | null;
 }
 
 export interface CreateCompanionData {

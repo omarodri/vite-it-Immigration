@@ -47,6 +47,17 @@
 
 ## Implementaciones Recientes
 
+### 2026-05-15 — Spec 59: Promoción Companion → Cliente Independiente
+- `ClientPromotionService` (promote + checkEligibility), `ClientPromotionController` (store + eligibility)
+- Excepciones tipadas: `CompanionNotEligibleForPromotionException` (`$errorCode`, no `$code` — colisión PHP), `ClientPromotionConflictException`
+- `clients.promoted_from_companion_id` (FK nullable, UNIQUE) — trazabilidad + idempotencia de DB
+- `Companion::promotedClient()` HasOne · `Client::originatedFromCompanion()` BelongsTo
+- `CompanionResource` expone `already_promoted` + `promoted_to_client_id`; `CaseService::getCase()` eager-carga `companions.promotedClient`
+- Frontend: `companionPromotionService.ts`, 3 estados de ícono en `cases/show.vue` (verde/gris/info), 27 i18n keys por idioma
+- Descubrimiento clave: roles reales del tenant son `consultor`, `apoyo`, `contador`, `cliente`, `user` — NO `attorney`/`paralegal` como indicaba CLAUDE.md (ya corregido)
+- Ruta Vue Router del detalle de cliente: `clients-show` (no `clients-detail`)
+- Tests unitarios y feature tests pendientes (DT-05)
+
 ### 2026-05-14 — Spec 57: Radar Fechas Importantes (Módulo Alertas)
 - `CaseImportantDate` model (sin BelongsToTenant — ver D-07)
 - `ImportantDateAlertController`, `CaseImportantDatePolicy`
@@ -94,3 +105,4 @@
 | DT-02 | Wizard Fase 4 avatares pendiente | BAJO | 29 |
 | DT-03 | Spec 48 Fase 9 (etapas personalizadas avanzadas) deferida | BAJO | 48 |
 | DT-04 | Specs 49/50 smoke tests Phase 10 pendientes | BAJO | 49,50 |
+| DT-05 | Spec 59 tests unitarios y feature tests pendientes | BAJO | 59 |

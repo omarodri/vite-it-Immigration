@@ -323,6 +323,36 @@
                                         </div>
                                     </div>
                                     <div class="flex gap-1">
+                                        <!-- Already promoted → link to promoted client -->
+                                        <router-link
+                                            v-if="computeLocalEligibility(companion).alreadyPromoted && companion.promoted_to_client_id"
+                                            :to="{ name: 'clients-show', params: { id: companion.promoted_to_client_id } }"
+                                            class="btn btn-sm p-1"
+                                            :title="$t('companion.promote.already_promoted_tooltip')"
+                                        >
+                                            <icon-user-plus class="w-4 h-4 text-info" />
+                                        </router-link>
+                                        <!-- Eligible → promote button -->
+                                        <button
+                                            v-else-if="computeLocalEligibility(companion).eligible"
+                                            v-can="'clients.promote_from_companion'"
+                                            type="button"
+                                            class="btn btn-sm btn-outline-success p-1"
+                                            :title="$t('companion.promote.promote_tooltip')"
+                                            @click="handlePromote(companion)"
+                                        >
+                                            <icon-user-plus class="w-4 h-4" />
+                                        </button>
+                                        <!-- Not eligible → disabled with reason tooltip -->
+                                        <button
+                                            v-else
+                                            type="button"
+                                            class="btn btn-sm btn-outline-secondary p-1 opacity-40 cursor-not-allowed"
+                                            :title="$t(`companion.promote.tooltip_${computeLocalEligibility(companion).reasons[0] ?? 'unknown'}`)"
+                                            disabled
+                                        >
+                                            <icon-user-plus class="w-4 h-4" />
+                                        </button>
                                         <button
                                             type="button"
                                             class="btn btn-sm btn-outline-info p-1"
@@ -476,8 +506,11 @@ import IconFolder from '@/components/icon/icon-folder.vue';
 import IconPlus from '@/components/icon/icon-plus.vue';
 import IconTrash from '@/components/icon/icon-trash.vue';
 import IconEye from '@/components/icon/icon-eye.vue';
+import IconUserPlus from '@/components/icon/icon-user-plus.vue';
 import CompanionFormModal from '@/components/companions/CompanionFormModal.vue';
 import CompanionViewModal from '@/components/companions/CompanionViewModal.vue';
+import companionPromotionService from '@/services/companionPromotionService';
+import Swal from 'sweetalert2';
 
 useMeta({ title: 'Client Profile' });
 
@@ -623,6 +656,77 @@ const onCompanionSaved = async () => {
     showCompanionModal.value = false;
     editingCompanion.value = null;
     await loadCompanions();
+};
+
+interface EligibilityResult {
+    eligible: boolean;
+    reasons: string[];
+    alreadyPromoted: boolean;
+}
+
+const computeLocalEligibility = (c: Companion): EligibilityResult => {
+    if (c.already_promoted) {
+        return { eligible: false, reasons: [], alreadyPromoted: true };
+    }
+    const reasons: string[] = [];
+    if (!c.first_name?.trim())  reasons.push('missing_first_name');
+    if (!c.last_name?.trim())   reasons.push('missing_last_name');
+    if (!c.email?.trim())       reasons.push('missing_email');
+    if (!c.phone?.trim())       reasons.push('missing_phone');
+    if (!c.date_of_birth) {
+        reasons.push('missing_date_of_birth');
+    } else if ((c.age ?? 0) < 22) {
+        reasons.push('underage');
+    }
+    return { eligible: reasons.length === 0, reasons, alreadyPromoted: false };
+};
+
+const handlePromote = async (companion: Companion) => {
+    try {
+        const { data } = await companionPromotionService.checkEligibility(companion.id);
+        if (!data.data.eligible) {
+            const firstReason = data.data.reasons[0] ?? 'unknown';
+            await Swal.fire({
+                icon: 'warning',
+                title: t('companion.promote.not_eligible_title'),
+                text: t(`companion.promote.tooltip_${firstReason}`),
+            });
+            return;
+        }
+    } catch {
+        return;
+    }
+
+    const { isConfirmed } = await Swal.fire({
+        icon: 'question',
+        title: t('companion.promote.modal.title', { fullName: companion.full_name }),
+        html: `<p>${t('companion.promote.modal.body_html')}</p>
+               <p class="mt-2 text-sm text-gray-500">${t('companion.promote.modal.fields_to_copy')}</p>`,
+        showCancelButton: true,
+        confirmButtonText: t('companion.promote.modal.confirm'),
+        cancelButtonText:  t('companion.promote.modal.cancel'),
+        confirmButtonColor: '#00ab55',
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+        const { data } = await companionPromotionService.promote(companion.id);
+        await Swal.fire({
+            icon: 'success',
+            title: t('companion.promote.success'),
+            timer: 2000,
+            showConfirmButton: false,
+        });
+        router.push({ name: 'clients-show', params: { id: data.data.id } });
+    } catch (err: any) {
+        const code = err.response?.data?.code ?? 'unknown';
+        Swal.fire({
+            icon: 'error',
+            title: t('companion.promote.error_title'),
+            text: t(`companion.promote.error.${code}`),
+        });
+    }
 };
 
 const confirmDeleteCompanion = async (companion: Companion) => {
