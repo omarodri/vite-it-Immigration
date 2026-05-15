@@ -27,7 +27,16 @@
                         </p>
                     </div>
                 </div>
-                <div class="shrink-0 ml-4">
+                <div class="shrink-0 ml-4 flex flex-col gap-2 items-end">
+                    <button
+                        v-if="status?.google.sync_status === 'error'"
+                        type="button"
+                        class="btn btn-outline-warning btn-sm"
+                        :disabled="loading"
+                        @click="retry('google')"
+                    >
+                        {{ $t('calendar_sync.retry') }}
+                    </button>
                     <button
                         v-if="status?.google.connected"
                         type="button"
@@ -38,7 +47,7 @@
                         {{ $t('calendar_sync.disconnect') }}
                     </button>
                     <button
-                        v-else
+                        v-else-if="!status?.google.sync_status || status?.google.sync_status !== 'error'"
                         type="button"
                         class="btn btn-outline-primary btn-sm"
                         :disabled="loading || !status?.google.credentials_configured"
@@ -67,7 +76,16 @@
                         </p>
                     </div>
                 </div>
-                <div class="shrink-0 ml-4">
+                <div class="shrink-0 ml-4 flex flex-col gap-2 items-end">
+                    <button
+                        v-if="status?.microsoft.sync_status === 'error'"
+                        type="button"
+                        class="btn btn-outline-warning btn-sm"
+                        :disabled="loading"
+                        @click="retry('microsoft')"
+                    >
+                        {{ $t('calendar_sync.retry') }}
+                    </button>
                     <button
                         v-if="status?.microsoft.connected"
                         type="button"
@@ -78,7 +96,7 @@
                         {{ $t('calendar_sync.disconnect') }}
                     </button>
                     <button
-                        v-else
+                        v-else-if="!status?.microsoft.sync_status || status?.microsoft.sync_status !== 'error'"
                         type="button"
                         class="btn btn-outline-primary btn-sm"
                         :disabled="loading || !status?.microsoft.credentials_configured"
@@ -164,6 +182,24 @@ async function connect(provider: 'google' | 'microsoft') {
         }
     } catch {
         Swal.fire({ icon: 'error', title: t('calendar_sync.connect_error') })
+        loading.value = false
+    }
+}
+
+async function retry(provider: 'google' | 'microsoft') {
+    loading.value = true
+    try {
+        await calendarSyncService.retry(provider)
+        await fetchStatus()
+        Swal.fire({
+            icon: 'success',
+            title: t('calendar_sync.retry_success'),
+            timer: 2000,
+            showConfirmButton: false,
+        })
+    } catch {
+        Swal.fire({ icon: 'error', title: t('calendar_sync.connect_error') })
+    } finally {
         loading.value = false
     }
 }

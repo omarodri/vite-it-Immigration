@@ -61,12 +61,25 @@ const config = computed(() => {
         allowInput: true,
         enableTime: props.enableTime,
         time_24hr: locale !== 'en',
-        // Parse date strings as local time to avoid UTC-offset day shift
-        parseDate: (dateStr: string) => {
-            const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
-            if (match) {
-                return new Date(+match[1], +match[2] - 1, +match[3]);
+        // Parse as local time. Second arg is the format flatpickr is using
+        // (dateFormat for internal value, altFormat when user types manually).
+        parseDate: (dateStr: string, format: string) => {
+            // Internal Y-m-d — avoid UTC-offset day shift
+            const iso = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3]);
+
+            // d/m/Y — Spanish and French alt format
+            if (format.startsWith('d/m/Y')) {
+                const m = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
             }
+
+            // m/d/Y — English alt format
+            if (format.startsWith('m/d/Y')) {
+                const m = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                if (m) return new Date(+m[3], +m[1] - 1, +m[2]);
+            }
+
             return new Date(dateStr);
         },
     };

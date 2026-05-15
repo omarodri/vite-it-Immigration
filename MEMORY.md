@@ -47,6 +47,47 @@
 
 ## Implementaciones Recientes
 
+### 2026-05-15 — Spec 63: Widget "Próximos Hitos Legales" en Dashboard
+- `UpcomingMilestonesService` (app/Services/Dashboard/) — `getUpcoming(User)` con ventana ±30 días, JOIN explícito `cases` (D-07), `whereNull('cases.deleted_at')` (soft-delete en JOINs crudos), `whereIn('cases.status', ['active','inactive'])`, LIMIT 10, orden `due_date/sort_order/id`
+- Serialización inline: `days_diff` via `Carbon::diffInDays($date, false)` (negativo=pasado), `urgency_bucket` calculado en PHP — mismo patrón que Spec 57 (no hay utilidad frontend para esto)
+- `DashboardController::index()` — nueva llamada gateada por `cases.view`, campo `upcoming_milestones` en response consolidado
+- No se creó migración — índice `due_date` ya existía en migración original de `case_important_dates`
+- Frontend: `DashboardMilestone` type + getter `upcomingMilestones` en `useDashboardStore`
+- `UpcomingMilestonesWidget.vue` — reutiliza `UrgencyBadge.vue` existente; posición en sidebar derecho entre Upcoming Events y Expiring Documents
+- 3 keys i18n FLAT en es/en/fr: `dashboard.upcoming_milestones`, `dashboard.no_upcoming_milestones`, `dashboard.view_all_milestones`
+- Build Vite: ✓ sin errores (8.90s)
+
+### 2026-05-15 — Spec 62: Sincronización Calendarios Externos — Completar Gaps
+- `CalendarSyncService::getConnectedProviders()` (plural) — elimina supuesto "un proveedor por usuario"; `getConnectedProvider()` marcado `@deprecated`
+- `pullEvents($user, $provider = null)` refactorizado: acepta proveedor explícito, ventana de backfill desde `tenant.settings.calendar_backfill_months` (default 6) + `calendar_lookahead_months` (default 12)
+- `handlePullError()` privado en `CalendarSyncService` — circuit breaker: tras 5 errores `status='error'`
+- `Tenant::calendarBackfillMonths()` + `calendarLookaheadMonths()` — accessors con clamp [1,24]
+- `UpdateTenantSettingsRequest` + validación para los dos nuevos settings
+- `EventSyncObserver::shouldSync()` — ahora bloquea re-push de eventos con `sync_source IN ['google','outlook']` (fix anti-loop multi-provider R7)
+- `PullCalendarEventsJob::handle()` refactorizado: itera por `(user, provider)` explícito + filtro `last_pull_at < now()-15min` (previene doble-pull tras on-demand) + try/catch por fila
+- `UserCalendarOAuthController::retry()` — reset de circuit breaker + pull sincrono; ruta `POST /api/calendar-oauth/{provider}/retry` con `throttle:5,1`
+- `UserCalendarOAuthController::pull()` — amplía filtro a `['active', 'paused']`
+- `UserCalendarOAuthController::callback()` — dispara backfill inicial no-bloqueante tras crear `CalendarSyncStatus`
+- `CalendarProviderInterface` + `GoogleCalendarService` + `MicrosoftCalendarService` — firma `listEvents($token, $since, $until = null)` actualizada
+- Frontend: `useCalendarSyncStore` (nuevo), `calendarSyncService.retry()` + `.pullOnDemand()`, botón Retry en `CalendarConnections.vue` (estado error), barra de estado en `apps/calendar.vue` (lastPullAt + Actualizar ahora)
+- 18 keys i18n FLAT nuevas en es/en/fr (`calendar_sync.retry`, `calendar_sync.refresh_now`, `calendar_sync.status_error`, etc.)
+- Build Vite: ✓ sin errores (9.15s)
+- DT-08 agregado: `OAuthTokenService::refresh()` propagation + `activity_log` on circuit breaker open
+
+### 2026-05-15 — Spec 61: Paginación y Ordenamiento Widget Tareas Dashboard
+- `AssignedTasksService` (app/Services/Dashboard/) — `paginate(User, page, perPage)` con orden `due_date IS NULL ASC, due_date ASC, id ASC` (NULLs al final)
+- Índice compuesto `idx_todos_dashboard` en `todos(tenant_id, assigned_to_id, status, due_date)` — migración `2026_05_15_000010`
+- `DashboardController::assignedTasks()` — nuevo endpoint paginado `GET /api/dashboard/assigned-tasks?page=N&per_page=M` (max 50)
+- `DashboardController::index()` — primera página embebida (10 items) + campo `assigned_tasks_meta` ({total, per_page, last_page})
+- Frontend: `assignedTasks` pasó de getter (array) a sub-state en `useDashboardStore` ({items, page, perPage, total, lastPage, isLoading, error})
+- Nuevas acciones: `_syncAssignedTasksFromDashboard()`, `fetchAssignedTasksPage(page)`, `invalidateAssignedTasks()`
+- `index.vue`: skeleton loader, footer de paginación con Anterior/Siguiente, badge de total real (no conteo visible)
+- `TaskRow.vue`: prop `urgencyBadge` — badge rojo (vencida) o naranja (próxima) adyacente a la fecha
+- 6 keys i18n FLAT en es/en/fr: `common.prev`, `common.next`, `dashboard.pagination_summary`, `dashboard.tasks_load_error`, `dashboard.urgency_overdue`, `dashboard.urgency_due_soon`
+- Gotcha G17 documentado en CLAUDE.md: widget usa `Todo`, no `CaseTask` ni `Task`
+- Build Vite: ✓ sin errores (1226 módulos transformados)
+- Cambio de ordenamiento: `FIELD(priority,...)` eliminado → orden cronológico por urgencia de fecha
+
 ### 2026-05-15 — Spec 60: Bóveda de Credenciales IRCC
 - `CaseIrccCredential` model con `BelongsToTenant`, casts `encrypted` en todos los campos sensibles, `encrypted:array` en `security_questions` (5 preguntas fijas)
 - `case_ircc_credentials` tabla separada 1:1 con `cases` (TEXT para campos encriptados, `key_version TINYINT DEFAULT 1` para rotación futura)
@@ -119,3 +160,5 @@
 | DT-04 | Specs 49/50 smoke tests Phase 10 pendientes | BAJO | 49,50 |
 | DT-05 | Spec 59 tests unitarios y feature tests pendientes | BAJO | 59 |
 | DT-06 | Spec 60 Fase 3 (runbook APP_KEY + backup + ircc:verify-integrity) y Fase 4 (tests) pendientes | **ALTO** (bloqueante para prod) | 60 |
+| DT-07 | Spec 61 tests Feature/Unit pendientes; permiso `tasks.view` solo en seeder (no en migración — viola D-03) | BAJO | 61 |
+| DT-08 | Spec 62: `OAuthTokenService::refresh()` propagation si refresh falla irrecuperablemente; `activity_log` entry cuando `CalendarSyncStatus→status='error'`; tests Feature/Unit de CalendarSync multi-provider; eliminar wrapper `getConnectedProvider()` tras confirmar 0 callers | BAJO | 62 |

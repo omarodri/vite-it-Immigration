@@ -80,4 +80,7 @@ defineEmits<{
     color: rgb(147 197 253);
 }
 
+.multiselect__content-wrapper {
+    z-index: 9999 !important;
+}
 </style>

@@ -82,6 +82,7 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant', 'ensure.single.sess
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/dashboard/assigned-tasks', [DashboardController::class, 'assignedTasks']);
 
     // Auth routes
     Route::get('/user', [AuthController::class, 'user']);
@@ -300,6 +301,9 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant', 'ensure.single.sess
             ->whereIn('provider', ['google', 'microsoft']);
         Route::post('/{provider}/disconnect', [UserCalendarOAuthController::class, 'disconnect'])
             ->whereIn('provider', ['google', 'microsoft']);
+        Route::post('/{provider}/retry', [UserCalendarOAuthController::class, 'retry'])
+             ->whereIn('provider', ['google', 'microsoft'])
+             ->middleware('throttle:5,1');
     });
 
     // Timesheet

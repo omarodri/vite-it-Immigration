@@ -151,6 +151,17 @@ class UserCalendarOAuthController extends Controller
                 ]
             );
 
+            // Backfill initial sync (non-fatal — connection persists even if pull fails)
+            try {
+                $this->syncService->pullEvents($user, $provider);
+            } catch (\Throwable $e) {
+                \Log::warning('Initial calendar backfill failed (non-fatal)', [
+                    'user_id'  => $user->id,
+                    'provider' => $provider,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
+
             return redirect("{$profilePage}?calendar_connected={$provider}");
         } catch (\Exception $e) {
             Log::error("Calendar OAuth {$provider} callback exception", [
@@ -250,6 +261,45 @@ class UserCalendarOAuthController extends Controller
         ]);
     }
 
+    public function retry(Request $request, string $provider): JsonResponse
+    {
+        $user = Auth::user();
+
+        $syncStatus = CalendarSyncStatus::where('user_id', $user->id)
+            ->where('provider', $provider)
+            ->first();
+
+        if (!$syncStatus) {
+            return response()->json(['error' => 'no_connection'], 404);
+        }
+
+        $syncStatus->update([
+            'status'      => 'active',
+            'error_count' => 0,
+            'last_error'  => null,
+        ]);
+
+        try {
+            $this->syncService->pullEvents($user, $provider);
+            return response()->json([
+                'success'   => true,
+                'pulled_at' => now()->toIso8601String(),
+                'provider'  => $provider,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('Calendar retry pull failed', [
+                'user_id'  => $user->id,
+                'provider' => $provider,
+                'error'    => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'error'   => 'sync_failed',
+                'message' => $e->getMessage(),
+            ], 502);
+        }
+    }
+
     /**
      * Trigger an on-demand calendar pull for the authenticated user.
      *
@@ -273,7 +323,7 @@ class UserCalendarOAuthController extends Controller
         }
 
         $statuses = CalendarSyncStatus::where('user_id', $user->id)
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'paused'])
             ->get();
 
         if ($statuses->isEmpty()) {

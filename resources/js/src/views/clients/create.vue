@@ -354,13 +354,12 @@
                     <!-- Description -->
                     <div class="mt-5">
                         <label for="description" class="mb-2 block">{{ $t('clients.notes') }}</label>
-                        <textarea
-                            id="description"
-                            v-model="form.description"
-                            rows="4"
-                            :placeholder="$t('clients.enter_notes')"
-                            class="form-textarea"
-                        ></textarea>
+                        <div class="markdown-editor">
+                            <textarea
+                                id="description"
+                                :placeholder="$t('clients.enter_notes')"
+                            ></textarea>
+                        </div>
                     </div>
                 </div>
 

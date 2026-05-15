@@ -69,7 +69,8 @@
       "Bash(composer --version)",
       "Bash(continue)",
       "Bash(git -C /Users/omar/Herd/vite-it-Immigration status --short)",
-      "Bash(xattr *)"
+      "Bash(xattr *)",
+      "Bash(sort -t_ -k1 -n)"
     ]
   }
 }

@@ -85,21 +85,24 @@
                         <div class="flex items-center justify-between mb-5">
                             <h5 class="font-semibold text-lg dark:text-white-light">
                                 {{ t('dashboard.assigned_tasks') }}
-                                <span v-if="dashboard.assignedTasks.length" class="badge badge-outline-danger ml-2">
-                                    {{ dashboard.assignedTasks.length }}
+                                <span v-if="dashboard.assignedTasks.total > 0" class="badge badge-outline-danger ml-2">
+                                    {{ dashboard.assignedTasks.total }}
                                 </span>
                             </h5>
                         </div>
 
-                        <div v-if="dashboard.isLoading && !dashboard.data" class="flex items-center justify-center py-10">
-                            <span class="animate-spin border-4 border-primary border-l-transparent rounded-full w-10 h-10 inline-block align-middle"></span>
+                        <!-- Skeleton: carga inicial o cambio de página -->
+                        <div v-if="dashboard.assignedTasks.isLoading || (dashboard.isLoading && !dashboard.data)" class="space-y-2">
+                            <div v-for="n in 5" :key="n" class="h-10 rounded bg-gray-100 dark:bg-gray-800 animate-pulse" />
                         </div>
 
-                        <div v-else-if="dashboard.assignedTasks.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-gray-500">
+                        <!-- Estado vacío -->
+                        <div v-else-if="dashboard.assignedTasks.items.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-gray-500">
                             <icon-list-check class="w-12 h-12 mb-3 opacity-50" />
                             <p>{{ t('dashboard.no_tasks') }}</p>
                         </div>
 
+                        <!-- Tabla de tareas -->
                         <div v-else class="table-responsive">
                             <table class="table-hover">
                                 <thead>
@@ -114,9 +117,47 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <TaskRow v-for="task in dashboard.assignedTasks" :key="task.id" :task="task" />
+                                    <TaskRow
+                                        v-for="task in dashboard.assignedTasks.items"
+                                        :key="task.id"
+                                        :task="task"
+                                        :urgency-badge="urgencyBadge(task.due_date)"
+                                    />
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- Footer paginación -->
+                        <div
+                            v-if="!dashboard.assignedTasks.isLoading && dashboard.assignedTasks.total > dashboard.assignedTasks.perPage"
+                            class="flex items-center justify-between pt-4 mt-4 border-t border-gray-100 dark:border-gray-700"
+                        >
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                {{ t('dashboard.pagination_summary', {
+                                    from: ((dashboard.assignedTasks.page - 1) * dashboard.assignedTasks.perPage) + 1,
+                                    to: Math.min(dashboard.assignedTasks.page * dashboard.assignedTasks.perPage, dashboard.assignedTasks.total),
+                                    total: dashboard.assignedTasks.total
+                                }) }}
+                            </p>
+                            <div class="flex items-center gap-2">
+                                <button
+                                    class="btn btn-sm btn-outline-primary"
+                                    :disabled="dashboard.assignedTasks.page <= 1 || dashboard.assignedTasks.isLoading"
+                                    @click="goToPage(dashboard.assignedTasks.page - 1)"
+                                >
+                                    {{ t('common.prev') }}
+                                </button>
+                                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                    {{ dashboard.assignedTasks.page }} / {{ dashboard.assignedTasks.lastPage }}
+                                </span>
+                                <button
+                                    class="btn btn-sm btn-outline-primary"
+                                    :disabled="dashboard.assignedTasks.page >= dashboard.assignedTasks.lastPage || dashboard.assignedTasks.isLoading"
+                                    @click="goToPage(dashboard.assignedTasks.page + 1)"
+                                >
+                                    {{ t('common.next') }}
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -175,6 +216,9 @@
                             {{ t('dashboard.add_event') }}
                         </router-link>
                     </div>
+
+                    <!-- Upcoming Legal Milestones -->
+                    <UpcomingMilestonesWidget />
 
                     <!-- Expiring Documents -->
                     <div class="panel">
@@ -240,12 +284,29 @@ import StatCircle from '@/views/dashboard/components/StatCircle.vue';
 import TaskRow from '@/views/dashboard/components/TaskRow.vue';
 import EventSidebarItem from '@/views/dashboard/components/EventSidebarItem.vue';
 import RecentCaseItem from '@/views/dashboard/components/RecentCaseItem.vue';
+import UpcomingMilestonesWidget from '@/views/dashboard/components/UpcomingMilestonesWidget.vue';
 
 const { t } = useI18n();
 useMeta({ title: 'Dashboard' });
 
 const store = useAppStore();
 const dashboard = useDashboardStore();
+
+function urgencyBadge(dateStr: string | null): { cls: string; key: string } | null {
+    if (!dateStr) return null;
+    const d = new Date(dateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor((d.getTime() - today.getTime()) / 86400000);
+    if (diffDays < 0)  return { cls: 'badge badge-outline-danger',  key: 'dashboard.urgency_overdue' };
+    if (diffDays <= 1) return { cls: 'badge badge-outline-warning', key: 'dashboard.urgency_due_soon' };
+    return null;
+}
+
+function goToPage(page: number) {
+    if (page < 1 || page > dashboard.assignedTasks.lastPage || dashboard.assignedTasks.isLoading) return;
+    dashboard.fetchAssignedTasksPage(page);
+}
 
 onMounted(() => {
     dashboard.fetchDashboard(true);

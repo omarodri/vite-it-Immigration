@@ -1,27 +1,238 @@
-.dark .markdown-editor .editor-toolbar i.separator {
-    border-color: #888ea8;
-    border-right: none;
+/* =========================================================
+   EasyMDE — Estilos del proyecto (sin dependencia de Font Awesome)
+
+   EasyMDE genera: <button class="fa fa-bold no-disable">
+   Font Awesome inyecta íconos via ::before con una fuente especial.
+   Sin la fuente, ::before muestra caracteres erróneos.
+
+   Solución: resetear la fuente y reemplazar ::before con texto legible
+   en todos los botones de la toolbar.
+   ========================================================= */
+
+/* --- Reset base de Font Awesome en la toolbar ---------------------------- */
+.markdown-editor .editor-toolbar button,
+.markdown-editor .editor-toolbar button::before {
+    font-family: 'Nunito', sans-serif !important;
+    speak: never;
+    font-style: normal;
+    font-variant: normal;
+    text-rendering: auto;
+    -webkit-font-smoothing: antialiased;
 }
 
-.dark .markdown-editor .EasyMDEContainer .CodeMirror,
-.dark .markdown-editor .editor-preview {
-    background-color: #121e32;
+/* --- Toolbar container --------------------------------------------------- */
+.markdown-editor .EasyMDEContainer .editor-toolbar {
+    border: 1px solid #e0e6ed;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    background: #f8f9fa;
+    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1px;
 }
 
-.markdown-editor .editor-toolbar,
-.markdown-editor .EasyMDEContainer .CodeMirror{
-    border-color: #ccc;
-    color: #0e1726;
-}
-.dark .markdown-editor .editor-toolbar,
-.dark .markdown-editor .EasyMDEContainer .CodeMirror,
-.dark .markdown-editor .editor-preview {
-    border-color: #17263c;
-    color: #888ea8 !important;
+/* --- Toolbar buttons ----------------------------------------------------- */
+.markdown-editor .editor-toolbar button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 28px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    color: #3b3f5c;
+    font-size: 12px;
+    line-height: 1;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.dark .markdown-editor .editor-toolbar button.active, .editor-toolbar button:hover {
-    background-color: transparent !important;
-    border-color: transparent !important;
+.markdown-editor .editor-toolbar button:hover,
+.markdown-editor .editor-toolbar button.active {
+    background: #eef0ff;
+    border-color: #c5ccf9;
     color: #4361ee;
+}
+
+/* --- Separator ----------------------------------------------------------- */
+.markdown-editor .editor-toolbar i.separator {
+    display: inline-block;
+    width: 1px;
+    height: 18px;
+    background: #dde2ec;
+    border: none;
+    margin: 0 3px;
+    vertical-align: middle;
+}
+
+/* --- Íconos de toolbar via ::before (sobrescriben Font Awesome) ---------- */
+/* EasyMDE genera class="fa fa-bold" → selector: .fa-bold                  */
+
+.markdown-editor .editor-toolbar button.fa-bold::before          { content: 'B'; font-weight: 700; }
+.markdown-editor .editor-toolbar button.fa-italic::before        { content: 'I'; font-style: italic; font-weight: 600; }
+.markdown-editor .editor-toolbar button.fa-strikethrough::before { content: 'S\0336'; }
+.markdown-editor .editor-toolbar button.fa-header::before,
+.markdown-editor .editor-toolbar button.fa-heading::before       { content: 'H'; font-weight: 700; }
+/* Subíndice para heading-1/2/3 — EasyMDE añade .header-1 .header-2 .header-3 */
+.markdown-editor .editor-toolbar button.header-1::before         { content: 'H\B9'; font-weight: 700; font-size: 11px; }
+.markdown-editor .editor-toolbar button.header-2::before         { content: 'H\B2'; font-weight: 700; font-size: 11px; }
+.markdown-editor .editor-toolbar button.header-3::before         { content: 'H\B3'; font-weight: 700; font-size: 11px; }
+.markdown-editor .editor-toolbar button.fa-quote-left::before    { content: '\201C'; font-size: 15px; line-height: 1; }
+.markdown-editor .editor-toolbar button.fa-list-ul::before       { content: '\2261'; font-size: 14px; line-height: 1; }
+.markdown-editor .editor-toolbar button.fa-list-ol::before       { content: '1.'; font-size: 10px; font-weight: 600; }
+.markdown-editor .editor-toolbar button.fa-minus::before         { content: '\2014'; font-size: 14px; }
+.markdown-editor .editor-toolbar button.fa-code::before          { content: '</>'; font-family: monospace !important; font-size: 9px; }
+.markdown-editor .editor-toolbar button.fa-link::before          { content: '\1F517'; font-size: 12px; }
+.markdown-editor .editor-toolbar button.fa-picture-o::before,
+.markdown-editor .editor-toolbar button.fa-image::before         { content: '\1F5BC'; font-size: 12px; }
+.markdown-editor .editor-toolbar button.fa-eye::before           { content: '\25CE'; font-size: 13px; }
+.markdown-editor .editor-toolbar button.fa-columns::before       { content: '\229E'; font-size: 13px; }
+.markdown-editor .editor-toolbar button.fa-arrows-alt::before    { content: '\26F6'; font-size: 12px; }
+.markdown-editor .editor-toolbar button.fa-question-circle::before { content: '?'; font-weight: 700; }
+.markdown-editor .editor-toolbar button.fa-undo::before          { content: '\21A9'; font-size: 13px; }
+.markdown-editor .editor-toolbar button.fa-redo::before          { content: '\21AA'; font-size: 13px; }
+.markdown-editor .editor-toolbar button.fa-eraser::before        { content: '\2715'; font-size: 11px; }
+
+/* --- CodeMirror editor area --------------------------------------------- */
+.markdown-editor .EasyMDEContainer .CodeMirror {
+    border: 1px solid #e0e6ed;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    color: #3b3f5c;
+    background: #ffffff;
+    min-height: 180px;
+    padding: 8px 0;
+    line-height: 1.6;
+}
+
+.markdown-editor .EasyMDEContainer .CodeMirror-focused {
+    border-color: #4361ee;
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.15);
+}
+
+.markdown-editor .EasyMDEContainer .CodeMirror .CodeMirror-placeholder {
+    color: #adb5bd;
+}
+
+/* Status bar */
+.markdown-editor .editor-statusbar {
+    color: #888ea8;
+    font-size: 11px;
+    padding: 2px 8px;
+    border: 1px solid #e0e6ed;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    background: #f8f9fa;
+}
+
+/* Preview panel */
+.markdown-editor .editor-preview,
+.markdown-editor .editor-preview-side {
+    background: #ffffff;
+    border: 1px solid #e0e6ed;
+    color: #3b3f5c;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+
+.dark .markdown-editor .editor-toolbar,
+.dark .markdown-editor .EasyMDEContainer .editor-toolbar {
+    background: #1b2e4b;
+    border-color: #17263c;
+}
+
+.dark .markdown-editor .editor-toolbar button {
+    color: #888ea8;
+}
+
+.dark .markdown-editor .editor-toolbar button:hover,
+.dark .markdown-editor .editor-toolbar button.active {
+    background: rgba(67, 97, 238, 0.15);
+    border-color: rgba(67, 97, 238, 0.4);
+    color: #4361ee;
+}
+
+.dark .markdown-editor .editor-toolbar i.separator {
+    background: #253a55;
+    border: none;
+}
+
+.dark .markdown-editor .EasyMDEContainer .CodeMirror {
+    background: #0e1726;
+    border-color: #17263c;
+    color: #888ea8;
+}
+
+.dark .markdown-editor .EasyMDEContainer .CodeMirror-focused {
+    border-color: #4361ee;
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+}
+
+.dark .markdown-editor .EasyMDEContainer .CodeMirror .CodeMirror-placeholder {
+    color: #506690;
+}
+
+.dark .markdown-editor .EasyMDEContainer .CodeMirror .CodeMirror-cursor {
+    border-left-color: #888ea8;
+}
+
+.dark .markdown-editor .EasyMDEContainer .CodeMirror .CodeMirror-selected {
+    background: rgba(67, 97, 238, 0.25);
+}
+
+.dark .markdown-editor .EasyMDEContainer .CodeMirror .CodeMirror-activeline-background {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Texto markdown en dark mode */
+.dark .markdown-editor .EasyMDEContainer .CodeMirror .cm-header {
+    color: #a8b8d8;
+}
+
+.dark .markdown-editor .EasyMDEContainer .CodeMirror .cm-strong {
+    color: #c3d0e8;
+}
+
+.dark .markdown-editor .EasyMDEContainer .CodeMirror .cm-em {
+    color: #9ba8bd;
+}
+
+.dark .markdown-editor .EasyMDEContainer .CodeMirror .cm-quote {
+    color: #506690;
+}
+
+.dark .markdown-editor .editor-statusbar {
+    background: #1b2e4b;
+    border-color: #17263c;
+    color: #506690;
+}
+
+.dark .markdown-editor .editor-preview,
+.dark .markdown-editor .editor-preview-side {
+    background: #0e1726;
+    border-color: #17263c;
+    color: #888ea8;
+}
+
+/* Scrollbar dark mode */
+.dark .markdown-editor .EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.dark .markdown-editor .EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar-track {
+    background: #0e1726;
+}
+.dark .markdown-editor .EasyMDEContainer .CodeMirror-scroll::-webkit-scrollbar-thumb {
+    background: #253a55;
+    border-radius: 3px;
 }

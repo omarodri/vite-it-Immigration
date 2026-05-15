@@ -57,6 +57,22 @@
                     </button>
                 </div>
 
+                <!-- Sync status bar -->
+                <div v-if="syncStore.hasAnyConnection" class="flex items-center justify-between mb-3 px-1 text-xs text-gray-500 dark:text-gray-400">
+                    <span v-if="syncStore.lastPullAt">
+                        {{ $t('calendar_sync.last_sync_at', { time: syncStore.lastPullAt ? new Date(syncStore.lastPullAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '' }) }}
+                    </span>
+                    <span v-else>{{ $t('calendar_sync.never_synced') }}</span>
+                    <button
+                        class="btn btn-sm btn-outline-primary"
+                        :disabled="syncStore.isPulling"
+                        @click="syncStore.refreshNow()"
+                    >
+                        <span v-if="syncStore.isPulling" class="animate-spin border-2 border-primary border-l-transparent rounded-full w-3 h-3 inline-block mr-1" />
+                        {{ syncStore.isPulling ? $t('calendar_sync.refreshing') : $t('calendar_sync.refresh_now') }}
+                    </button>
+                </div>
+
                 <!-- FullCalendar -->
                 <div class="calendar-wrapper">
                     <FullCalendar ref="calendarRef" :options="calendarOptions">
@@ -100,12 +116,14 @@ import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import allLocales from '@fullcalendar/core/locales-all';
 
 import { useAppStore } from '@/stores/index';
 import { useUserStore } from '@/stores/user';
 import { useMeta } from '@/composables/use-meta';
 import api from '@/services/api';
 import { calendarSyncService } from '@/services/calendarSyncService';
+import { useCalendarSyncStore } from '@/stores/calendarSync';
 
 import EventFormModal, { type EventEditPayload } from '@/components/EventFormModal.vue';
 import IconPlus from '@/components/icon/icon-plus.vue';
@@ -116,11 +134,13 @@ onMounted(() => {
     calendarSyncService.triggerPull()
         .then(({ pulled }) => { if (pulled) refreshCalendar(); })
         .catch(() => {});
+    syncStore.fetchStatus();
 });
 
 const { t } = useI18n();
 const store = useAppStore();
 const userStore = useUserStore();
+const syncStore = useCalendarSyncStore();
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -148,6 +168,10 @@ const knownAssignees = ref<{ id: number; name: string }[]>([]);
 
 const currentUserId = computed(() => userStore.currentUser?.id ?? -1);
 
+// App uses 'ae' for Arabic; FullCalendar expects 'ar'
+const FC_LOCALE_MAP: Record<string, string> = { ae: 'ar' };
+const fcLocale = computed(() => FC_LOCALE_MAP[store.locale] ?? store.locale);
+
 const assigneesInView = computed(() => knownAssignees.value);
 
 // ─── FullCalendar Options ─────────────────────────────────────────────────────
@@ -155,7 +179,8 @@ const assigneesInView = computed(() => knownAssignees.value);
 const calendarOptions = computed(() => ({
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
     initialView: 'dayGridMonth',
-    locale: store.locale,
+    locales: allLocales,
+    locale: fcLocale.value,
     headerToolbar: {
         left: 'prev,next today',
         center: 'title',

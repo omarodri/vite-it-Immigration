@@ -37,7 +37,9 @@ class EventSyncObserver
             return false;
         }
 
-        if ($event->sync_source !== 'local' && !$event->external_id) {
+        // Block re-pushing events imported from external providers (R7 anti-loop multi-provider).
+        // Events with sync_source 'google' or 'outlook' are already in the source system.
+        if (in_array($event->sync_source, ['google', 'outlook'], true)) {
             return false;
         }
 

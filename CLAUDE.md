@@ -344,6 +344,15 @@ The `ircc_credentials.view` Gate and the route model binding for `ImmigrationCas
 ### G16. IRCC secret tab trigger is UX friction — NOT security (Spec 60)
 The triple-click mechanism on `case_number` in `cases/show.vue` that activates the IRCC tab is a UX layer to avoid accidental exposure. It is **not** a security control. The backend `Gate::define('ircc_credentials.view')` is the real authorization gate and validates on every request. Never conflate the frontend trigger with actual access control. An attacker with valid session cookies can call the API directly regardless of frontend state.
 
+### G17. Dashboard "Assigned Tasks" widget uses `Todo` model — NOT `CaseTask` nor `Task` (Spec 61)
+The widget labeled "Tareas Asignadas" in the Dashboard queries the `Todo` model (table `todos`), not `CaseTask` (checklist) nor `Task` (Kanban workflow). The dedicated service is `AssignedTasksService`. The store sub-state is `useDashboardStore().assignedTasks` (an object with `items`, `total`, `page`, `perPage`, `lastPage`, `isLoading`). Any change to the Dashboard task widget must target `todos`, not `tasks` or `case_tasks`. `CaseTaskService::updateTaskCore()` can mutate `Todo` records via `TodoCoreService::syncCoreFieldsFromTask()` — this cross-service mutation is intentional.
+
+### G18. Calendar sync is multi-provider — never assume one provider per user (Spec 62)
+`CalendarSyncService::getConnectedProvider()` (singular) is `@deprecated` — use `getConnectedProviders()` which returns a `Collection<string>`. A user can have both Google and Microsoft connected simultaneously. `PullCalendarEventsJob` iterates by `(user, provider)` pair and calls `pullEvents($user, $provider)` with explicit provider argument. `EventSyncObserver::shouldSync()` blocks re-push for events with `sync_source IN ['google','outlook']` to prevent cross-provider contamination. The `CalendarProviderInterface::listEvents()` signature is `($token, $since, $until = null)`.
+
+### G19. Calendar backfill settings live in `tenant.settings` JSON — no SQL column (Spec 62)
+`tenant.settings.calendar_backfill_months` (default 6, max 24) and `calendar_lookahead_months` (default 12, max 24) control the sync window. Access via `$tenant->calendarBackfillMonths()` and `$tenant->calendarLookaheadMonths()` — accessors apply `max(1, min(24, $value))` clamp. On first connect (`last_pull_at IS NULL`) the full backfill window applies; subsequent pulls are incremental from `last_pull_at`. Validate in `UpdateTenantSettingsRequest` when persisting.
+
 ---
 
 ## Project Structure

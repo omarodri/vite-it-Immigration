@@ -198,4 +198,16 @@ class Tenant extends Model
     {
         return 'slug';
     }
+
+    public function calendarBackfillMonths(): int
+    {
+        $value = (int) data_get($this->settings, 'calendar_backfill_months', 6);
+        return max(1, min(24, $value));
+    }
+
+    public function calendarLookaheadMonths(): int
+    {
+        $value = (int) data_get($this->settings, 'calendar_lookahead_months', 12);
+        return max(1, min(24, $value));
+    }
 }

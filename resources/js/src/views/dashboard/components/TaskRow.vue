@@ -4,6 +4,7 @@ import type { DashboardTask } from '@/types/dashboard';
 
 defineProps<{
     task: DashboardTask;
+    urgencyBadge?: { cls: string; key: string } | null;
 }>();
 
 const { t } = useI18n();
@@ -43,7 +44,14 @@ function isOverdue(dateStr: string | null): boolean {
             <span v-if="task.tag" class="badge badge-outline-primary text-xs text-wrap">{{ task.tag }}</span>
             <span v-else class="text-gray-400">--</span>
         </td>
-        <td class="whitespace-nowrap text-xs" :class="{ 'text-danger font-semibold': isOverdue(task.due_date) }">{{ formatDate(task.due_date) }}</td>
+        <td class="whitespace-nowrap text-xs">
+            <span v-if="urgencyBadge" :class="urgencyBadge.cls" class="mr-1 text-xs">
+                {{ t(urgencyBadge.key) }}
+            </span>
+            <span :class="{ 'text-danger font-semibold': isOverdue(task.due_date) }">
+                {{ formatDate(task.due_date) }}
+            </span>
+        </td>
         <td class="whitespace-nowrap">
             <router-link
                 v-if="task.case"

@@ -34,6 +34,8 @@ class UpdateTenantSettingsRequest extends FormRequest
             'language' => ['sometimes', 'string', 'in:es,en,fr'],
             'name_format'        => ['sometimes', 'string', 'in:first_last,last_first'],
             'max_timer_duration' => ['sometimes', 'integer', 'min:15', 'max:1440'],
+            'calendar_backfill_months'  => ['sometimes', 'integer', 'min:1', 'max:24'],
+            'calendar_lookahead_months' => ['sometimes', 'integer', 'min:1', 'max:24'],
         ];
     }
 

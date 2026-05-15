@@ -26,20 +26,27 @@ class PullCalendarEventsJob implements ShouldQueue, ShouldBeUnique
     {
         $this->provisionMicrosoftUsers();
 
-        $activeConnections = CalendarSyncStatus::where('status', 'active')
+        $statuses = CalendarSyncStatus::where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('last_pull_at')
+                  ->orWhere('last_pull_at', '<', now()->subMinutes(15));
+            })
             ->with('user')
             ->get();
 
-        foreach ($activeConnections as $syncStatus) {
+        foreach ($statuses as $syncStatus) {
+            if (!$syncStatus->user) {
+                continue;
+            }
+
             try {
-                if ($syncStatus->user) {
-                    $syncService->pullEvents($syncStatus->user);
-                }
-            } catch (\Exception $e) {
-                Log::error('Pull failed for user', [
-                    'user_id'  => $syncStatus->user_id,
-                    'provider' => $syncStatus->provider,
-                    'error'    => $e->getMessage(),
+                $syncService->pullEvents($syncStatus->user, $syncStatus->provider);
+            } catch (\Throwable $e) {
+                \Log::warning('PullCalendarEventsJob: pull failed for provider', [
+                    'sync_status_id' => $syncStatus->id,
+                    'user_id'        => $syncStatus->user_id,
+                    'provider'       => $syncStatus->provider,
+                    'error'          => $e->getMessage(),
                 ]);
             }
         }

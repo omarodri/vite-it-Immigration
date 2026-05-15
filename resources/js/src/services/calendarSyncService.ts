@@ -35,4 +35,14 @@ export const calendarSyncService = {
         const { data } = await api.post('/calendar-oauth/pull');
         return data;
     },
+
+    async retry(provider: 'google' | 'microsoft'): Promise<{ success: boolean; pulled_at?: string; message?: string }> {
+        const { data } = await api.post(`/calendar-oauth/${provider}/retry`);
+        return data;
+    },
+
+    async pullOnDemand(): Promise<{ pulled: boolean; providers?: string[]; reason?: string }> {
+        const { data } = await api.post('/calendar-oauth/pull');
+        return data;
+    },
 };

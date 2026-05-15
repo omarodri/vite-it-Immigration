@@ -80,7 +80,7 @@ class MicrosoftCalendarService implements CalendarProviderInterface
         return $response->successful() || $response->status() === 404;
     }
 
-    public function listEvents(string $accessToken, \DateTimeInterface $since): array
+    public function listEvents(string $accessToken, \DateTimeInterface $since, ?\DateTimeInterface $until = null): array
     {
         $events = [];
         $url = $this->getBaseUrl();

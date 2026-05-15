@@ -1,3 +1,5 @@
+import type { UrgencyBucket } from '@/types/important-date-alert';
+
 export interface DashboardMetrics {
     active_cases_assigned_to_me: number;
     today_events: number;
@@ -54,10 +56,38 @@ export interface DashboardExpiringDocument {
     client_id: number;
 }
 
+export interface DashboardMilestone {
+    id: number;
+    case_id: number;
+    case_number: string | null;
+    client_name: string | null;
+    label: string;
+    due_date: string;
+    days_diff: number;
+    urgency_bucket: UrgencyBucket;
+}
+
 export interface DashboardData {
     metrics: DashboardMetrics;
     assigned_tasks: DashboardTask[];
     upcoming_events: DashboardEvent[];
     recent_cases: DashboardCase[];
     expiring_documents?: DashboardExpiringDocument[];
+    upcoming_milestones?: DashboardMilestone[];
+    assigned_tasks_meta?: AssignedTasksMeta;
+}
+
+export interface PaginationMeta {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number | null;
+    to: number | null;
+}
+
+export interface AssignedTasksMeta {
+    total: number;
+    per_page: number;
+    last_page: number;
 }

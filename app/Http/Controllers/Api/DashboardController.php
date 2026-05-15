@@ -13,6 +13,8 @@ use App\Models\Event;
 use App\Models\ImmigrationCase;
 use App\Models\LegalDocument;
 use App\Models\Todo;
+use App\Services\Dashboard\AssignedTasksService;
+use App\Services\Dashboard\UpcomingMilestonesService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -44,16 +46,16 @@ class DashboardController extends Controller
             ->whereIn('status', ['pending', 'important'])
             ->count();
 
-        // -- Assigned Tasks (max 50) ------------------------------------------
-        $assignedTasks = $user->can('tasks.view')
-            ? Todo::with(['immigrationCase:id,case_number'])
-                  ->where('assigned_to_id', $user->id)
-                  ->whereIn('status', ['pending', 'important'])
-                  ->orderByRaw("FIELD(priority, 'high', 'medium', 'low')")
-                  ->orderBy('due_date')
-                  ->limit(50)
-                  ->get()
-            : collect();
+        // -- Assigned Tasks (first page, 10 items) ---------------------------
+        $tasksPaginator = $user->can('tasks.view')
+            ? app(AssignedTasksService::class)->paginate($user, 1, 10)
+            : null;
+        $assignedTasks     = $tasksPaginator ? $tasksPaginator->getCollection() : collect();
+        $assignedTasksMeta = $tasksPaginator ? [
+            'total'     => $tasksPaginator->total(),
+            'per_page'  => $tasksPaginator->perPage(),
+            'last_page' => $tasksPaginator->lastPage(),
+        ] : ['total' => 0, 'per_page' => 10, 'last_page' => 1];
 
         // -- Upcoming Events (next 10) ----------------------------------------
         $upcomingEvents = Event::where(fn ($q) =>
@@ -115,6 +117,11 @@ class DashboardController extends Controller
                                      : $d->documentable?->client_id,
             ]);
 
+        // -- Upcoming Milestones (±30 days window, top 10) -------------------------
+        $upcomingMilestones = $user->can('cases.view')
+            ? app(UpcomingMilestonesService::class)->getUpcoming($user)
+            : collect();
+
         return response()->json([
             'data' => [
                 'metrics'         => [
@@ -123,10 +130,29 @@ class DashboardController extends Controller
                     'pending_todos'               => $pendingTodosCount,
                 ],
                 'assigned_tasks'      => DashboardTodoResource::collection($assignedTasks),
+                'assigned_tasks_meta' => $assignedTasksMeta,
                 'upcoming_events'     => DashboardEventResource::collection($upcomingEvents),
                 'recent_cases'        => DashboardCaseResource::collection($recentCases),
                 'expiring_documents'  => $expiringDocuments,
+                'upcoming_milestones' => $upcomingMilestones,
             ],
         ]);
+    }
+
+    public function assignedTasks(Request $request): JsonResponse
+    {
+        $user    = $request->user();
+        $page    = max(1, (int) $request->query('page', 1));
+        $perPage = max(1, min(50, (int) $request->query('per_page', AssignedTasksService::DEFAULT_PER_PAGE)));
+
+        if (! $user->can('tasks.view')) {
+            return response()->json(['data' => [], 'meta' => ['current_page' => 1, 'last_page' => 1, 'per_page' => $perPage, 'total' => 0, 'from' => null, 'to' => null], 'links' => []]);
+        }
+
+        $paginator = app(AssignedTasksService::class)->paginate($user, $page, $perPage);
+
+        return response()->json(
+            DashboardTodoResource::collection($paginator)->response()->getData(true)
+        );
     }
 }
