@@ -332,6 +332,18 @@ The Eloquent model `ImmigrationCase` maps to the physical table `cases` in MySQL
 ### G12. Case Creation Wizard has 7 steps (Spec 56)
 Steps: 1=CaseType, 2=Client, 3=Companions, 4=Details, **5=Folders** (new — dynamic folder selection), 6=Checklist, 7=Summary. `isLastStep === 7`, `canGoNext: step < 7`. Wizard state includes `folders.selected: CaseFolderInput[]` persisted in sessionStorage. `FolderService::createDefaultStructure()` is a backward-compatible alias for `createSelectedStructure($case, null)` — existing callers unchanged.
 
+### G13. `encrypted:array` cast only accepts flat serializable structures (Spec 60)
+The `encrypted:array` cast on `CaseIrccCredential::$security_questions` serializes and encrypts the full JSON in one operation. The array must contain only plain PHP types (strings, ints, null) — no Carbon instances, no Eloquent models. Validate in `StoreIrccCredentialRequest` that each element is `{pregunta: string, respuesta: string}`. Also, `encrypted:array` returns `null` (not `[]`) for a NULL DB column — always coalesce to a 5-element default array before returning from the Resource.
+
+### G14. `encrypted` cast breaks `where` queries (Spec 60)
+Fields cast as `encrypted` in `CaseIrccCredential` (ircc_username, ircc_password, etc.) cannot be searched via Eloquent `where`. The ciphertext is non-deterministic (random IV per encryption). If future search over these fields is needed, a separate HMAC-SHA256 column is required. Do not attempt `whereIrccUsername()` or similar.
+
+### G15. IRCC cross-tenant must return 404, not 403 (Spec 60)
+The `ircc_credentials.view` Gate and the route model binding for `ImmigrationCase` must return 404 (not 403) for resources belonging to another tenant. Returning 403 leaks the existence of the resource. Route model binding scoped to the active tenant already handles this via `TenantScope`.
+
+### G16. IRCC secret tab trigger is UX friction — NOT security (Spec 60)
+The triple-click mechanism on `case_number` in `cases/show.vue` that activates the IRCC tab is a UX layer to avoid accidental exposure. It is **not** a security control. The backend `Gate::define('ircc_credentials.view')` is the real authorization gate and validates on every request. Never conflate the frontend trigger with actual access control. An attacker with valid session cookies can call the API directly regardless of frontend state.
+
 ---
 
 ## Project Structure

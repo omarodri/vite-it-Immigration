@@ -37,6 +37,7 @@ use App\Http\Controllers\Api\TodoController;
 use App\Http\Controllers\Api\TrashController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\GlobalSearchController;
+use App\Http\Controllers\Api\IrccCredentialController;
 use App\Http\Controllers\Api\UserCalendarOAuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -190,6 +191,13 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant', 'ensure.single.sess
     // Document download routes (rate limit: 60/min)
     Route::middleware('throttle:downloads')->group(function () {
         Route::get('/cases/{case}/documents/{document}/download', [DocumentController::class, 'download']);
+    });
+
+    // IRCC Credentials Vault (Spec 60)
+    Route::prefix('cases/{case}/ircc-credentials')->group(function () {
+        Route::get('availability', [IrccCredentialController::class, 'availability']);
+        Route::get('/',            [IrccCredentialController::class, 'show']);
+        Route::put('/',            [IrccCredentialController::class, 'update']);
     });
 
     // Event Calendar routes

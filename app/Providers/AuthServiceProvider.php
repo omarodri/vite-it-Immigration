@@ -60,5 +60,19 @@ class AuthServiceProvider extends ServiceProvider
             }
             return null;
         });
+
+        // Spec 60 — IRCC Credentials Vault.
+        // Dedicated abilities (not Policy-bound) because ImmigrationCase is
+        // already mapped to CasePolicy. Gate::before above still applies, so
+        // super-admin / admin bypass these checks automatically.
+        Gate::define('ircc_credentials.view', function (User $user, ImmigrationCase $case) {
+            return $user->tenant_id === $case->tenant_id
+                && $user->hasPermissionTo('ircc_credentials.view');
+        });
+
+        Gate::define('ircc_credentials.update', function (User $user, ImmigrationCase $case) {
+            return $user->tenant_id === $case->tenant_id
+                && $user->hasPermissionTo('ircc_credentials.edit');
+        });
     }
 }

@@ -47,6 +47,18 @@
 
 ## Implementaciones Recientes
 
+### 2026-05-15 — Spec 60: Bóveda de Credenciales IRCC
+- `CaseIrccCredential` model con `BelongsToTenant`, casts `encrypted` en todos los campos sensibles, `encrypted:array` en `security_questions` (5 preguntas fijas)
+- `case_ircc_credentials` tabla separada 1:1 con `cases` (TEXT para campos encriptados, `key_version TINYINT DEFAULT 1` para rotación futura)
+- Autorización via `Gate::define('ircc_credentials.view|update')` en `AuthServiceProvider` (no Policy mapeada a modelo — colisionaría con `CasePolicy`)
+- `IrccCredentialService` (upsert + refresh) · `IrccAuditService` (logRead + logWrite — sin valores sensibles en propiedades del log)
+- `IrccCredentialController` (availability + show + update) · `IrccCredentialResource` (nullable-safe, emptyQuestions() fallback)
+- Permisos `ircc_credentials.view` + `ircc_credentials.edit` → `super-admin` y `consultor`
+- Frontend: `useIrccStore` (clear() con sobrescritura `\0`), `useExtendedTab` composable (triple-click + check backend silencioso), `IrccCredentialsTab.vue` (3 secciones + tabla 5 filas + reveal por campo)
+- `cases/show.vue`: `tabs` computed condicional, triple-click en `<h2>` del case_number, `onBeforeRouteLeave` limpia store
+- **⚠️ Bloqueante de release:** Backup de `APP_KEY` + runbook de rotación OBLIGATORIO antes de producción (datos irrecuperables sin la key)
+- Gotchas G13-G16 documentados en CLAUDE.md
+
 ### 2026-05-15 — Spec 59: Promoción Companion → Cliente Independiente
 - `ClientPromotionService` (promote + checkEligibility), `ClientPromotionController` (store + eligibility)
 - Excepciones tipadas: `CompanionNotEligibleForPromotionException` (`$errorCode`, no `$code` — colisión PHP), `ClientPromotionConflictException`
@@ -106,3 +118,4 @@
 | DT-03 | Spec 48 Fase 9 (etapas personalizadas avanzadas) deferida | BAJO | 48 |
 | DT-04 | Specs 49/50 smoke tests Phase 10 pendientes | BAJO | 49,50 |
 | DT-05 | Spec 59 tests unitarios y feature tests pendientes | BAJO | 59 |
+| DT-06 | Spec 60 Fase 3 (runbook APP_KEY + backup + ircc:verify-integrity) y Fase 4 (tests) pendientes | **ALTO** (bloqueante para prod) | 60 |

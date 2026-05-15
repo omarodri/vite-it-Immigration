@@ -23,7 +23,10 @@
         <div v-else-if="currentCase" class="space-y-5">
             <!-- Header Card -->
             <div class="panel">
-                <h2 class="text-2xl font-bold dark:text-white-light">{{ currentCase.case_number }}</h2>
+                <h2
+                    class="text-2xl font-bold dark:text-white-light cursor-default select-none"
+                    @click="irccActivation.onTriggerClick()"
+                >{{ currentCase.case_number }}</h2>
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <div class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg mt-4">
@@ -513,6 +516,12 @@
                     <div v-else-if="activeTab === 'time'">
                         <TimeLogList :case-id="currentCase.id" />
                     </div>
+
+                    <!-- IRCC Credentials Tab (Spec 60 — hidden, triple-click activated) -->
+                    <IrccCredentialsTab
+                        v-else-if="activeTab === 'ircc'"
+                        :case-id="currentCase.id"
+                    />
                 </div>
             </div>
 
@@ -603,6 +612,12 @@ import TimeDisplay from '@/components/timesheet/TimeDisplay.vue';
 import TimeLogModal from '@/components/timesheet/TimeLogModal.vue';
 import TimeLogList from '@/components/timesheet/TimeLogList.vue';
 import type { TimeLog } from '@/types/timesheet';
+
+// IRCC (Spec 60) — hidden tab activated by triple-click
+import { onBeforeRouteLeave } from 'vue-router';
+import { useExtendedTab } from '@/composables/useIrccActivation';
+import { useIrccStore } from '@/stores/useIrccStore';
+import IrccCredentialsTab from './IrccCredentialsTab.vue';
 
 useMeta({ title: 'Case Details' });
 
@@ -755,18 +770,34 @@ const handlePromote = async (companion: PromotableCompanion) => {
     }
 };
 
-const tabs = computed(() => [
-    { id: 'info', label: 'cases.tab_information' },
-    { id: 'lifecycle', label: 'cases.tab_lifecycle' },
-    { id: 'documents', label: 'cases.tab_documents' },
-    { id: 'events', label: 'cases.tab_events' },
-    { id: 'todos', label: 'cases.tab_todos' },
-    { id: 'invoices', label: 'cases.tab_invoices' },
-    { id: 'time', label: 'timesheet.time_history' },
-    { id: 'timeline', label: 'cases.tab_timeline' },
-]);
-
 const currentCase = computed(() => caseStore.currentCase);
+
+// IRCC (Spec 60) — hidden tab activated by triple-click on case number
+const irccTabCaseId = computed(() => currentCase.value?.id);
+const irccActivation = useExtendedTab(irccTabCaseId);
+const irccStore = useIrccStore();
+
+onBeforeRouteLeave(() => {
+    irccStore.clear();
+    irccActivation.deactivate();
+});
+
+const tabs = computed(() => {
+    const baseTabs = [
+        { id: 'info', label: 'cases.tab_information' },
+        { id: 'lifecycle', label: 'cases.tab_lifecycle' },
+        { id: 'documents', label: 'cases.tab_documents' },
+        { id: 'events', label: 'cases.tab_events' },
+        { id: 'todos', label: 'cases.tab_todos' },
+        { id: 'invoices', label: 'cases.tab_invoices' },
+        { id: 'time', label: 'timesheet.time_history' },
+        { id: 'timeline', label: 'cases.tab_timeline' },
+    ];
+    if (irccActivation.visible.value) {
+        baseTabs.push({ id: 'ircc', label: 'ircc.tab_title' });
+    }
+    return baseTabs;
+});
 
 const primaryApplicant = computed(() => {
     if (!currentCase.value) return null;

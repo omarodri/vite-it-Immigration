@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -346,6 +347,19 @@ class ImmigrationCase extends Model
     public function timeLogs(): HasMany
     {
         return $this->hasMany(TimeLog::class, 'case_id');
+    }
+
+    /**
+     * Spec 60 — Get the encrypted IRCC credential record for this case.
+     *
+     * One-to-one relationship; the table enforces UNIQUE(case_id).
+     * NEVER eager-load this from list endpoints or surface it through
+     * CaseResource — credentials are accessed only via their dedicated
+     * /api/cases/{case}/ircc-credentials endpoint.
+     */
+    public function irccCredentials(): HasOne
+    {
+        return $this->hasOne(CaseIrccCredential::class, 'case_id');
     }
 
     /**

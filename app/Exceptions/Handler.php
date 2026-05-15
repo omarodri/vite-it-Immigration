@@ -34,6 +34,13 @@ class Handler extends ExceptionHandler
         'current_password',
         'password',
         'password_confirmation',
+        // Spec 60 — IRCC Credentials Vault: never flash credential fields
+        // back into the session on validation exceptions.
+        'ircc_password',
+        'email_password',
+        'ircc_username',
+        'application_number',
+        'security_questions',
     ];
 
     /**
