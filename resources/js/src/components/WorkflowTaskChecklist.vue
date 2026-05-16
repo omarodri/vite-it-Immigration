@@ -109,13 +109,14 @@
 import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { VueDraggable } from 'vue-draggable-plus';
-import type { WorkflowTask } from '@/types/workflow';
+import type { WorkflowTask, CaseStage } from '@/types/workflow';
 import api from '@/services/api';
 
 const props = defineProps<{
     tasks: WorkflowTask[];
     caseId: number;
     editable?: boolean;
+    adHocStages?: CaseStage[];
 }>();
 
 const emit = defineEmits<{
@@ -165,11 +166,22 @@ const progressClass = computed(() => {
     return 'bg-danger';
 });
 
+// Lookup map for ad-hoc stages by ID
+const adHocStageMap = computed(() => {
+    const map = new Map<number, CaseStage>();
+    for (const s of (props.adHocStages ?? [])) map.set(s.id, s);
+    return map;
+});
+
 const stageColorMap = computed<Record<number, string>>(() => {
     const map: Record<number, string> = {};
     for (const task of localTasks.value) {
         if (task.workflow_stage_id && task.workflow_stage) {
             map[task.workflow_stage_id] = task.workflow_stage.color ?? '#4361ee';
+        }
+        if (task.case_stage_id) {
+            const cs = adHocStageMap.value.get(task.case_stage_id);
+            if (cs) map[task.case_stage_id] = cs.color ?? '#4361ee';
         }
     }
     return map;
@@ -183,26 +195,43 @@ interface TaskGroup {
 }
 
 const groupedTasks = computed<TaskGroup[]>(() => {
-    const map = new Map<number | null, TaskGroup>();
+    // Use a string key internally to avoid collision between workflow_stage IDs and case_stage IDs
+    const map = new Map<string, TaskGroup>();
+    const loc = locale.value as 'es' | 'en' | 'fr';
 
     for (const task of localTasks.value) {
-        const stageId = task.workflow_stage_id ?? null;
-        if (!map.has(stageId)) {
-            const stage = task.workflow_stage;
-            const loc = locale.value as 'es' | 'en' | 'fr';
-            const name = stage
-                ? (stage.translations?.['name']?.[loc]
-                    ?? stage.translations?.['name']?.['es']
-                    ?? null)
-                : null;
-            map.set(stageId, {
-                stageId,
-                stageName: name,
-                stageSortOrder: stage?.sort_order ?? 9999,
-                tasks: [],
-            });
+        let key: string;
+        let stageId: number | null;
+        let stageName: string | null;
+        let stageSortOrder: number;
+
+        if (task.workflow_stage_id && task.workflow_stage) {
+            // Standard workflow task
+            key = `w:${task.workflow_stage_id}`;
+            stageId = task.workflow_stage_id;
+            const ws = task.workflow_stage;
+            stageName = ws.translations?.['name']?.[loc]
+                ?? ws.translations?.['name']?.['es']
+                ?? null;
+            stageSortOrder = ws.sort_order ?? 9999;
+        } else if (task.case_stage_id && adHocStageMap.value.has(task.case_stage_id)) {
+            // Ad-hoc task — group by case_stage_id
+            const cs = adHocStageMap.value.get(task.case_stage_id)!;
+            key = `a:${task.case_stage_id}`;
+            stageId = task.case_stage_id;
+            stageName = cs.name[loc] ?? cs.name['es'] ?? cs.name_resolved ?? null;
+            stageSortOrder = cs.sort_order;
+        } else {
+            key = 'ungrouped';
+            stageId = null;
+            stageName = null;
+            stageSortOrder = 9999;
         }
-        map.get(stageId)!.tasks.push(task);
+
+        if (!map.has(key)) {
+            map.set(key, { stageId, stageName, stageSortOrder, tasks: [] });
+        }
+        map.get(key)!.tasks.push(task);
     }
 
     return [...map.values()].sort((a, b) => a.stageSortOrder - b.stageSortOrder);

@@ -1127,6 +1127,7 @@
     "case_tasks.remove_task": "Remove",
     "case_tasks.no_selected": "No stages selected. Select from the list on the left.",
     "case_tasks.optional_step": "This step is optional",
+    "case_tasks.tasks_short": "Tasks",
     "wizard.step5_checklist.title": "Lifecycle",
     "wizard.step6.title": "Summary",
     "wizard.step6.description": "Review the information before creating the case",

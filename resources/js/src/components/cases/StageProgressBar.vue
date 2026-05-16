@@ -42,14 +42,32 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
-import type { WorkflowSnapshot, WorkflowSnapshotStage } from '@/types/workflow';
+import { useI18n } from 'vue-i18n';
+import type { WorkflowSnapshot, WorkflowSnapshotStage, CaseStage } from '@/types/workflow';
 
 const props = defineProps<{
     snapshot: WorkflowSnapshot | null;
     currentStageId: number | null;
+    stagesOverride?: CaseStage[];
 }>();
 
-const stages = computed<WorkflowSnapshotStage[]>(() => props.snapshot?.stages ?? []);
+const { locale } = useI18n();
+
+const stages = computed<WorkflowSnapshotStage[]>(() => {
+    if (props.stagesOverride?.length) {
+        const loc = locale.value as 'es' | 'en' | 'fr';
+        return props.stagesOverride.map(s => ({
+            id: s.id,
+            code: s.code,
+            sort_order: s.sort_order,
+            is_terminal: s.is_terminal,
+            color: s.color,
+            name: s.name[loc] ?? s.name['es'] ?? s.name_resolved ?? s.code,
+            description: null,
+        }));
+    }
+    return props.snapshot?.stages ?? [];
+});
 
 const currentIndex = computed(() =>
     stages.value.findIndex(s => s.id === props.currentStageId)

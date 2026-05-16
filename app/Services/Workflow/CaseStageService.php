@@ -44,6 +44,11 @@ class CaseStageService
                 $stage->setTranslations('description', $data['description']);
             }
 
+            // First stage created → make it the current stage automatically
+            if ($maxOrder === null) {
+                $case->updateQuietly(['current_case_stage_id' => $stage->id]);
+            }
+
             activity()
                 ->causedBy(Auth::user())
                 ->performedOn($case)

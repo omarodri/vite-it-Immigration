@@ -15,11 +15,9 @@ class TodoCoreService
      */
     public function createForTask(Task $task, string $source = 'wizard', ?Carbon $referenceDate = null): ?Todo
     {
-        if (! $task->task_template_id) {
-            return null;
-        }
-
-        $template = $task->relationLoaded('template') ? $task->template : $task->template()->first();
+        $template = $task->task_template_id
+            ? ($task->relationLoaded('template') ? $task->template : $task->template()->first())
+            : null;
 
         $assignedTo = $task->assigned_to ?? $task->requester_id ?? Auth::id();
 

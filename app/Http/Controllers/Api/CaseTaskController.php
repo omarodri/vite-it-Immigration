@@ -158,7 +158,7 @@ class CaseTaskController extends Controller
 
         $task = $this->caseTaskService->createAdHocTask($case, $request->validated());
 
-        if ($request->boolean('create_todo_core', true) && $task->task_template_id) {
+        if ($request->boolean('create_todo_core', true)) {
             app(\App\Services\Todo\TodoCoreService::class)->createForTask($task, 'workflow_add');
         }
 

@@ -169,7 +169,7 @@
                     <div class="flex-[1] flex flex-nowrap justify-end gap-2 items-center min-w-0">
                         <button
                             v-can="'cases.update'"
-                            v-if="currentCase.current_stage_id"
+                            v-if="currentCase.current_stage_id || currentCase.current_case_stage_id"
                             type="button"
                             class="btn btn-success gap-2 btn-sm"
                             :disabled="isAdvancingStage"
@@ -443,15 +443,23 @@
 
                     <!-- Lifecycle Tab -->
                     <div v-else-if="activeTab === 'lifecycle'">
-                        <!-- Workflow Roadmap (only when workflow snapshot exists) -->
+                        <!-- Roadmap: workflow-snapshot based (standard cases) -->
                         <StageProgressBar
-                            v-if="currentCase.workflow_snapshot && currentCase.workflow_snapshot.stages.length"
+                            v-if="currentCase.workflow_snapshot?.stages?.length"
                             :snapshot="currentCase.workflow_snapshot"
-                            :current-stage-id="currentCase.current_stage_id"
+                            :current-stage-id="currentCase.current_stage_id ?? null"
+                        />
+                        <!-- Roadmap: ad-hoc case stages -->
+                        <StageProgressBar
+                            v-else-if="caseStagesStore.orderedStages.length"
+                            :snapshot="null"
+                            :stages-override="caseStagesStore.orderedStages"
+                            :current-stage-id="currentCase.current_case_stage_id ?? null"
                         />
                         <WorkflowTaskChecklist
                             :tasks="currentCase.tasks ?? []"
                             :case-id="currentCase.id"
+                            :ad-hoc-stages="currentCase.workflow_snapshot ? undefined : caseStagesStore.orderedStages"
                             @progress-updated="(p: number) => { if (currentCase) currentCase.progress = p }"
                             @task-toggled="onTaskToggled"
                         />
@@ -594,6 +602,7 @@ import CaseDocumentsTab from '@/views/cases/components/CaseDocumentsTab.vue';
 import StageProgressBar from '@/components/cases/StageProgressBar.vue';
 import { workflowService } from '@/services/workflowService';
 import type { TranslationsByField, WorkflowTask } from '@/types/workflow';
+import { useCaseStagesStore } from '@/stores/useCaseStagesStore';
 
 // Icons
 import IconFolder from '@/components/icon/icon-folder.vue';
@@ -626,6 +635,7 @@ const router = useRouter();
 const { t } = useI18n();
 const caseStore = useCaseStore();
 const todoStore = useTodoStore();
+const caseStagesStore = useCaseStagesStore();
 const { confirm: confirmDialog, success, error } = useNotification();
 
 const isLoading = ref(true);
@@ -940,10 +950,13 @@ const confirmDelete = async () => {
     }
 };
 
-// Watch for tab changes to load timeline
+// Watch for tab changes to load timeline or ad-hoc stages
 watch(activeTab, async (newTab) => {
     if (newTab === 'timeline' && currentCase.value) {
         await caseStore.fetchTimeline(currentCase.value.id);
+    }
+    if (newTab === 'lifecycle' && currentCase.value && !currentCase.value.workflow_snapshot) {
+        await caseStagesStore.load(currentCase.value.id);
     }
 });
 
@@ -975,6 +988,10 @@ onMounted(async () => {
     const caseId = parseInt(route.params.id as string);
     try {
         await caseStore.fetchCase(caseId);
+        // For ad-hoc cases (no workflow_snapshot), load the case stages for the roadmap
+        if (!caseStore.currentCase?.workflow_snapshot) {
+            caseStagesStore.load(caseId);
+        }
         // Load todos for this case so TimeLogModal can list them as options
         todoStore.fetchTodos({ case_id: caseId });
         // Load active timer (may belong to this case or another) to keep the header in sync

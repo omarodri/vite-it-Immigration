@@ -1246,6 +1246,7 @@
     "case_tasks.remove_task": "Eliminar",
     "case_tasks.no_selected": "No hay etapas seleccionadas. Selecciona de la lista de la izquierda.",
     "case_tasks.optional_step": "Este paso es opcional",
+    "case_tasks.tasks_short": "Tareas",
     "wizard.step5_checklist.title": "Ciclo de Vida",
     "wizard.step6.title": "Resumen",
     "wizard.step6.description": "Revisa la informacion antes de crear el expediente",

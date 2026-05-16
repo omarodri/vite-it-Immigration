@@ -805,6 +805,7 @@
     "case_tasks.remove_task": "Supprimer",
     "case_tasks.no_selected": "Aucune etape selectionnee. Choisissez dans la liste de gauche.",
     "case_tasks.optional_step": "Cette etape est optionnelle",
+    "case_tasks.tasks_short": "Tâches",
     "wizard.step5_checklist.title": "Cycle de vie",
     "wizard.step6.title": "Resume",
     "wizard.step6.description": "Verifiez les informations avant de creer le dossier",
