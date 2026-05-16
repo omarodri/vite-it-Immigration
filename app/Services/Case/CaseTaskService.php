@@ -287,9 +287,7 @@ class CaseTaskService
 
             $fresh = $task->fresh(['assignee']);
 
-            if ($fresh->task_template_id) {
-                app(\App\Services\Todo\TodoCoreService::class)->syncCoreFieldsFromTask($fresh);
-            }
+            app(\App\Services\Todo\TodoCoreService::class)->syncCoreFieldsFromTask($fresh);
 
             return $fresh;
         });
@@ -312,9 +310,7 @@ class CaseTaskService
 
             $this->recalculateCaseProgress($case);
 
-            if ($clone->task_template_id) {
-                app(\App\Services\Todo\TodoCoreService::class)->createForTask($clone, 'workflow_add');
-            }
+            app(\App\Services\Todo\TodoCoreService::class)->createForTask($clone, 'workflow_add');
 
             activity()
                 ->causedBy(Auth::user())
