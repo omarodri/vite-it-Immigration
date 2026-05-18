@@ -204,7 +204,7 @@ watch(
             // Load staff lazily
             if (staff.value.length === 0) {
                 try {
-                    staff.value = await userService.getStaff();
+                    staff.value = await userService.getStaff(null, 'todo_core.delete', ['admin', 'user']);
                 } catch {
                     staff.value = [];
                 }

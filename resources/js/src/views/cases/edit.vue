@@ -126,7 +126,7 @@
                         <!-- Current Workflow Stage -->
                         <div>
                             <label for="current_stage_id" class="block text-sm font-medium mb-2">{{ $t('cases.stage') }}</label>
-                            <select id="current_stage_id" v-model="form.current_stage_id" class="form-select">
+                            <select id="current_stage_id" v-model="selectedStageId" class="form-select">
                                 <option :value="null">{{ $t('cases.no_stage') }}</option>
                                 <option
                                     v-for="stage in workflowStages"
@@ -357,7 +357,8 @@ import TaskBoard from '@/components/cases/board/TaskBoard.vue';
 import TrashTab from '@/components/cases/board/TrashTab.vue';
 import TodoCoreConfirmationModal from '@/components/cases/TodoCoreConfirmationModal.vue';
 import IconTrash from '@/components/icon/icon-trash.vue';
-import type { WorkflowTask } from '@/types/workflow';
+import type { WorkflowTask, CaseStage as WorkflowCaseStage } from '@/types/workflow';
+import { useCaseStagesStore } from '@/stores/useCaseStagesStore';
 import userService from '@/services/userService';
 import { usePermissions } from '@/composables/usePermissions';
 import type { StaffMember } from '@/types/wizard';
@@ -379,6 +380,7 @@ const router = useRouter();
 const { t, locale } = useI18n();
 const caseStore = useCaseStore();
 const companionStore = useCompanionStore();
+const caseStagesStore = useCaseStagesStore();
 const { success, error } = useNotification();
 
 const availableCompanions = ref<Companion[]>([]);
@@ -391,19 +393,27 @@ const languageOptions = computed(() => [
     { value: 'fr', label: t('common.french') },
 ]);
 
-// Workflow stages derived from the case's workflow_snapshot
+// Workflow stages derived from workflow_snapshot (standard cases) or
+// from CaseStage records (old/ad-hoc cases that have no snapshot).
 const workflowStages = computed(() => {
-    const snapshot = currentCase.value?.workflow_snapshot;
-    if (!snapshot?.stages) return [];
     void locale.value;
-    return snapshot.stages
-        .slice()
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .map((s) => ({
-            id: s.id,
-            name: s.name ?? `Stage ${s.sort_order + 1}`,
-            sort_order: s.sort_order,
-        }));
+    const snapshot = currentCase.value?.workflow_snapshot;
+    if (snapshot?.stages?.length) {
+        return snapshot.stages
+            .slice()
+            .sort((a, b) => a.sort_order - b.sort_order)
+            .map((s) => ({
+                id: s.id,
+                name: s.name ?? `Stage ${s.sort_order + 1}`,
+                sort_order: s.sort_order,
+            }));
+    }
+    // Fallback: ad-hoc / old cases — use CaseStage records loaded by caseStagesStore
+    return caseStagesStore.orderedStages.map((s: WorkflowCaseStage) => ({
+        id: s.id,
+        name: s.name[locale.value] ?? s.name['es'] ?? s.name_resolved ?? s.code,
+        sort_order: s.sort_order,
+    }));
 });
 
 const stageColorById = computed<Record<number, string>>(() => {
@@ -415,6 +425,21 @@ const stageColorById = computed<Record<number, string>>(() => {
         }
     }
     return map;
+});
+
+// For snapshot cases the dropdown value is the WorkflowStage ID (current_stage_id).
+// For ad-hoc/old cases it is the CaseStage instance ID (current_case_stage_id).
+const hasWorkflowSnapshot = computed(() => !!(currentCase.value?.workflow_snapshot?.stages?.length));
+
+const selectedStageId = computed<number | null>({
+    get: () => hasWorkflowSnapshot.value ? form.current_stage_id : form.current_case_stage_id,
+    set: (val: number | null) => {
+        if (hasWorkflowSnapshot.value) {
+            form.current_stage_id = val;
+        } else {
+            form.current_case_stage_id = val;
+        }
+    },
 });
 
 const activeBoardTab = ref<'board' | 'trash'>('board');
@@ -466,7 +491,7 @@ const isLoading = ref(true);
 const isSubmitting = ref(false);
 const errors = reactive<Record<string, string>>({});
 
-const form = reactive<UpdateCaseData & { important_dates: ImportantDate[]; tasks: CaseTask[]; current_stage_id: number | null }>({
+const form = reactive<UpdateCaseData & { important_dates: ImportantDate[]; tasks: CaseTask[]; current_stage_id: number | null; current_case_stage_id: number | null }>({
     status: 'active',
     priority: 'medium',
     progress: 0,
@@ -480,6 +505,7 @@ const form = reactive<UpdateCaseData & { important_dates: ImportantDate[]; tasks
     companion_ids: [],
     stage: null as CaseStage | null,
     current_stage_id: null as number | null,
+    current_case_stage_id: null as number | null,
     ircc_status: null as IrccStatus | null,
     final_result: null as FinalResult | null,
     ircc_code: '',
@@ -539,6 +565,11 @@ onMounted(async () => {
     const caseId = parseInt(route.params.id as string);
     try {
         await caseStore.fetchCase(caseId);
+        // For old/ad-hoc cases without a workflow_snapshot, load CaseStage records
+        // so the stage dropdown can show the stages created in the roadmap editor.
+        if (!caseStore.currentCase?.workflow_snapshot) {
+            await caseStagesStore.load(caseId);
+        }
         if (currentCase.value) {
             // Populate form with current case data
             form.status = currentCase.value.status;
@@ -563,6 +594,7 @@ onMounted(async () => {
             form.service_type = currentCase.value.service_type ?? 'fee_based';
             form.fees = currentCase.value.fees ?? null;
             form.current_stage_id = currentCase.value.current_stage_id ?? null;
+            form.current_case_stage_id = currentCase.value.current_case_stage_id ?? null;
             form.tasks = [];
 
             // Load staff members (include current assignee even if inactive)

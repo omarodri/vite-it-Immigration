@@ -1453,6 +1453,7 @@
     "documents.sync_failed": "Erreur de synchronisation des dossiers",
     "documents.sync_retry": "Réessayer",
     "documents.sync_success": "Dossiers synchronisés avec succès",
+    "documents.sync_queued": "Synchronisation en cours. Les dossiers apparaîtront sous peu.",
     "documents.sync_imported": "{count} document(s) importé(s) depuis le stockage cloud",
     "documents.sync_button": "Synchroniser",
     "documents.provider_local": "Local",

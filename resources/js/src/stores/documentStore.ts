@@ -100,8 +100,8 @@ export const useDocumentStore = defineStore('document', {
             this.syncStatus = 'syncing';
             try {
                 await documentService.syncFolders(caseId);
-                this.syncStatus = 'synced';
-                // Refresh folders to get updated sync_status
+                // 202 = job queued, not yet completed — stay pending until worker finishes
+                this.syncStatus = 'pending';
                 await this.fetchFolders(caseId);
             } catch {
                 this.syncStatus = 'error';

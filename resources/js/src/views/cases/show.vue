@@ -169,7 +169,7 @@
                     <div class="flex-[1] flex flex-nowrap justify-end gap-2 items-center min-w-0">
                         <button
                             v-can="'cases.update'"
-                            v-if="currentCase.current_stage_id || currentCase.current_case_stage_id"
+                            v-if="currentCase.current_stage_id || currentCase.current_case_stage_id || (currentCase.workflow_snapshot?.stages?.length ?? 0) > 0 || caseStagesStore.orderedStages.length > 0"
                             type="button"
                             class="btn btn-success gap-2 btn-sm"
                             :disabled="isAdvancingStage"

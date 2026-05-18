@@ -83,10 +83,13 @@ const userService = {
     /**
      * Get staff members available for case assignment
      */
-    async getStaff(includeUserId?: number | null): Promise<StaffMember[]> {
-        const url = includeUserId != null
-            ? `/users/staff?include_user_id=${includeUserId}`
-            : '/users/staff';
+    async getStaff(includeUserId?: number | null, permission?: string, excludeRoles?: string[]): Promise<StaffMember[]> {
+        const params = new URLSearchParams();
+        if (includeUserId != null) params.set('include_user_id', String(includeUserId));
+        if (permission) params.set('permission', permission);
+        if (excludeRoles?.length) params.set('exclude_roles', excludeRoles.join(','));
+        const qs = params.toString();
+        const url = qs ? `/users/staff?${qs}` : '/users/staff';
         const response = await api.get<{ data: StaffMember[] }>(url);
         return response.data.data;
     },

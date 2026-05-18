@@ -1322,6 +1322,7 @@
     "documents.sync_failed": "Folder sync failed",
     "documents.sync_retry": "Retry",
     "documents.sync_success": "Folders synced successfully",
+    "documents.sync_queued": "Sync in progress. Folders will appear shortly.",
     "documents.sync_imported": "Imported {count} document(s) from cloud storage",
     "documents.sync_button": "Sync",
     "documents.provider_local": "Local",

@@ -121,6 +121,16 @@ class CaseStageService
                     ->where('sort_order', '<', $stage->sort_order)
                     ->orderByDesc('sort_order')
                     ->first();
+
+                // If no previous stage exists (deleting the first), fall forward to the next
+                if (! $prev) {
+                    $prev = CaseStage::where('case_id', $case->id)
+                        ->where('id', '!=', $stage->id)
+                        ->where('sort_order', '>', $stage->sort_order)
+                        ->orderBy('sort_order')
+                        ->first();
+                }
+
                 $case->updateQuietly(['current_case_stage_id' => $prev?->id]);
             }
 

@@ -137,7 +137,26 @@ class WorkflowInstantiator
         return DB::transaction(function () use ($case) {
             $case = ImmigrationCase::lockForUpdate()->findOrFail($case->id);
             if (! $case->current_case_stage_id) {
-                return null;
+                // Recovery for old/migrated cases: find the CaseStage matching current_stage_id,
+                // or fall back to the first active CaseStage. This repairs the pointer without
+                // advancing — the method will then proceed to advance from the recovered stage.
+                $recovered = $case->current_stage_id
+                    ? CaseStage::where('case_id', $case->id)
+                          ->where('workflow_stage_id', $case->current_stage_id)
+                          ->first()
+                    : null;
+
+                $recovered ??= CaseStage::where('case_id', $case->id)
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->first();
+
+                if (! $recovered) {
+                    return null; // No stages exist for this case
+                }
+
+                $case->updateQuietly(['current_case_stage_id' => $recovered->id]);
+                $case->current_case_stage_id = $recovered->id;
             }
 
             $blocking = Task::where('case_id', $case->id)

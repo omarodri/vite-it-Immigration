@@ -353,6 +353,21 @@ The widget labeled "Tareas Asignadas" in the Dashboard queries the `Todo` model 
 ### G19. Calendar backfill settings live in `tenant.settings` JSON — no SQL column (Spec 62)
 `tenant.settings.calendar_backfill_months` (default 6, max 24) and `calendar_lookahead_months` (default 12, max 24) control the sync window. Access via `$tenant->calendarBackfillMonths()` and `$tenant->calendarLookaheadMonths()` — accessors apply `max(1, min(24, $value))` clamp. On first connect (`last_pull_at IS NULL`) the full backfill window applies; subsequent pulls are incremental from `last_pull_at`. Validate in `UpdateTenantSettingsRequest` when persisting.
 
+### G20. Stage dropdown uses two different ID spaces depending on `workflow_snapshot`
+`ImmigrationCase` has two stage pointer fields: `current_stage_id` (FK → `workflow_stages`, template ID) and `current_case_stage_id` (FK → `case_stages`, per-case instance ID). The stage dropdown in `cases/edit.vue` must write to the correct field based on whether the case has a `workflow_snapshot`:
+- **Snapshot case** → dropdown value = WorkflowStage ID → save as `current_stage_id` → validated by `UpdateCaseRequest` against `workflow_stages`.
+- **Ad-hoc/old case** (no snapshot) → dropdown value = CaseStage instance ID → save as `current_case_stage_id` → validated against `case_stages`.
+The `selectedStageId` writable computed in `edit.vue` routes to the right field via `hasWorkflowSnapshot`. Never send an ad-hoc CaseStage ID as `current_stage_id` — it will fail validation (`exists:workflow_stages,id`).
+
+### G21. `/users/staff` supports permission-based and role-exclusion filters
+The endpoint accepts two optional query params beyond `include_user_id`:
+- `?permission=todo_core.delete` — returns active users in the tenant who have that permission (via role or direct), instead of the default `activeConsultors()` scope.
+- `?exclude_roles=admin,user` — comma-separated list of roles to exclude from results.
+Used in `NewTaskModal` (`?permission=todo_core.delete&exclude_roles=admin,user`) to populate the task assignee list with eligible non-admin staff. Both params are handled by `UserService::getStaffMembers($includeUserId, $permission, $excludeRoles)`.
+
+### G22. HTTP 202 from folder sync = job queued, not completed
+`DocumentService::syncFolders()` (and its underlying `SyncCaseFolderStructure` job) returns 202 when the sync job is dispatched to the queue — the folders are NOT yet synced at that point. The queue worker must be running (`php artisan queue:work`). In `documentStore.ts`, set `syncStatus = 'pending'` after a 202 response and show a "Sincronización en progreso" toast — never show a success toast. Only set `syncStatus = 'synced'` when confirmed complete via a subsequent status poll or webhook.
+
 ---
 
 ## Project Structure

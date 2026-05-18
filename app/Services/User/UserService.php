@@ -36,9 +36,17 @@ class UserService
      * When $includeUserId is provided and that user is inactive or not a consultor,
      * they are prepended to the list with is_current_assignment = true (grandfather clause).
      */
-    public function getStaffMembers(?int $includeUserId = null): Collection
+    public function getStaffMembers(?int $includeUserId = null, ?string $permission = null, array $excludeRoles = []): Collection
     {
-        $staff = User::activeConsultors()
+        $query = $permission
+            ? User::permission($permission)->active()
+            : User::activeConsultors();
+
+        if ($excludeRoles) {
+            $query->whereDoesntHave('roles', fn ($q) => $q->whereIn('name', $excludeRoles));
+        }
+
+        $staff = $query
             ->where('tenant_id', Auth::user()->tenant_id)
             ->with('profile:id,user_id,avatar_url')
             ->select('id', 'name', 'email')

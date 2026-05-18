@@ -153,7 +153,31 @@ import api from '@/services/api';
 
 ---
 
-## 8. Anti-patterns a Evitar
+## 8. Computed Escribible para Formularios con Campo Condicional
+
+Cuando un formulario debe escribir a campos diferentes según el tipo de entidad, usar un computed con getter/setter en lugar de lógica en el template:
+
+```typescript
+// Evitar: v-model directo a campos distintos según condición
+// Usar: computed que enruta al campo correcto
+
+const hasSnapshot = computed(() => !!(entity.value?.snapshot?.items?.length));
+
+const selectedId = computed<number | null>({
+    get: () => hasSnapshot.value ? form.template_id : form.instance_id,
+    set: (val) => {
+        if (hasSnapshot.value) form.template_id = val;
+        else form.instance_id = val;
+    },
+});
+// En el template: v-model="selectedId"
+```
+
+Aplicado en `cases/edit.vue` → `selectedStageId` (snapshot → `current_stage_id`, ad-hoc → `current_case_stage_id`). Ver gotcha G20.
+
+---
+
+## 9. Anti-patterns a Evitar
 
 | Anti-pattern | Corrección |
 |-------------|-----------|

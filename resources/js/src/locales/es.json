@@ -1438,6 +1438,7 @@
     "documents.sync_failed": "Error de sincronización de carpetas",
     "documents.sync_retry": "Reintentar",
     "documents.sync_success": "Carpetas sincronizadas correctamente",
+    "documents.sync_queued": "Sincronización en progreso. Las carpetas aparecerán en breve.",
     "documents.sync_imported": "Se importaron {count} documento(s) desde almacenamiento en la nube",
     "documents.sync_button": "Sincronizar",
     "documents.provider_local": "Local",

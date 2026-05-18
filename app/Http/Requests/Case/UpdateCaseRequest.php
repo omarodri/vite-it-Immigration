@@ -59,6 +59,7 @@ class UpdateCaseRequest extends FormRequest
             'case_tasks.*.is_custom' => ['sometimes', 'boolean'],
             'case_tasks.*.sort_order' => ['sometimes', 'integer', 'min:0', 'max:255'],
             'current_stage_id' => ['sometimes', 'nullable', 'integer', 'exists:workflow_stages,id'],
+            'current_case_stage_id' => ['sometimes', 'nullable', 'integer', 'exists:case_stages,id'],
             'stage' => ['sometimes', 'nullable', Rule::in(array_keys(ImmigrationCase::STAGE_LABELS))],
             'ircc_status' => ['sometimes', 'nullable', Rule::in(array_keys(ImmigrationCase::IRCC_STATUS_LABELS))],
             'final_result' => ['nullable', Rule::in([

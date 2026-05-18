@@ -30,8 +30,12 @@ class UserController extends Controller
     public function staff(Request $request): JsonResponse
     {
         $includeUserId = $request->query('include_user_id') ? (int) $request->query('include_user_id') : null;
+        $permission    = $request->query('permission') ?: null;
+        $excludeRoles  = $request->query('exclude_roles')
+            ? array_filter(explode(',', $request->query('exclude_roles')))
+            : [];
 
-        $staff = $this->userService->getStaffMembers($includeUserId);
+        $staff = $this->userService->getStaffMembers($includeUserId, $permission, $excludeRoles);
 
         return response()->json(['data' => $staff]);
     }
