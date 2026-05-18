@@ -152,10 +152,18 @@ class CaseService
             ]);
         }
 
-        // Step 2: Dispatch cloud sync to the queue — never block the HTTP request on
-        // external API calls (Guzzle timeouts cause PHP fatal errors uncatchable by try-catch).
-        // SyncCaseFolderStructure handles local vs cloud and retries on failure.
-        \App\Jobs\SyncCaseFolderStructure::dispatch($case->id);
+        // Step 2: Run folder sync. With QUEUE_CONNECTION=database the job is queued for a
+        // background worker; with QUEUE_CONNECTION=sync it runs inline inside this request.
+        // The try/catch ensures a SharePoint/OneDrive failure never rolls back the case creation.
+        try {
+            \App\Jobs\SyncCaseFolderStructure::dispatch($case->id);
+        } catch (\Throwable $e) {
+            Log::error('CaseService: Folder sync failed.', [
+                'case_id'     => $case->id,
+                'case_number' => $case->case_number,
+                'error'       => $e->getMessage(),
+            ]);
+        }
 
         return $case;
     }
