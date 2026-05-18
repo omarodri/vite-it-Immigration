@@ -191,12 +191,14 @@ class CaseFolderSyncService
             return null;
         }
 
-        if ($tenant->base_folder_external_id) {
-            return $tenant->base_folder_external_id;
-        }
-
+        // Always traverse by name (findOrCreateFolder is idempotent: GET first, creates only if absent).
+        // This avoids stale-cache failures when the tenant cached ID no longer exists in OneDrive
+        // (e.g. folder deleted, drive reconnected, or account switched).
         $externalId = $this->createNestedFolders($provider, $tenant->base_folder_path);
-        $tenant->update(['base_folder_external_id' => $externalId]);
+
+        if ($tenant->base_folder_external_id !== $externalId) {
+            $tenant->update(['base_folder_external_id' => $externalId]);
+        }
 
         return $externalId;
     }
