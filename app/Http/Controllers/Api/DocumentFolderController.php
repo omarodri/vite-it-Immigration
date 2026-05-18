@@ -13,6 +13,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Log;
 
 class DocumentFolderController extends Controller
 {
@@ -165,7 +166,20 @@ class DocumentFolderController extends Controller
 
         $case->update(['folder_sync_status' => 'pending']);
 
-        SyncCaseFolderStructure::dispatch($case->id);
+        try {
+            SyncCaseFolderStructure::dispatch($case->id);
+        } catch (\Throwable $e) {
+            Log::error('DocumentFolderController: sync dispatch failed', [
+                'case_id' => $case->id,
+                'error' => $e->getMessage(),
+            ]);
+            $case->update(['folder_sync_status' => 'failed']);
+
+            return response()->json([
+                'message' => 'Folder sync failed: ' . $e->getMessage(),
+                'folder_sync_status' => 'failed',
+            ], 422);
+        }
 
         return response()->json([
             'message' => 'Folder sync has been queued.',

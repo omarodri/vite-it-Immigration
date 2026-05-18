@@ -33,13 +33,19 @@ class CaseFolderSyncService
         $rootExternalId = $case->root_external_folder_id;
 
         if (!$rootExternalId) {
+            if (!$case->client) {
+                Log::error('CaseFolderSyncService: case has no associated client', ['case_id' => $case->id]);
+                $case->update(['folder_sync_status' => 'failed']);
+                throw new \RuntimeException("Case #{$case->id} has no associated client; cannot build root folder name.");
+            }
+
             $clientSlug = $this->normalizeClientNameForFolderSegment($case->client->full_name);
             $rootFolderName = $clientSlug !== ''
                 ? $case->case_number.'-'.$clientSlug
                 : $case->case_number;
-            $baseFolderExternalId = $this->resolveBaseFolderExternalId($tenant, $provider);
 
             try {
+                $baseFolderExternalId = $this->resolveBaseFolderExternalId($tenant, $provider);
                 $rootResult = $provider->createFolder($rootFolderName, $baseFolderExternalId);
                 $rootExternalId = $rootResult['external_id'];
 
