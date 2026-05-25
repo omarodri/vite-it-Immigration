@@ -80,7 +80,7 @@ class ClientPromotionService
 
         if (! $companion->date_of_birth) {
             $reasons[] = 'missing_date_of_birth';
-        } elseif (($companion->age ?? 0) < 22) {
+        } elseif (($companion->age ?? 0) < 18) {
             $reasons[] = 'underage';
         }
 
@@ -123,7 +123,7 @@ class ClientPromotionService
             throw new CompanionNotEligibleForPromotionException('missing_date_of_birth');
         }
 
-        if (($companion->age ?? 0) < 22) {
+        if (($companion->age ?? 0) < 18) {
             throw new CompanionNotEligibleForPromotionException('underage');
         }
 
@@ -146,6 +146,8 @@ class ClientPromotionService
     {
         return [
             'tenant_id'                  => $companion->tenant_id,
+            // Spec 64 — companions always promote to a persona-type client.
+            'type'                       => Client::TYPE_PERSON,
             'first_name'                 => $companion->first_name,
             'last_name'                  => $companion->last_name,
             'email'                      => $companion->email,

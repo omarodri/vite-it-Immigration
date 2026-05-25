@@ -179,9 +179,11 @@ export interface ImmigrationCase {
     // Conditional Relations
     client?: {
         id: number;
-        first_name: string;
-        last_name: string;
+        type: 'person' | 'company';
+        first_name: string | null;
+        last_name: string | null;
         full_name?: string;
+        initials?: string;
         email: string | null;
         phone: string | null;
     };

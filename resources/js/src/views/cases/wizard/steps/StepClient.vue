@@ -176,7 +176,14 @@ watch(
             try {
                 const response = await clientService.getClient(clientId);
                 // Handle both {data: Client} and Client responses
-                selectedClient.value = (response as any).data || response;
+                const client = (response as any).data || response;
+                selectedClient.value = client;
+                // Refresh the cached client type in the wizard state — needed
+                // for the company → beneficiary flow (DT-09) when the wizard
+                // is restored from sessionStorage.
+                if (client?.type && wizard.state.clientType !== client.type) {
+                    wizard.setClientType(client.type);
+                }
             } catch (error) {
                 console.error('Failed to load selected client:', error);
             }
@@ -219,7 +226,7 @@ function handleSearchInput() {
 // Select a client
 function selectClient(client: Client) {
     selectedClient.value = client;
-    wizard.setClient(client.id);
+    wizard.setClient(client.id, client.type ?? null);
     searchQuery.value = '';
     searchResults.value = [];
     hasSearched.value = false;
@@ -228,8 +235,9 @@ function selectClient(client: Client) {
 // Clear selection
 function clearSelection() {
     selectedClient.value = null;
-    wizard.setClient(0); // This will be caught by validation
+    wizard.setClient(0, null); // This will be caught by validation
     wizard.state.clientId = null;
+    wizard.state.clientType = null;
 }
 
 // Handle newly created client

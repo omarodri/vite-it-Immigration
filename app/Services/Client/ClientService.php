@@ -30,6 +30,26 @@ class ClientService
     public function createClient(array $data): Client
     {
         return DB::transaction(function () use ($data) {
+            // Spec 64 — sanitize payload so the wrong-side fields are nulled out.
+            // This is a defence-in-depth pass; FormRequests already mark them as
+            // `prohibited`, but a programmatic caller (test, console command, future
+            // bulk importer) might bypass the request layer.
+            $type = $data['type'] ?? Client::TYPE_PERSON;
+            if ($type === Client::TYPE_COMPANY) {
+                foreach (['first_name', 'last_name', 'date_of_birth', 'marital_status',
+                          'nationality', 'second_nationality', 'gender', 'profession'] as $field) {
+                    $data[$field] = null;
+                }
+            } else {
+                foreach (['company_name', 'trade_name', 'tax_id', 'industry',
+                          'website', 'legal_rep_name', 'legal_rep_title'] as $field) {
+                    $data[$field] = null;
+                }
+                if (! isset($data['type'])) {
+                    $data['type'] = Client::TYPE_PERSON;
+                }
+            }
+
             // Check for duplicate email
             if (! empty($data['email']) && $this->clientRepository->existsByEmailForTenant($data['email'])) {
                 throw new \InvalidArgumentException('A client with this email already exists');
@@ -55,6 +75,13 @@ class ClientService
     public function updateClient(Client $client, array $data): Client
     {
         return DB::transaction(function () use ($client, $data) {
+            // Spec 64 — type is immutable after creation. Any attempt to change
+            // it is a hard error; silently dropping the field would mask bugs.
+            if (isset($data['type']) && $data['type'] !== $client->type) {
+                throw new \InvalidArgumentException('Client type cannot be changed after creation.');
+            }
+            unset($data['type']);
+
             // Check for duplicate email (excluding current client)
             if (! empty($data['email']) && $data['email'] !== $client->email) {
                 if ($this->clientRepository->existsByEmailForTenant($data['email'], $client->id)) {

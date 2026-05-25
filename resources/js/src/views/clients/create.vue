@@ -11,12 +11,62 @@
         </ul>
 
         <div class="panel">
-            <!-- Form -->
-            <form @submit.prevent="handleSubmit" class="space-y-6">
-                
+            <!-- Step 1: Type Selector (Spec 64) -->
+            <div v-if="selectedType === null" class="flex flex-col items-center justify-center min-h-[400px] py-10">
+                <h5 class="font-semibold text-xl dark:text-white-light mb-2 text-center">
+                    {{ $t('clients.type_selector.title') }}
+                </h5>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-8 text-center max-w-md">
+                    {{ $t('clients.type_selector.subtitle') }}
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-2xl px-4">
+                    <button
+                        type="button"
+                        class="panel flex flex-col items-center gap-3 p-8 cursor-pointer hover:border-primary hover:shadow-md transition-all border-2 border-transparent"
+                        @click="selectType('person')"
+                    >
+                        <div class="w-16 h-16 rounded-full bg-info/10 text-info flex items-center justify-center">
+                            <icon-user class="w-9 h-9" />
+                        </div>
+                        <span class="font-semibold text-base dark:text-white-light">{{ $t('clients.type.person') }}</span>
+                        <span class="text-xs text-gray-500 text-center">{{ $t('clients.type_selector.person_description') }}</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="panel flex flex-col items-center gap-3 p-8 cursor-pointer hover:border-success hover:shadow-md transition-all border-2 border-transparent"
+                        @click="selectType('company')"
+                    >
+                        <div class="w-16 h-16 rounded-full bg-success/10 text-success flex items-center justify-center">
+                            <icon-building class="w-9 h-9" />
+                        </div>
+                        <span class="font-semibold text-base dark:text-white-light">{{ $t('clients.type.company') }}</span>
+                        <span class="text-xs text-gray-500 text-center">{{ $t('clients.type_selector.company_description') }}</span>
+                    </button>
+                </div>
+                <router-link to="/clients" class="btn btn-outline-secondary mt-8 gap-2">
+                    <icon-arrow-left class="w-4 h-4" />
+                    {{ $t('clients.cancel') }}
+                </router-link>
+            </div>
+
+            <!-- Step 2: Form (after type selected) -->
+            <form v-else @submit.prevent="handleSubmit" class="space-y-6">
+
                 <!-- Header -->
                 <div class="flex items-center justify-between mb-5">
-                    <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('clients.create_new_client') }}</h5>
+                    <div class="flex items-center gap-3">
+                        <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('clients.create_new_client') }}</h5>
+                        <span :class="selectedType === 'company' ? 'badge badge-outline-success' : 'badge badge-outline-info'">
+                            {{ selectedType === 'company' ? $t('clients.type.company') : $t('clients.type.person') }}
+                        </span>
+                        <button
+                            type="button"
+                            class="text-xs text-gray-500 hover:text-primary underline"
+                            @click="changeType"
+                        >
+                            {{ $t('common.change') }}
+                        </button>
+                    </div>
                     <!-- Actions -->
                     <div class="flex items-center justify-end gap-4">
                         <!-- Back to List Button -->
@@ -54,7 +104,64 @@
                     </button>
                 </div>
 
-                <!-- Personal Information Section -->
+                <!-- Company Information Section (Spec 64) -->
+                <div v-if="selectedType === 'company'" class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
+                    <h6 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <icon-building class="w-5 h-5" />
+                        {{ $t('clients.company_information') }}
+                    </h6>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <div class="md:col-span-2">
+                            <label for="company_name" class="mb-2 block">
+                                {{ $t('clients.fields.company_name') }} <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                id="company_name"
+                                v-model="form.company_name"
+                                type="text"
+                                class="form-input"
+                                :class="{ 'border-danger': companyErrors.company_name }"
+                            />
+                            <p v-if="companyErrors.company_name" class="text-danger mt-1 text-sm">{{ companyErrors.company_name }}</p>
+                        </div>
+                        <div>
+                            <label for="trade_name" class="mb-2 block">{{ $t('clients.fields.trade_name') }}</label>
+                            <input id="trade_name" v-model="form.trade_name" type="text" class="form-input" />
+                        </div>
+                        <div>
+                            <label for="tax_id" class="mb-2 block">
+                                {{ $t('clients.fields.tax_id') }} <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                id="tax_id"
+                                v-model="form.tax_id"
+                                type="text"
+                                class="form-input"
+                                :class="{ 'border-danger': companyErrors.tax_id }"
+                            />
+                            <p v-if="companyErrors.tax_id" class="text-danger mt-1 text-sm">{{ companyErrors.tax_id }}</p>
+                        </div>
+                        <div>
+                            <label for="industry" class="mb-2 block">{{ $t('clients.fields.industry') }}</label>
+                            <input id="industry" v-model="form.industry" type="text" class="form-input" />
+                        </div>
+                        <div>
+                            <label for="website" class="mb-2 block">{{ $t('clients.fields.website') }}</label>
+                            <input id="website" v-model="form.website" type="url" class="form-input" placeholder="https://" />
+                        </div>
+                        <div>
+                            <label for="legal_rep_name" class="mb-2 block">{{ $t('clients.fields.legal_rep_name') }}</label>
+                            <input id="legal_rep_name" v-model="form.legal_rep_name" type="text" class="form-input" />
+                        </div>
+                        <div>
+                            <label for="legal_rep_title" class="mb-2 block">{{ $t('clients.fields.legal_rep_title') }}</label>
+                            <input id="legal_rep_title" v-model="form.legal_rep_title" type="text" class="form-input" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Information Section (Spec 64 — only for person) -->
+                <template v-if="selectedType === 'person'">
                 <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
                     <h6 class="text-lg font-semibold mb-4 flex items-center gap-2">
                         <icon-user class="w-5 h-5" />
@@ -149,10 +256,11 @@
                             <select id="language" v-model="form.language" class="form-select">
                                 <option value="">{{ $t('clients.enter_language') }}</option>
                                 <option v-for="opt in languageOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                            </select>   
+                            </select>
                         </div>
                     </div>
                 </div>
+                </template>
 
                 <!-- Contact Information Section -->
                 <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
@@ -260,8 +368,8 @@
                     </div>
                 </div>
 
-                <!-- Canada Status Section -->
-                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
+                <!-- Canada Status Section (Person only — Spec 64) -->
+                <div v-if="selectedType === 'person'" class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
                     <h6 class="text-lg font-semibold mb-4 flex items-center gap-2">
                         <icon-home class="w-5 h-5" />
                         {{ $t('clients.canada_legal_status') }}
@@ -389,10 +497,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useVuelidate } from '@vuelidate/core';
 import { required, email, helpers } from '@vuelidate/validators';
+import type { ClientType } from '@/types/client';
 import { useMeta } from '@/composables/use-meta';
 import { useClientStore } from '@/stores/client';
 import { useNotification } from '@/composables/useNotification';
@@ -406,6 +515,7 @@ import type { LegalDocument } from '@/types/legal-document';
 import IconArrowLeft from '@/components/icon/icon-arrow-left.vue';
 import IconFile from '@/components/icon/icon-file.vue';
 import IconUser from '@/components/icon/icon-user.vue';
+import IconBuilding from '@/components/icon/icon-building.vue';
 import IconMail from '@/components/icon/icon-mail.vue';
 import IconHome from '@/components/icon/icon-home.vue';
 import IconSettings from '@/components/icon/icon-settings.vue';
@@ -478,6 +588,25 @@ const errorMessage = ref('');
 const legalDocs = ref<LegalDocument[]>([]);
 const createdClientId = ref<number | null>(null);
 
+// Spec 64 — Client type selector state
+const selectedType = ref<ClientType | null>(null);
+const companyErrors = reactive<{ company_name: string; tax_id: string }>({
+    company_name: '',
+    tax_id: '',
+});
+
+const selectType = (type: ClientType) => {
+    selectedType.value = type;
+    errorMessage.value = '';
+};
+
+const changeType = () => {
+    selectedType.value = null;
+    errorMessage.value = '';
+    companyErrors.company_name = '';
+    companyErrors.tax_id = '';
+};
+
 // Date picker config
 const maxBirthDate = new Date();
 maxBirthDate.setDate(maxBirthDate.getDate() - 1);
@@ -510,30 +639,65 @@ const form = reactive({
     iuc: '',
     status: 'prospect',
     description: '',
+    // Spec 64 — Company-specific fields
+    company_name: '',
+    trade_name: '',
+    tax_id: '',
+    industry: '',
+    website: '',
+    legal_rep_name: '',
+    legal_rep_title: '',
 });
 
-// Validation rules
-const rules = computed(() => ({
-    first_name: {
-        required: helpers.withMessage(() => t('clients.first_name_required'), required),
-    },
-    last_name: {
-        required: helpers.withMessage(() => t('clients.last_name_required'), required),
-    },
-    email: {
-        required: helpers.withMessage(() => t('clients.email_required'), required),
-        email: helpers.withMessage(() => t('clients.invalid_email'), email),
-    },
-    phone: {
-        required: helpers.withMessage(() => t('clients.phone_required'), required),
-    },
-}));
+// Validation rules — Spec 64: first/last name only required for persons
+const rules = computed(() => {
+    const isPerson = selectedType.value === 'person';
+    return {
+        first_name: isPerson
+            ? { required: helpers.withMessage(() => t('clients.first_name_required'), required) }
+            : {},
+        last_name: isPerson
+            ? { required: helpers.withMessage(() => t('clients.last_name_required'), required) }
+            : {},
+        email: {
+            required: helpers.withMessage(() => t('clients.email_required'), required),
+            email: helpers.withMessage(() => t('clients.invalid_email'), email),
+        },
+        phone: {
+            required: helpers.withMessage(() => t('clients.phone_required'), required),
+        },
+    };
+});
 
 const v$ = useVuelidate(rules, form);
 
+const validateCompanyFields = (): boolean => {
+    companyErrors.company_name = '';
+    companyErrors.tax_id = '';
+    let valid = true;
+    if (!form.company_name?.trim()) {
+        companyErrors.company_name = t('clients.validation.company_name_required');
+        valid = false;
+    }
+    if (!form.tax_id?.trim()) {
+        companyErrors.tax_id = t('clients.validation.tax_id_required');
+        valid = false;
+    }
+    return valid;
+};
+
 const handleSubmit = async () => {
+    if (!selectedType.value) {
+        errorMessage.value = t('clients.validation.type_required');
+        return;
+    }
+
     const isValid = await v$.value.$validate();
     if (!isValid) return;
+
+    if (selectedType.value === 'company' && !validateCompanyFields()) {
+        return;
+    }
 
     isSubmitting.value = true;
     errorMessage.value = '';
@@ -546,6 +710,33 @@ const handleSubmit = async () => {
         );
         if (canada_status_other) {
             data.other_status_1 = canada_status_other;
+        }
+
+        // Spec 64 — always include type, strip fields that don't apply to the selected type
+        data.type = selectedType.value;
+        if (selectedType.value === 'company') {
+            // Remove person-only fields
+            delete data.first_name;
+            delete data.last_name;
+            delete data.date_of_birth;
+            delete data.gender;
+            delete data.marital_status;
+            delete data.nationality;
+            delete data.profession;
+            delete data.canada_status;
+            delete data.other_status_1;
+            delete data.entry_point;
+            delete data.arrival_date;
+            delete data.iuc;
+        } else {
+            // Remove company-only fields
+            delete data.company_name;
+            delete data.trade_name;
+            delete data.tax_id;
+            delete data.industry;
+            delete data.website;
+            delete data.legal_rep_name;
+            delete data.legal_rep_title;
         }
 
         const newClient = await clientStore.createClient(data as any);
@@ -576,16 +767,36 @@ const handleSubmit = async () => {
 
 const easyMDE = ref<EasyMDE | null>(null);
 
-onMounted(() => {
+const initEasyMDE = async () => {
+    await nextTick();
+    const el = document.getElementById('description') as HTMLElement | null;
+    if (!el || easyMDE.value) return;
     easyMDE.value = new EasyMDE({
-        element: document.getElementById('description') as HTMLElement,
-        initialValue: '',
+        element: el,
+        initialValue: form.description || '',
         spellChecker: false,
-        toolbar: ["bold", "italic", "strikethrough", "|", "heading-3", "|", "quote", "|", "unordered-list", "ordered-list", "|", "horizontal-rule"],
+        toolbar: ['bold', 'italic', 'strikethrough', '|', 'heading-3', '|', 'quote', '|', 'unordered-list', 'ordered-list', '|', 'horizontal-rule'],
     });
     easyMDE.value.codemirror.on('change', () => {
         form.description = easyMDE.value!.value();
     });
+};
+
+// Init markdown editor only once the form (with #description textarea) is rendered
+watch(selectedType, async (value) => {
+    if (value !== null) {
+        await initEasyMDE();
+    } else {
+        // When user goes back to the type selector, dispose the editor so it can re-init cleanly
+        if (easyMDE.value) {
+            try { easyMDE.value.toTextArea(); } catch { /* no-op */ }
+            easyMDE.value = null;
+        }
+    }
+});
+
+onMounted(() => {
+    // Form is hidden until type is chosen; the watcher above initializes EasyMDE
 });
 
 </script>

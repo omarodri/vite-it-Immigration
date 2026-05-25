@@ -4,6 +4,7 @@
  */
 
 export type ClientStatus = 'prospect' | 'active' | 'inactive' | 'archived';
+export type ClientType = 'person' | 'company';
 export type Gender = 'male' | 'female' | 'other';
 export type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed' | 'common_law' | 'legally_separated' | 'annulled_marriage' | 'unknown';
 export type CanadaStatus = 'asylum_seeker' | 'refugee' | 'temporary_resident' | 'permanent_resident' | 'citizen' | 'visitor' | 'student' | 'worker' | 'protected_person' | 'other';
@@ -15,9 +16,13 @@ export interface Client {
     tenant_id: number;
     user_id: number | null;
 
-    // Personal Information
-    first_name: string;
-    last_name: string;
+    // Type discriminator (Spec 64)
+    type: ClientType;
+    display_name: string;
+
+    // Personal Information (nullable for company clients)
+    first_name: string | null;
+    last_name: string | null;
     full_name: string;
     sort_name: string;
     initials: string;
@@ -30,6 +35,15 @@ export interface Client {
     marital_status: MaritalStatus | null;
     profession: string | null;
     description: string | null;
+
+    // Company-specific fields (nullable for person clients)
+    company_name: string | null;
+    trade_name: string | null;
+    tax_id: string | null;
+    industry: string | null;
+    website: string | null;
+    legal_rep_name: string | null;
+    legal_rep_title: string | null;
 
     // Contact Information
     email: string | null;
@@ -74,9 +88,21 @@ export interface Client {
 }
 
 export interface CreateClientData {
-    // Personal Information (required)
-    first_name: string;
-    last_name: string;
+    // Type discriminator (Spec 64) — required
+    type: ClientType;
+
+    // Personal Information (required only when type='person')
+    first_name?: string;
+    last_name?: string;
+
+    // Company-specific (required only when type='company')
+    company_name?: string;
+    trade_name?: string;
+    tax_id?: string;
+    industry?: string;
+    website?: string;
+    legal_rep_name?: string;
+    legal_rep_title?: string;
 
     // Personal Information (optional)
     nationality?: string;
@@ -119,6 +145,16 @@ export interface UpdateClientData {
     // Personal Information
     first_name?: string;
     last_name?: string;
+
+    // Company-specific (Spec 64) — type itself cannot be changed
+    company_name?: string;
+    trade_name?: string;
+    tax_id?: string;
+    industry?: string;
+    website?: string;
+    legal_rep_name?: string;
+    legal_rep_title?: string;
+
     nationality?: string;
     second_nationality?: string;
     language?: string;
@@ -166,6 +202,7 @@ export interface ClientStatistics {
 export interface ClientFilters {
     search?: string;
     status?: ClientStatus;
+    type?: 'person' | 'company' | 'all';
     nationality?: string;
     canada_status?: CanadaStatus;
     date_from?: string;
@@ -222,4 +259,10 @@ export const LANGUAGE_OPTIONS: Array<{ value: Language; label: string }> = [
     { value: 'es', label: 'Spanish' },
     { value: 'en', label: 'English' },
     { value: 'fr', label: 'French' },
+];
+
+// Client type selector options (Spec 64)
+export const CLIENT_TYPE_OPTIONS: Array<{ value: ClientType; labelKey: string; descKey: string; icon: string }> = [
+    { value: 'person', labelKey: 'clients.type.person', descKey: 'clients.type_selector.person_description', icon: 'user' },
+    { value: 'company', labelKey: 'clients.type.company', descKey: 'clients.type_selector.company_description', icon: 'building' },
 ];

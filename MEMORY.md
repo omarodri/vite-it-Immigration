@@ -47,6 +47,26 @@
 
 ## Implementaciones Recientes
 
+### 2026-05-24 — Spec 64 DT-09: Wizard + Búsqueda Global para Empresas (COMPLETADO)
+- `Companion::RELATIONSHIP_BENEFICIARY = 'beneficiary'` + `scopeBeneficiaries()` + entrada en `RELATIONSHIP_TYPES`
+- `GlobalSearchService` — búsqueda de clientes por `display_name LIKE` + `tax_id LIKE` (reemplaza `first_name/last_name LIKE`); SELECT ampliado con `display_name`, `type`, `company_name`, `trade_name`; misma corrección en sección trash
+- `FolderService` — sin cambios requeridos: rutas usan `case_number`, no nombre de cliente
+- `StepCompanions.vue` — sección "Empleado Beneficiario" obligatoria para empresa (border rojo/verde por estado), botón "Agregar Empleado Beneficiario", preset `relationship='beneficiary'` bloqueado en modal, auto-set `primary_applicant_type='companion'` al guardar; sección "Integrantes de Familia" opcional abajo
+- `StepSummary.vue` — jerarquía empresa → empleado → familia con `isCompanyCase` + `familyMembers` computeds; layout persona sin cambios
+- `useCaseWizard.ts` — `clientType`, `setClientType()`, `setClient()` ya soportaban empresa; validación Step 3 requiere beneficiario para `type='company'`
+- 11 keys i18n FLAT en es/en/fr: `wizard.step_companions.*` + `wizard.step_summary.*`
+- Build Vite: ✓ sin errores (9.57s)
+- **Pendiente residual:** `StepClient.vue` nota informativa (baja prioridad), `StoreCaseRequest` validación server-side companion beneficiario, tests PHP
+
+### 2026-05-24 — Spec 64: Clientes Empresa — Patrocinador + Beneficiario (PART)
+- STI en tabla `clients`: columna `type ENUM('person','company') DEFAULT 'person'` + 7 campos empresa nullable (`company_name`, `trade_name`, `tax_id`, `industry`, `website`, `legal_rep_name`, `legal_rep_title`)
+- `display_name` columna virtual GENERATED ALWAYS AS STORED + FULLTEXT index — unifica búsqueda persona/empresa sin lógica duplicada
+- `Client::TYPE_PERSON/TYPE_COMPANY` constantes; scopes `ofType()`, `persons()`, `companies()`; accessors `full_name`/`sort_name`/`initials` null-safe para empresa
+- 4 FormRequests nuevos + 2 dispatchers refactorizados; campos opuestos marcados `prohibited`
+- `ClientService::createClient()` null-out campos contrarios; `updateClient()` bloquea cambio de `type`
+- Frontend: `list.vue` (filtro segmentado), `create.vue` (selector tipo), `edit.vue` (bloqueo tipo), `show.vue` (secciones condicionales)
+- Build Vite: ✓ sin errores; 3 migraciones aplicadas en producción
+
 ### 2026-05-15 — Spec 63: Widget "Próximos Hitos Legales" en Dashboard
 - `UpcomingMilestonesService` (app/Services/Dashboard/) — `getUpcoming(User)` con ventana ±30 días, JOIN explícito `cases` (D-07), `whereNull('cases.deleted_at')` (soft-delete en JOINs crudos), `whereIn('cases.status', ['active','inactive'])`, LIMIT 10, orden `due_date/sort_order/id`
 - Serialización inline: `days_diff` via `Carbon::diffInDays($date, false)` (negativo=pasado), `urgency_bucket` calculado en PHP — mismo patrón que Spec 57 (no hay utilidad frontend para esto)
@@ -162,3 +182,4 @@
 | DT-06 | Spec 60 Fase 3 (runbook APP_KEY + backup + ircc:verify-integrity) y Fase 4 (tests) pendientes | **ALTO** (bloqueante para prod) | 60 |
 | DT-07 | Spec 61 tests Feature/Unit pendientes; permiso `tasks.view` solo en seeder (no en migración — viola D-03) | BAJO | 61 |
 | DT-08 | Spec 62: `OAuthTokenService::refresh()` propagation si refresh falla irrecuperablemente; `activity_log` entry cuando `CalendarSyncStatus→status='error'`; tests Feature/Unit de CalendarSync multi-provider; eliminar wrapper `getConnectedProvider()` tras confirmar 0 callers | BAJO | 62 |
+| DT-09 | Spec 64 pendientes: (a) Wizard StepCompanions sección Beneficiario obligatoria para empresa + StepSummary jerarquía; (b) `Companion::RELATIONSHIP_BENEFICIARY` constante + scope; (c) `FolderService::buildCaseFolderName()` via `primaryApplicant()`; (d) `GlobalSearchService` busca por `display_name`; (e) tests PHP | MEDIO | 64 |

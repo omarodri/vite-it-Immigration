@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -46,10 +47,13 @@ class Companion extends Model
         'arrival_date' => 'date',
     ];
 
+    public const RELATIONSHIP_BENEFICIARY = 'beneficiary';
+
     /**
      * Relationship types with Spanish labels.
      */
     public const RELATIONSHIP_TYPES = [
+        'beneficiary'        => 'Beneficiary / Employee',
         'spouse'             => 'Cónyuge',
         'common-law partner' => 'Pareja de hecho',
         'dependent child'    => 'Hijo/a dependiente',
@@ -64,6 +68,7 @@ class Companion extends Model
         'cousin'             => 'Primo/a',
         'child-in-law'       => 'Yerno/Nuera',
         'parent-in-law'      => 'Suegro/a',
+        'employee'           => 'Empleado',
         'other'              => 'Otro',
     ];
 
@@ -99,6 +104,14 @@ class Companion extends Model
     public function promotedClient(): HasOne
     {
         return $this->hasOne(Client::class, 'promoted_from_companion_id');
+    }
+
+    /**
+     * Scope: only companions flagged as the case beneficiary (e.g. sponsored employee).
+     */
+    public function scopeBeneficiaries(Builder $query): Builder
+    {
+        return $query->where('relationship', self::RELATIONSHIP_BENEFICIARY);
     }
 
     /**

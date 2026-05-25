@@ -65,8 +65,18 @@
                                 </div>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <!-- Relationship -->
-                                    <div>
+                                    <!-- Relationship (locked when preset is provided, e.g. 'beneficiary') -->
+                                    <div v-if="lockedRelationship">
+                                        <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.relationship') }} *</label>
+                                        <input
+                                            type="text"
+                                            class="form-input bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
+                                            :value="lockedRelationshipLabel"
+                                            readonly
+                                            disabled
+                                        />
+                                    </div>
+                                    <div v-else>
                                         <label class="block text-sm font-medium mb-1 dark:text-white">{{ $t('companions.relationship') }} *</label>
                                         <select
                                             v-model="companionForm.relationship"
@@ -90,6 +100,7 @@
                                             <option value="cousin">{{ $t('companions.cousin') }}</option>
                                             <option value="child-in-law">{{ $t('companions.child-in-law') }}</option>
                                             <option value="parent-in-law">{{ $t('companions.parent-in-law') }}</option>
+                                            <option value="employee">{{ $t('companions.employee') }}</option>
                                             <option value="other">{{ $t('companions.other') }}</option>
                                         </select>
                                         <p v-if="companionErrors.relationship" class="text-danger text-xs mt-1">{{ companionErrors.relationship[0] }}</p>
@@ -291,9 +302,16 @@ const props = withDefaults(defineProps<{
     clientId: number
     companion?: Companion | null
     showDocuments?: boolean
+    /**
+     * If provided, the relationship is pre-set AND locked (read-only) in the form.
+     * Used by the case wizard when creating the mandatory beneficiary companion
+     * for company-type clients (DT-09).
+     */
+    presetRelationship?: RelationshipType | null
 }>(), {
     companion: null,
     showDocuments: true,
+    presetRelationship: null,
 })
 
 const emit = defineEmits<{
@@ -345,11 +363,23 @@ const maxBirthDate = computed(() => {
     return d
 })
 
+// Lock the relationship field when a preset is provided AND we are creating
+// a new companion (editing existing companions is not affected).
+const lockedRelationship = computed<RelationshipType | null>(() => {
+    return !props.companion && props.presetRelationship ? props.presetRelationship : null
+})
+
+const lockedRelationshipLabel = computed<string>(() => {
+    if (!lockedRelationship.value) return ''
+    // Use the i18n key the rest of the app uses for relationship labels.
+    return t(`companions.${lockedRelationship.value}`)
+})
+
 function resetForm() {
     companionForm.value = {
         first_name: '',
         last_name: '',
-        relationship: '' as RelationshipType,
+        relationship: (props.presetRelationship ?? '') as RelationshipType,
         relationship_other: '',
         date_of_birth: '',
         gender: undefined,

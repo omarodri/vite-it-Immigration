@@ -49,6 +49,11 @@ class ClientRepository implements ClientRepositoryInterface
             $query->search($filters['search']);
         }
 
+        // Type filter — Spec 64 (Clientes Empresa). Accepts 'person' | 'company' | 'all'.
+        if (! empty($filters['type']) && $filters['type'] !== 'all') {
+            $query->ofType($filters['type']);
+        }
+
         // Status filter
         if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
@@ -73,7 +78,7 @@ class ClientRepository implements ClientRepositoryInterface
         }
 
         // Sorting — only allow real DB columns
-        $allowedSortFields = ['first_name', 'last_name', 'email', 'status', 'created_at', 'arrival_date'];
+        $allowedSortFields = ['first_name', 'last_name', 'display_name', 'email', 'status', 'created_at', 'arrival_date'];
         $sortBy = in_array($filters['sort_by'] ?? '', $allowedSortFields) ? $filters['sort_by'] : 'created_at';
         $sortDirection = ($filters['sort_direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sortBy, $sortDirection);

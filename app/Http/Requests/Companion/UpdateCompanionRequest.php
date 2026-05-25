@@ -18,7 +18,7 @@ class UpdateCompanionRequest extends FormRequest
         return [
             'first_name' => ['sometimes', 'string', 'max:255'],
             'last_name' => ['sometimes', 'string', 'max:255'],
-            'relationship' => ['sometimes', Rule::in(['spouse', 'child', 'parent', 'sibling', 'common-law partner', 'dependent child', 'grandchild', 'grandparent', 'half-sibling', 'step-sibling', 'aunt / uncle', 'niece / nephew', 'cousin', 'child-in-law', 'parent-in-law', 'other'])],
+            'relationship' => ['sometimes', Rule::in(['beneficiary', 'spouse', 'child', 'parent', 'sibling', 'common-law partner', 'dependent child', 'grandchild', 'grandparent', 'half-sibling', 'step-sibling', 'aunt / uncle', 'niece / nephew', 'cousin', 'child-in-law', 'parent-in-law', 'employee', 'other'])],
             'relationship_other' => ['nullable', 'string', 'max:255'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', Rule::in(['male', 'female', 'other'])],

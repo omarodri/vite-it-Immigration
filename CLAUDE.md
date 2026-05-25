@@ -368,6 +368,16 @@ Used in `NewTaskModal` (`?permission=todo_core.delete&exclude_roles=admin,user`)
 ### G22. HTTP 202 from folder sync = job queued, not completed
 `DocumentService::syncFolders()` (and its underlying `SyncCaseFolderStructure` job) returns 202 when the sync job is dispatched to the queue — the folders are NOT yet synced at that point. The queue worker must be running (`php artisan queue:work`). In `documentStore.ts`, set `syncStatus = 'pending'` after a 202 response and show a "Sincronización en progreso" toast — never show a success toast. Only set `syncStatus = 'synced'` when confirmed complete via a subsequent status poll or webhook.
 
+### G23. Clients have two types — always use `display_name` for UI (Spec 64)
+`Client.type` is `ENUM('person','company')`. The `display_name` column is a MySQL GENERATED STORED column that resolves automatically: company → `trade_name ?? company_name`, person → `"first_name last_name"`. Rules:
+- **Always use `display_name`** when showing a client name to the user (lists, badges, case headers). Never concatenate `first_name + last_name` directly — it returns empty string for companies.
+- `first_name` and `last_name` are **nullable** for company clients. Accessing them on a company without null-check will return `null`.
+- `company_name`, `trade_name`, `tax_id` etc. are **nullable** for person clients.
+- **Type is immutable** after creation — `ClientService::updateClient()` throws if `type` changes. The frontend also blocks the UI.
+- **Companions for company clients:** do NOT block — a company case requires at least one `Companion` with `relationship='beneficiary'` (the sponsored employee). Family of the employee are additional companions. See Spec 64 + DT-09.
+- `Client::TYPE_PERSON = 'person'` and `Client::TYPE_COMPANY = 'company'` are the canonical constants.
+- Scopes: `scopeOfType(?string $type)`, `scopePersons()`, `scopeCompanies()` on the `Client` model.
+
 ---
 
 ## Project Structure

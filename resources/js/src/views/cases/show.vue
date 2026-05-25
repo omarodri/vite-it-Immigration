@@ -292,9 +292,9 @@
                                 </p>
 
                                 <div v-else class="space-y-3">
-                                    <!-- Client as dependent (only when companion is primary AND client was marked as participant) -->
+                                    <!-- Client as dependent (only when companion is primary, client is a person, AND was marked as participant) -->
                                     <div
-                                        v-if="currentCase.primary_applicant_type === 'companion' && currentCase.client_is_participant && currentCase.client"
+                                        v-if="currentCase.primary_applicant_type === 'companion' && currentCase.client_is_participant && currentCase.client && currentCase.client.type !== 'company'"
                                         class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
                                     >
                                         <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -726,7 +726,7 @@ const computeLocalEligibility = (c: PromotableCompanion): EligibilityResult => {
     if (!c.phone?.trim())       reasons.push('missing_phone');
     if (!c.date_of_birth) {
         reasons.push('missing_date_of_birth');
-    } else if ((c.age ?? 0) < 22) {
+    } else if ((c.age ?? 0) < 18) {
         reasons.push('underage');
     }
     return { eligible: reasons.length === 0, reasons, alreadyPromoted: false };
@@ -832,11 +832,13 @@ const dependentCompanions = computed(() => {
     return currentCase.value.companions.filter(c => c.id !== currentCase.value!.primary_applicant_companion_id);
 });
 
-// Total count of dependents shown (client counts only when companion is primary AND client_is_participant)
+// Total count of dependents shown (client counts only when companion is primary, client is a person, AND client_is_participant)
 const dependentsCount = computed(() => {
     if (!currentCase.value) return 0;
     const clientAsDependent =
-        currentCase.value.primary_applicant_type === 'companion' && currentCase.value.client_is_participant ? 1 : 0;
+        currentCase.value.primary_applicant_type === 'companion'
+        && currentCase.value.client_is_participant
+        && currentCase.value.client?.type !== 'company' ? 1 : 0;
     return dependentCompanions.value.length + clientAsDependent;
 });
 

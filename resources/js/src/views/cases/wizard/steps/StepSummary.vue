@@ -57,96 +57,199 @@
                 </div>
             </section>
 
-            <!-- Client Info (contract holder) -->
-            <section class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="client-heading">
-                <div class="flex justify-between items-center mb-4">
-                    <h4 id="client-heading" class="font-semibold text-gray-900 dark:text-white">
-                        {{ $t('wizard.step6.client_info') }}
-                    </h4>
-                    <button type="button" class="btn btn-primary mt-1" @click="wizard.goToStep(2)">
-                        {{ $t('wizard.edit') }}
-                    </button>
-                </div>
-                <div v-if="selectedClient" class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold text-lg">
-                        {{ selectedClient.initials || getInitials(selectedClient.first_name, selectedClient.last_name) }}
+            <!-- ============================================================
+                 COMPANY CASE HIERARCHY (DT-09)
+                 Sponsor → Beneficiary Employee → Family Members
+                 ============================================================ -->
+            <template v-if="isCompanyCase">
+                <!-- 1. Sponsor Company -->
+                <section class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="sponsor-company-heading">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 id="sponsor-company-heading" class="font-semibold text-gray-900 dark:text-white">
+                            {{ $t('wizard.step_summary.sponsor_company') }}
+                        </h4>
+                        <button type="button" class="btn btn-primary mt-1" @click="wizard.goToStep(2)">
+                            {{ $t('wizard.edit') }}
+                        </button>
                     </div>
-                    <div>
-                        <p class="font-medium text-gray-900 dark:text-white">
-                            {{ selectedClient.full_name }}
-                            <span v-if="wizard.state.primaryApplicantType === 'client'" class="badge badge-outline-success text-xs ml-2 align-middle">
-                                {{ $t('wizard.step6.also_primary_applicant') }}
-                            </span>
-                        </p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ selectedClient.email || selectedClient.phone || '' }}</p>
+                    <div v-if="selectedClient" class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-primary/20 text-primary flex items-center justify-center">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2m-2 0v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5m0 0H3" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">
+                                {{ selectedClient.display_name || selectedClient.full_name }}
+                            </p>
+                            <p v-if="selectedClient.tax_id" class="text-xs text-gray-500 dark:text-gray-400">
+                                {{ $t('clients.tax_id') }}: {{ selectedClient.tax_id }}
+                            </p>
+                            <p v-if="selectedClient.legal_rep_name" class="text-xs text-gray-500 dark:text-gray-400">
+                                {{ selectedClient.legal_rep_name }}<span v-if="selectedClient.legal_rep_title"> — {{ selectedClient.legal_rep_title }}</span>
+                            </p>
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Primary Applicant (only if different from client) -->
-            <section v-if="wizard.state.primaryApplicantType === 'companion' && primaryApplicantCompanion"
-                     class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light"
-                     aria-labelledby="primary-applicant-heading">
-                <div class="flex justify-between items-center mb-4">
-                    <h4 id="primary-applicant-heading" class="font-semibold text-gray-900 dark:text-white">
-                        {{ $t('wizard.step6.primary_applicant') }}
-                    </h4>
-                    <button type="button" class="btn btn-primary mt-1" @click="wizard.goToStep(3)">
-                        {{ $t('wizard.edit') }}
-                    </button>
-                </div>
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-semibold">
-                        {{ primaryApplicantCompanion.initials || getInitials(primaryApplicantCompanion.first_name, primaryApplicantCompanion.last_name) }}
+                <!-- 2. Beneficiary Employee -->
+                <section
+                    class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light"
+                    aria-labelledby="beneficiary-employee-heading"
+                >
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 id="beneficiary-employee-heading" class="font-semibold text-gray-900 dark:text-white">
+                            {{ $t('wizard.step_summary.beneficiary_employee') }}
+                        </h4>
+                        <button type="button" class="btn btn-primary mt-1" @click="wizard.goToStep(3)">
+                            {{ $t('wizard.edit') }}
+                        </button>
                     </div>
-                    <div>
-                        <p class="font-medium text-gray-900 dark:text-white">
-                            {{ primaryApplicantCompanion.full_name }}
-                            <span class="badge badge-outline-primary text-xs ml-2 align-middle">
-                                {{ $t('wizard.step6.primary_applicant_badge') }}
-                            </span>
-                        </p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">
-                            {{ primaryApplicantCompanion.relationship_label || primaryApplicantCompanion.relationship }}
-                        </p>
+                    <div v-if="primaryApplicantCompanion" class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-success/20 text-success flex items-center justify-center font-semibold">
+                            {{ primaryApplicantCompanion.initials || getInitials(primaryApplicantCompanion.first_name, primaryApplicantCompanion.last_name) }}
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">
+                                {{ primaryApplicantCompanion.full_name }}
+                                <span class="badge badge-outline-success text-xs ml-2 align-middle">
+                                    {{ $t('wizard.step_companions.beneficiary_badge') }}
+                                </span>
+                            </p>
+                            <p v-if="primaryApplicantCompanion.email" class="text-xs text-gray-500 dark:text-gray-400">
+                                {{ primaryApplicantCompanion.email }}
+                            </p>
+                        </div>
                     </div>
-                </div>
-            </section>
+                    <p v-else class="text-danger text-sm">
+                        {{ $t('wizard.step_companions.beneficiary_required') }}
+                    </p>
+                </section>
 
-            <!-- Dependents / Companions (excluding primary applicant) -->
-            <section class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="companions-heading">
-                <div class="flex justify-between items-center mb-4">
-                    <h4 id="companions-heading" class="font-semibold text-gray-900 dark:text-white">
-                        {{ $t('wizard.step6.dependents') }}
-                    </h4>
-                    <button type="button" class="btn btn-primary mt-1" @click="wizard.goToStep(3)">
-                        {{ $t('wizard.edit') }}
-                    </button>
-                </div>
-                <div v-if="dependentCompanions.length > 0 || (wizard.state.primaryApplicantType === 'companion' && wizard.state.clientIsDependent && selectedClient)" class="flex flex-wrap gap-2">
-                    <!-- Client as dependent (only when companion is primary AND client is marked as participant) -->
-                    <span v-if="wizard.state.primaryApplicantType === 'companion' && wizard.state.clientIsDependent && selectedClient"
-                          class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
-                        <span class="w-6 h-6 rounded-full bg-secondary/20 text-secondary text-xs flex items-center justify-center font-medium">
-                            {{ selectedClient.initials || getInitials(selectedClient.first_name, selectedClient.last_name) }}
+                <!-- 3. Family Members -->
+                <section class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="family-members-heading">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 id="family-members-heading" class="font-semibold text-gray-900 dark:text-white">
+                            {{ $t('wizard.step_summary.family_members') }}
+                        </h4>
+                        <button type="button" class="btn btn-primary mt-1" @click="wizard.goToStep(3)">
+                            {{ $t('wizard.edit') }}
+                        </button>
+                    </div>
+                    <div v-if="familyMembers.length > 0" class="flex flex-wrap gap-2">
+                        <span
+                            v-for="companion in familyMembers"
+                            :key="companion.id"
+                            class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full"
+                        >
+                            <span class="w-6 h-6 rounded-full bg-secondary/20 text-secondary text-xs flex items-center justify-center font-medium">
+                                {{ companion.initials || getInitials(companion.first_name, companion.last_name) }}
+                            </span>
+                            <span class="text-sm">{{ companion.full_name }}</span>
+                            <span class="text-xs text-gray-500">({{ companion.relationship_label || companion.relationship }})</span>
                         </span>
-                        <span class="text-sm">{{ selectedClient.full_name }}</span>
-                        <span class="text-xs text-gray-500">({{ $t('wizard.step3.client_label') }})</span>
-                    </span>
-                    <!-- Companion dependents (all selected companions except the primary applicant) -->
-                    <span v-for="companion in dependentCompanions" :key="companion.id"
-                          class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
-                        <span class="w-6 h-6 rounded-full bg-secondary/20 text-secondary text-xs flex items-center justify-center font-medium">
-                            {{ companion.initials || getInitials(companion.first_name, companion.last_name) }}
+                    </div>
+                    <p v-else class="text-gray-500 dark:text-gray-400 text-sm">
+                        {{ $t('wizard.step6.no_dependents') }}
+                    </p>
+                </section>
+            </template>
+
+            <!-- ============================================================
+                 PERSON CASE LAYOUT (unchanged)
+                 ============================================================ -->
+            <template v-else>
+                <!-- Client Info (contract holder) -->
+                <section class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="client-heading">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 id="client-heading" class="font-semibold text-gray-900 dark:text-white">
+                            {{ $t('wizard.step6.client_info') }}
+                        </h4>
+                        <button type="button" class="btn btn-primary mt-1" @click="wizard.goToStep(2)">
+                            {{ $t('wizard.edit') }}
+                        </button>
+                    </div>
+                    <div v-if="selectedClient" class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center font-semibold text-lg">
+                            {{ selectedClient.initials || getInitials(selectedClient.first_name ?? '', selectedClient.last_name ?? '') }}
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">
+                                {{ selectedClient.full_name }}
+                                <span v-if="wizard.state.primaryApplicantType === 'client'" class="badge badge-outline-success text-xs ml-2 align-middle">
+                                    {{ $t('wizard.step6.also_primary_applicant') }}
+                                </span>
+                            </p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ selectedClient.email || selectedClient.phone || '' }}</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Primary Applicant (only if different from client) -->
+                <section v-if="wizard.state.primaryApplicantType === 'companion' && primaryApplicantCompanion"
+                         class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light"
+                         aria-labelledby="primary-applicant-heading">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 id="primary-applicant-heading" class="font-semibold text-gray-900 dark:text-white">
+                            {{ $t('wizard.step6.primary_applicant') }}
+                        </h4>
+                        <button type="button" class="btn btn-primary mt-1" @click="wizard.goToStep(3)">
+                            {{ $t('wizard.edit') }}
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-semibold">
+                            {{ primaryApplicantCompanion.initials || getInitials(primaryApplicantCompanion.first_name, primaryApplicantCompanion.last_name) }}
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">
+                                {{ primaryApplicantCompanion.full_name }}
+                                <span class="badge badge-outline-primary text-xs ml-2 align-middle">
+                                    {{ $t('wizard.step6.primary_applicant_badge') }}
+                                </span>
+                            </p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                {{ primaryApplicantCompanion.relationship_label || primaryApplicantCompanion.relationship }}
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Dependents / Companions (excluding primary applicant) -->
+                <section class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="companions-heading">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 id="companions-heading" class="font-semibold text-gray-900 dark:text-white">
+                            {{ $t('wizard.step6.dependents') }}
+                        </h4>
+                        <button type="button" class="btn btn-primary mt-1" @click="wizard.goToStep(3)">
+                            {{ $t('wizard.edit') }}
+                        </button>
+                    </div>
+                    <div v-if="dependentCompanions.length > 0 || (wizard.state.primaryApplicantType === 'companion' && wizard.state.clientIsDependent && selectedClient)" class="flex flex-wrap gap-2">
+                        <!-- Client as dependent (only when companion is primary AND client is marked as participant) -->
+                        <span v-if="wizard.state.primaryApplicantType === 'companion' && wizard.state.clientIsDependent && selectedClient"
+                              class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
+                            <span class="w-6 h-6 rounded-full bg-secondary/20 text-secondary text-xs flex items-center justify-center font-medium">
+                                {{ selectedClient.initials || getInitials(selectedClient.first_name ?? '', selectedClient.last_name ?? '') }}
+                            </span>
+                            <span class="text-sm">{{ selectedClient.full_name }}</span>
+                            <span class="text-xs text-gray-500">({{ $t('wizard.step3.client_label') }})</span>
                         </span>
-                        <span class="text-sm">{{ companion.full_name }}</span>
-                        <span class="text-xs text-gray-500">({{ companion.relationship_label || companion.relationship }})</span>
-                    </span>
-                </div>
-                <p v-else class="text-gray-500 dark:text-gray-400 text-sm">
-                    {{ $t('wizard.step6.no_dependents') }}
-                </p>
-            </section>
+                        <!-- Companion dependents (all selected companions except the primary applicant) -->
+                        <span v-for="companion in dependentCompanions" :key="companion.id"
+                              class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
+                            <span class="w-6 h-6 rounded-full bg-secondary/20 text-secondary text-xs flex items-center justify-center font-medium">
+                                {{ companion.initials || getInitials(companion.first_name, companion.last_name) }}
+                            </span>
+                            <span class="text-sm">{{ companion.full_name }}</span>
+                            <span class="text-xs text-gray-500">({{ companion.relationship_label || companion.relationship }})</span>
+                        </span>
+                    </div>
+                    <p v-else class="text-gray-500 dark:text-gray-400 text-sm">
+                        {{ $t('wizard.step6.no_dependents') }}
+                    </p>
+                </section>
+            </template>
 
             <!-- Details Section -->
             <section class="prose bg-[#f1f2f3] px-4 py- sm:px-8 sm:py-4 rounded max-w-full dark:bg-[#1b2e4b] dark:text-white-light" aria-labelledby="details-heading">
@@ -359,6 +462,8 @@ const caseNumberPreview = computed(() => {
     return `${year2}-${typeCode}-${slug}-????`;
 });
 
+const isCompanyCase = computed<boolean>(() => wizard.state.clientType === 'company');
+
 const primaryApplicantCompanion = computed(() => {
     if (wizard.state.primaryApplicantType !== 'companion' || !wizard.state.primaryApplicantCompanionId) {
         return null;
@@ -369,6 +474,12 @@ const primaryApplicantCompanion = computed(() => {
 const dependentCompanions = computed(() => {
     return selectedCompanions.value.filter(
         c => !(wizard.state.primaryApplicantType === 'companion' && c.id === wizard.state.primaryApplicantCompanionId)
+    );
+});
+
+const familyMembers = computed(() => {
+    return selectedCompanions.value.filter(
+        c => c.relationship !== 'beneficiary' && c.id !== wizard.state.primaryApplicantCompanionId
     );
 });
 
@@ -473,3 +584,10 @@ function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString();
 }
 </script>
+
+<style scoped>
+:deep(.prose p) {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+</style>

@@ -5,7 +5,7 @@
 
 import type { Gender, CanadaStatus } from './client';
 
-export type RelationshipType = 'spouse' | 'common-law partner' | 'dependent child' | 'grandchild' | 'parent' | 'grandparent' | 'sibling' | 'half-sibling' | 'step-sibling' | 'aunt / uncle' | 'niece / nephew' | 'cousin' | 'child-in-law' | 'parent-in-law' | 'other';
+export type RelationshipType = 'beneficiary' | 'spouse' | 'common-law partner' | 'dependent child' | 'grandchild' | 'parent' | 'grandparent' | 'sibling' | 'half-sibling' | 'step-sibling' | 'aunt / uncle' | 'niece / nephew' | 'cousin' | 'child-in-law' | 'parent-in-law' | 'employee' | 'other';
 
 export interface Companion {
     id: number;
@@ -94,6 +94,7 @@ export const RELATIONSHIP_TYPE_OPTIONS: Array<{ value: RelationshipType; label: 
     { value: 'cousin', label: 'Cousin' },
     { value: 'child-in-law', label: 'Child-in-law' },
     { value: 'parent-in-law', label: 'Parent-in-law' },
+    { value: 'employee', label: 'Employee' },
     { value: 'other', label: 'Other' },
 ];
 
@@ -115,4 +116,5 @@ export const RELATIONSHIP_TYPE_LABELS_ES: Record<RelationshipType, string> = {
     cousin: 'Primo/a',
     'child-in-law': 'Hijo/a de hermano/a',
     'parent-in-law': 'Padre/Madre de hermano/a',
+    employee: 'Empleado',
 };

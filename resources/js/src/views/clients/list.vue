@@ -137,6 +137,19 @@
                     </select>
                 </div>
 
+                <!-- Type Filter (Spec 64) -->
+                <div class="flex gap-1 border border-gray-200 dark:border-gray-700 rounded-lg p-0.5" role="group" aria-label="Filter by client type">
+                    <button
+                        v-for="opt in (['all', 'person', 'company'] as const)"
+                        :key="opt"
+                        type="button"
+                        :class="['btn btn-sm', typeFilter === opt ? 'btn-primary' : 'btn-outline-secondary border-0']"
+                        @click="setTypeFilter(opt)"
+                    >
+                        {{ $t(`clients.filter.${opt}`) }}
+                    </button>
+                </div>
+
                 <!-- Column Chooser -->
                 <div class="relative">
                     <button type="button" class="btn btn-outline-secondary gap-1" @click="showColumnChooser = !showColumnChooser">
@@ -262,16 +275,22 @@
                             <div class="flex items-center gap-3">
                                 <div class="w-9 h-9 rounded-full flex items-center justify-center" :class="getStatusAvatarClass(data.value.status)">
                                     <span class="font-semibold text-sm">
-                                        {{ data.value.initials || getInitials(data.value.first_name, data.value.last_name) }}
+                                        <icon-building v-if="data.value.type === 'company'" class="w-4 h-4" />
+                                        <template v-else>{{ data.value.initials || getInitials(data.value.first_name, data.value.last_name) }}</template>
                                     </span>
                                 </div>
                                 <div>
                                     <router-link
                                         :to="`/clients/${data.value.id}`"
                                         class="text-primary font-semibold hover:underline"
-                                        :aria-label="`View ${data.value.full_name}`"
+                                        :aria-label="`View ${displayNameOf(data.value)}`"
                                     >
-                                        <div class="font-semibold">{{ data.value.full_name }}</div>
+                                        <div class="font-semibold flex items-center gap-2">
+                                            <span>{{ displayNameOf(data.value) }}</span>
+                                            <span :class="typeBadgeClass(data.value.type)">
+                                                {{ data.value.type === 'company' ? $t('clients.type.company') : $t('clients.type.person') }}
+                                            </span>
+                                        </div>
                                     </router-link>
                                     <div class="text-xs text-gray-500">{{ data.value.email || $t('clients.no_email') }}</div>
                                 </div>
@@ -395,11 +414,17 @@
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full flex items-center justify-center" :class="getStatusAvatarClass(client.status)">
                                     <span class="font-semibold text-sm">
-                                        {{ client.initials || getInitials(client.first_name, client.last_name) }}
+                                        <icon-building v-if="client.type === 'company'" class="w-5 h-5" />
+                                        <template v-else>{{ client.initials || getInitials(client.first_name, client.last_name) }}</template>
                                     </span>
                                 </div>
                                 <div>
-                                    <div class="font-semibold dark:text-white-light">{{ client.full_name }}</div>
+                                    <div class="font-semibold dark:text-white-light flex items-center gap-2">
+                                        <span>{{ displayNameOf(client) }}</span>
+                                        <span :class="typeBadgeClass(client.type)">
+                                            {{ client.type === 'company' ? $t('clients.type.company') : $t('clients.type.person') }}
+                                        </span>
+                                    </div>
                                     <div class="text-xs text-gray-500">{{ client.email || $t('clients.no_email') }}</div>
                                 </div>
                             </div>
@@ -521,11 +546,12 @@ import { useDebounce } from '@/composables/useDebounce';
 import { useClientColumnChooser } from '@/composables/useClientColumnChooser';
 import { formatDate } from '@/utils/formatters';
 import { useListPersistence } from '@/composables/useListPersistence';
-import type { Client, ClientStatus } from '@/types/client';
+import type { Client, ClientStatus, ClientType } from '@/types/client';
 
 // Icons
 import IconUserPlus from '@/components/icon/icon-user-plus.vue';
 import IconUser from '@/components/icon/icon-user.vue';
+import IconBuilding from '@/components/icon/icon-building.vue';
 import IconSearch from '@/components/icon/icon-search.vue';
 import IconEye from '@/components/icon/icon-eye.vue';
 import IconPencil from '@/components/icon/icon-pencil.vue';
@@ -550,6 +576,7 @@ const showColumnChooser = ref(false);
 // Local state
 const searchQuery = ref('');
 const statusFilter = ref('');
+const typeFilter = ref<'all' | 'person' | 'company'>('all');
 const perPage = ref(10);
 const currentPage = ref(1);
 const sortColumn = ref('created_at');
@@ -558,6 +585,7 @@ const sortDirection = ref<'asc' | 'desc'>('desc');
 const { restore: restoreFilters, persist: persistFilters, clear: clearPersistedFilters } = useListPersistence('clients', {
     searchQuery,
     statusFilter,
+    typeFilter,
     sortColumn,
     sortDirection,
     currentPage,
@@ -569,7 +597,7 @@ const initialLoading = ref(true);
 const tableKey = ref(0);
 
 // Computed
-const hasActiveFilters = computed(() => !!searchQuery.value || !!statusFilter.value);
+const hasActiveFilters = computed(() => !!searchQuery.value || !!statusFilter.value || typeFilter.value !== 'all');
 const showSkeleton = computed(() => initialLoading.value && clientStore.clients.length === 0);
 const showEmptyState = computed(() => !clientStore.isLoading && !initialLoading.value && clientStore.clients.length === 0);
 
@@ -619,6 +647,29 @@ const getStatusAvatarClass = (status: ClientStatus): string => {
     return classes[status] || 'bg-primary/10 text-primary';
 };
 
+// Spec 64 — type badge + display name helpers
+const typeBadgeClass = (type: ClientType | undefined): string => {
+    return type === 'company'
+        ? 'badge badge-outline-success text-[10px] px-1.5 py-0.5'
+        : 'badge badge-outline-info text-[10px] px-1.5 py-0.5';
+};
+
+const displayNameOf = (client: Client): string => {
+    return client.display_name
+        || client.full_name
+        || (client.type === 'company'
+            ? (client.trade_name || client.company_name || `#${client.id}`)
+            : `${client.first_name ?? ''} ${client.last_name ?? ''}`.trim() || `#${client.id}`);
+};
+
+const setTypeFilter = (value: 'all' | 'person' | 'company') => {
+    if (typeFilter.value === value) return;
+    typeFilter.value = value;
+    currentPage.value = 1;
+    clearSelection();
+    fetchClients();
+};
+
 const formatCanadaStatus = (status: string): string => {
     const key = `clients.status_${status}`;
     const translated = t(key);
@@ -637,6 +688,7 @@ const clearFilters = () => {
     clearPersistedFilters();
     searchQuery.value = '';
     statusFilter.value = '';
+    typeFilter.value = 'all';
     currentPage.value = 1;
     clearSelection();
     fetchClients();
@@ -695,6 +747,7 @@ const fetchClients = async () => {
         await clientStore.fetchClients({
             search: searchQuery.value || undefined,
             status: (statusFilter.value as ClientStatus) || undefined,
+            type: typeFilter.value !== 'all' ? typeFilter.value : undefined,
             sort_by: sortColumn.value,
             sort_direction: sortDirection.value,
             per_page: perPage.value,
@@ -706,6 +759,7 @@ const fetchClients = async () => {
             await clientStore.fetchClients({
                 search: searchQuery.value || undefined,
                 status: (statusFilter.value as ClientStatus) || undefined,
+                type: typeFilter.value !== 'all' ? typeFilter.value : undefined,
                 sort_by: sortColumn.value,
                 sort_direction: sortDirection.value,
                 per_page: perPage.value,

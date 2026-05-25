@@ -3,7 +3,7 @@
         <div class="flex justify-between items-center mb-4">
             <h5 class="text-lg font-semibold">{{ $t('clients.family_companions') }}</h5>
             <button
-                v-if="wizard.state.clientId"
+                v-if="wizard.state.clientId && !isCompanyCase"
                 v-can="'companions.create'"
                 type="button"
                 class="btn btn-primary btn-sm gap-2"
@@ -14,14 +14,99 @@
             </button>
         </div>
 
-        <!-- Primary Applicant Selection -->
-        <div v-if="wizard.state.clientId" class="mb-6 p-4 border border-primary/30 rounded-lg bg-primary/5">
+        <!-- ============================================================
+             BENEFICIARY EMPLOYEE SECTION (Company-type clients only — DT-09)
+             ============================================================ -->
+        <section
+            v-if="wizard.state.clientId && isCompanyCase"
+            class="mb-6 p-4 border-2 rounded-lg"
+            :class="hasBeneficiary
+                ? 'border-success/40 bg-success/5'
+                : wizard.state.primaryApplicantCompanionId
+                    ? 'border-gray-300/60 bg-gray-50 dark:border-gray-600/60 dark:bg-gray-800/30'
+                    : 'border-warning/40 bg-warning/5'"
+            aria-labelledby="beneficiary-section-heading"
+        >
+            <div class="flex justify-between items-start gap-3 mb-3">
+                <div class="flex-1 min-w-0">
+                    <h4 id="beneficiary-section-heading" class="font-semibold text-gray-900 dark:text-white">
+                        {{ $t('wizard.step_companions.beneficiary_section_title') }}
+                        <span class="text-danger ml-1">*</span>
+                    </h4>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {{ $t('wizard.step_companions.beneficiary_section_desc') }}
+                    </p>
+                </div>
+                <button
+                    v-if="!hasBeneficiary"
+                    v-can="'companions.create'"
+                    type="button"
+                    class="btn btn-primary btn-sm gap-2 shrink-0"
+                    @click="openBeneficiaryModal()"
+                >
+                    <icon-plus class="w-4 h-4" />
+                    {{ $t('wizard.step_companions.add_beneficiary') }}
+                </button>
+            </div>
+
+            <!-- Beneficiary card -->
+            <div v-if="hasBeneficiary && beneficiaryCompanion" class="flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-gray-900 border border-success/30">
+                <div class="shrink-0 w-10 h-10 rounded-full bg-success/20 text-success flex items-center justify-center font-semibold">
+                    {{ beneficiaryCompanion.initials || getInitials(beneficiaryCompanion.first_name, beneficiaryCompanion.last_name) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-gray-900 dark:text-white truncate">
+                        {{ beneficiaryCompanion.full_name }}
+                        <span class="badge badge-outline-success text-xs ml-2 align-middle">
+                            {{ $t('wizard.step_companions.beneficiary_badge') }}
+                        </span>
+                    </p>
+                    <p v-if="beneficiaryCompanion.email || beneficiaryCompanion.iuc" class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        <span v-if="beneficiaryCompanion.iuc">IUC: {{ beneficiaryCompanion.iuc }}</span>
+                        <span v-if="beneficiaryCompanion.iuc && beneficiaryCompanion.email"> · </span>
+                        <span v-if="beneficiaryCompanion.email">{{ beneficiaryCompanion.email }}</span>
+                    </p>
+                </div>
+                <button
+                    v-can="'companions.delete'"
+                    type="button"
+                    class="p-1.5 text-gray-400 hover:text-danger transition-colors rounded-lg hover:bg-danger/10"
+                    :title="$t('companions.confirm_delete')"
+                    @click="confirmDeleteCompanion(beneficiaryCompanion.id)"
+                >
+                    <icon-trash class="w-4 h-4" />
+                </button>
+            </div>
+
+            <!-- No dedicated beneficiary companion yet -->
+            <p
+                v-else
+                class="text-sm flex items-center gap-2"
+                :class="wizard.state.primaryApplicantCompanionId ? 'text-gray-500 dark:text-gray-400' : 'text-warning'"
+            >
+                <icon-info-triangle class="w-4 h-4 shrink-0" aria-hidden="true" />
+                {{ wizard.state.primaryApplicantCompanionId
+                    ? $t('wizard.step_companions.beneficiary_optional_note')
+                    : $t('wizard.step_companions.beneficiary_required') }}
+            </p>
+        </section>
+
+        <!-- ============================================================
+             PRIMARY APPLICANT SELECTION
+             Company cases: all companions shown (no client option); auto-set
+             when beneficiary is added but user can also pick manually.
+             Non-company cases: client + selected companions.
+             ============================================================ -->
+        <div
+            v-if="wizard.state.clientId && !loading && companions.length > 0"
+            class="mb-6 p-4 border border-primary/30 rounded-lg bg-primary/5"
+        >
             <h4 class="font-semibold text-gray-900 dark:text-white mb-1">
-                {{ $t('wizard.step3.primary_applicant_title') }}
+                {{ isCompanyCase ? $t('wizard.step_companions.primary_applicant_company_title') : $t('wizard.step3.primary_applicant_title') }}
                 <span class="text-danger ml-1">*</span>
             </h4>
             <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                {{ $t('wizard.step3.primary_applicant_desc') }}
+                {{ isCompanyCase ? $t('wizard.step_companions.primary_applicant_company_desc') : $t('wizard.step3.primary_applicant_desc') }}
             </p>
             <select
                 v-model="primaryApplicantSelection"
@@ -29,11 +114,13 @@
                 :class="{ 'border-danger': validationAttempted && !primaryApplicantSelection }"
             >
                 <option value="">{{ $t('wizard.step3.select_primary_applicant') }}</option>
-                <option :value="`client:${wizard.state.clientId}`">
+                <!-- Client as primary applicant only makes sense for person clients -->
+                <option v-if="!isCompanyCase" :value="`client:${wizard.state.clientId}`">
                     {{ selectedClientName }} ({{ $t('wizard.step3.client_label') }})
                 </option>
+                <!-- For company cases show ALL companions; for person cases show only selected ones -->
                 <option
-                    v-for="companion in selectedCompanions"
+                    v-for="companion in primaryApplicantCompanions"
                     :key="companion.id"
                     :value="`companion:${companion.id}`"
                 >
@@ -60,8 +147,34 @@
             </p>
         </div>
 
-        <!-- No Companions -->
-        <div v-else-if="companions.length === 0" class="text-center py-10" role="status" aria-live="polite">
+        <!-- Family Members section header for company cases -->
+        <div v-else-if="isCompanyCase" class="mb-4">
+            <div class="flex justify-between items-center mb-2">
+                <h4 class="font-semibold text-gray-900 dark:text-white">
+                    {{ $t('wizard.step_companions.family_section_title') }}
+                </h4>
+                <button
+                    v-can="'companions.create'"
+                    type="button"
+                    class="btn btn-outline-primary btn-sm gap-2"
+                    @click="openCompanionModal()"
+                >
+                    <icon-plus class="w-4 h-4" />
+                    {{ $t('companions.add') }}
+                </button>
+            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ $t('wizard.step_companions.family_section_desc') }}
+            </p>
+        </div>
+
+        <!-- No Companions (excluding beneficiary) -->
+        <div
+            v-if="!loading && wizard.state.clientId && nonBeneficiaryCompanions.length === 0 && (!isCompanyCase || hasBeneficiary)"
+            class="text-center py-10"
+            role="status"
+            aria-live="polite"
+        >
             <icon-users class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" aria-hidden="true" />
             <p class="text-gray-600 dark:text-gray-400 mb-2">
                 {{ $t('wizard.step3.no_companions') }}
@@ -71,19 +184,19 @@
             </p>
         </div>
 
-        <!-- Companions List -->
-        <fieldset v-else class="space-y-3">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        <!-- Companions List (excluding beneficiary, which has its own dedicated section) -->
+        <fieldset v-else-if="!loading && nonBeneficiaryCompanions.length > 0" class="space-y-3">
+            <h3 v-if="!isCompanyCase" class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 {{ $t('wizard.step3.title') }}
             </h3>
-            <p class="text-gray-500 dark:text-gray-400 mb-6">
+            <p v-if="!isCompanyCase" class="text-gray-500 dark:text-gray-400 mb-6">
                 {{ $t('wizard.step3.description') }}
             </p>
             <legend class="sr-only">{{ $t('wizard.step3.title') }}</legend>
 
-            <!-- Client shown as dependent when a companion is the primary applicant (toggleable) -->
+            <!-- Client shown as dependent when a companion is the primary applicant (non-company cases only) -->
             <div
-                v-if="wizard.state.primaryApplicantType === 'companion' && selectedClientName"
+                v-if="!isCompanyCase && wizard.state.primaryApplicantType === 'companion' && selectedClientName"
                 role="checkbox"
                 :aria-checked="wizard.state.clientIsDependent"
                 tabindex="0"
@@ -95,7 +208,6 @@
                 @keydown.space.prevent="toggleClientDependent"
                 @keydown.enter.prevent="toggleClientDependent"
             >
-                <!-- Checkbox indicator -->
                 <div
                     class="shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-colors"
                     :class="wizard.state.clientIsDependent
@@ -106,11 +218,9 @@
                         <polyline points="20 6 9 17 4 12" />
                     </svg>
                 </div>
-                <!-- Avatar -->
                 <div class="shrink-0 w-10 h-10 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-semibold text-sm">
                     {{ clientInitials }}
                 </div>
-                <!-- Info -->
                 <div class="flex-1 min-w-0">
                     <p class="font-medium text-gray-900 dark:text-white text-sm truncate">{{ selectedClientName }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">{{ $t('wizard.step3.client_label') }}</p>
@@ -118,7 +228,7 @@
             </div>
 
             <CompanionCheckbox
-                v-for="companion in companions"
+                v-for="companion in nonBeneficiaryCompanions"
                 :key="companion.id"
                 :companion="companion"
                 :is-selected="isSelected(companion.id)"
@@ -129,9 +239,9 @@
         </fieldset>
 
         <!-- Selection Summary -->
-        <div v-if="companions.length > 0" class="mt-6 p-4 bg-info/10 rounded-lg" role="status" aria-live="polite">
+        <div v-if="nonBeneficiaryCompanions.length > 0" class="mt-6 p-4 bg-info/10 rounded-lg" role="status" aria-live="polite">
             <p class="text-sm text-info">
-                <strong>{{ selectedCount }}</strong> {{ $t('wizard.step3.companions_selected') }}
+                <strong>{{ selectedNonBeneficiaryCount }}</strong> {{ $t('wizard.step3.companions_selected') }}
             </p>
         </div>
 
@@ -140,6 +250,7 @@
             v-model:show="showCompanionModal"
             :client-id="wizard.state.clientId ?? 0"
             :companion="null"
+            :preset-relationship="presetRelationshipForModal"
             @saved="onCompanionSaved"
         />
     </div>
@@ -151,12 +262,13 @@ import { useI18n } from 'vue-i18n';
 import { useCompanionStore } from '@/stores/companion';
 import { useNotification } from '@/composables/useNotification';
 import clientService from '@/services/clientService';
-import type { Companion } from '@/types/companion';
+import type { Companion, RelationshipType } from '@/types/companion';
 import CompanionCheckbox from '../components/CompanionCheckbox.vue';
 import CompanionFormModal from '@/components/companions/CompanionFormModal.vue';
 import IconUsers from '@/components/icon/icon-users.vue';
 import IconInfoTriangle from '@/components/icon/icon-info-triangle.vue';
 import IconPlus from '@/components/icon/icon-plus.vue';
+import IconTrash from '@/components/icon/icon-trash.vue';
 
 // Get wizard from parent
 const wizard = inject<ReturnType<typeof import('@/composables/useCaseWizard').useCaseWizard>>('wizard')!;
@@ -168,11 +280,47 @@ const { success, error: showError, confirm: confirmDialog } = useNotification();
 const companions = ref<Companion[]>([]);
 const loading = ref(false);
 const showCompanionModal = ref(false);
+const presetRelationshipForModal = ref<RelationshipType | null>(null);
 
 const validationAttempted = ref(false);
 const selectedClientName = ref('');
 
-// Derived from wizard state — always in sync, no watcher needed
+// =============================================
+// Company-case / Beneficiary helpers (DT-09)
+// =============================================
+
+const isCompanyCase = computed<boolean>(() => wizard.state.clientType === 'company');
+
+const beneficiaryCompanion = computed<Companion | null>(() => {
+    return companions.value.find((c) => c.relationship === 'beneficiary') ?? null;
+});
+
+const hasBeneficiary = computed<boolean>(() => beneficiaryCompanion.value !== null);
+
+const nonBeneficiaryCompanions = computed<Companion[]>(() => {
+    return companions.value.filter((c) => c.relationship !== 'beneficiary');
+});
+
+const selectedNonBeneficiaryCount = computed<number>(() => {
+    return wizard.state.selectedCompanionIds.filter((id) => {
+        const c = companions.value.find((x) => x.id === id);
+        return c && c.relationship !== 'beneficiary';
+    }).length;
+});
+
+// For the primary-applicant dropdown:
+// - Company cases → show ALL companions so the user can pick any one as the
+//   employee/primary-applicant (the beneficiary section auto-selects, but
+//   the dropdown allows manual override when companions already exist).
+// - Non-company cases → show only companions already included in the case.
+const primaryApplicantCompanions = computed(() =>
+    isCompanyCase.value ? companions.value : selectedCompanions.value
+);
+
+// =============================================
+// Primary applicant (non-company only)
+// =============================================
+
 const primaryApplicantSelection = computed({
     get(): string {
         if (wizard.state.primaryApplicantType === 'companion' && wizard.state.primaryApplicantCompanionId) {
@@ -188,19 +336,24 @@ const primaryApplicantSelection = computed({
         const [type, id] = value.split(':');
         wizard.state.primaryApplicantType = type as 'client' | 'companion';
         wizard.state.primaryApplicantCompanionId = type === 'companion' ? parseInt(id) : null;
+        // For company cases, the chosen companion must be included in the case.
+        if (isCompanyCase.value && type === 'companion') {
+            const companionId = parseInt(id);
+            if (!wizard.state.selectedCompanionIds.includes(companionId)) {
+                wizard.toggleCompanion(companionId);
+            }
+        }
         wizard.saveToSession();
     },
 });
 
-const selectedCount = computed(() => wizard.state.selectedCompanionIds.length);
-
 const selectedCompanions = computed(() =>
-    companions.value.filter(c => wizard.state.selectedCompanionIds.includes(c.id))
+    companions.value.filter((c) => wizard.state.selectedCompanionIds.includes(c.id))
 );
 
 const clientInitials = computed(() => {
     const parts = selectedClientName.value.trim().split(/\s+/);
-    return parts.map(p => p[0] || '').join('').slice(0, 2).toUpperCase();
+    return parts.map((p) => p[0] || '').join('').slice(0, 2).toUpperCase();
 });
 
 function toggleClientDependent() {
@@ -216,17 +369,40 @@ function toggleCompanion(id: number) {
     wizard.toggleCompanion(id);
 }
 
+function getInitials(firstName: string, lastName: string): string {
+    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`.toUpperCase();
+}
+
 function openCompanionModal() {
+    presetRelationshipForModal.value = null;
+    showCompanionModal.value = true;
+}
+
+function openBeneficiaryModal() {
+    presetRelationshipForModal.value = 'beneficiary';
     showCompanionModal.value = true;
 }
 
 async function onCompanionSaved(companion: Companion) {
     showCompanionModal.value = false;
+    presetRelationshipForModal.value = null;
+
     await companionStore.fetchCompanions(wizard.state.clientId!);
     companions.value = [...companionStore.companions];
+
     // Auto-select the newly created companion
     if (!wizard.state.selectedCompanionIds.includes(companion.id)) {
         wizard.toggleCompanion(companion.id);
+    }
+
+    // DT-09: For company cases the beneficiary is always the primary applicant.
+    if (isCompanyCase.value && companion.relationship === 'beneficiary') {
+        wizard.state.primaryApplicantType = 'companion';
+        wizard.state.primaryApplicantCompanionId = companion.id;
+        // The "client" of a company case is the company itself — never a
+        // dependent person on the application.
+        wizard.state.clientIsDependent = false;
+        wizard.saveToSession();
     }
 }
 
@@ -252,12 +428,23 @@ async function confirmDeleteCompanion(id: number) {
             if (wizard.state.selectedCompanionIds.includes(id)) {
                 wizard.toggleCompanion(id);
             }
+            // If the deleted companion was the beneficiary, reset the primary
+            // applicant on the wizard so the user is forced to add one.
+            if (companion.relationship === 'beneficiary' && isCompanyCase.value) {
+                wizard.state.primaryApplicantType = 'client';
+                wizard.state.primaryApplicantCompanionId = null;
+                wizard.saveToSession();
+            }
             success(t('companions.deleted_successfully'));
         } catch (err: any) {
             showError(err.response?.data?.message || t('companions.delete_failed'));
         }
     }
 }
+
+// =============================================
+// Companion list lifecycle
+// =============================================
 
 watch(
     () => wizard.state.clientId,
@@ -277,14 +464,42 @@ watch(
             try {
                 const response = await clientService.getClient(clientId);
                 const client = (response as any).data || response;
-                selectedClientName.value = client.full_name || `${client.first_name} ${client.last_name}`;
+                selectedClientName.value = client.display_name || client.full_name || `${client.first_name ?? ''} ${client.last_name ?? ''}`.trim();
+                // Keep wizard.clientType in sync when this step is the entry
+                // point after a session restore.
+                if (client?.type && wizard.state.clientType !== client.type) {
+                    wizard.setClientType(client.type);
+                }
             } catch (e) {
                 console.error('Failed to load client name:', e);
             }
-
         } else {
             companions.value = [];
             selectedClientName.value = '';
+        }
+    },
+    { immediate: true }
+);
+
+// Re-sync primary applicant assignment if companions list refreshes and a
+// beneficiary already exists (e.g. user comes back to the step after a reload).
+watch(
+    [isCompanyCase, beneficiaryCompanion],
+    ([company, beneficiary]) => {
+        if (company && beneficiary) {
+            if (
+                wizard.state.primaryApplicantType !== 'companion' ||
+                wizard.state.primaryApplicantCompanionId !== beneficiary.id
+            ) {
+                wizard.state.primaryApplicantType = 'companion';
+                wizard.state.primaryApplicantCompanionId = beneficiary.id;
+                wizard.state.clientIsDependent = false;
+                wizard.saveToSession();
+            }
+            // Ensure the beneficiary is selected.
+            if (!wizard.state.selectedCompanionIds.includes(beneficiary.id)) {
+                wizard.toggleCompanion(beneficiary.id);
+            }
         }
     },
     { immediate: true }

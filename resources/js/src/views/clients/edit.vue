@@ -7,7 +7,7 @@
             </li>
             <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
                 <router-link :to="`/clients/${clientId}`" class="text-primary hover:underline">
-                    {{ formatName(form.first_name, form.last_name) }}
+                    {{ clientType === 'company' ? (form.company_name || $t('clients.type.company')) : formatName(form.first_name, form.last_name) }}
                 </router-link>
             </li>
             <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
@@ -32,7 +32,15 @@
 
                 <!-- Header -->
                 <div class="flex items-center justify-between mb-5">
-                    <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('clients.edit_client') }}</h5>
+                    <div class="flex items-center gap-3">
+                        <h5 class="font-semibold text-lg dark:text-white-light">{{ $t('clients.edit_client') }}</h5>
+                        <span :class="clientType === 'company' ? 'badge badge-outline-success' : 'badge badge-outline-info'">
+                            {{ clientType === 'company' ? $t('clients.type.company') : $t('clients.type.person') }}
+                        </span>
+                        <span class="text-xs text-gray-400" :title="$t('clients.validation.cannot_change_type')">
+                            <icon-info-circle class="inline w-3.5 h-3.5" />
+                        </span>
+                    </div>
                     <!-- header/actions -->
                     <div class="flex items-center justify-end gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                         <router-link to="/clients" class="btn btn-outline-primary gap-2">
@@ -67,8 +75,64 @@
                     </button>
                 </div>
 
-                <!-- Personal Information Section -->
-                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
+                <!-- Company Information Section (Spec 64 — company only) -->
+                <div v-if="clientType === 'company'" class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
+                    <h6 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <icon-building class="w-5 h-5" />
+                        {{ $t('clients.company_information') }}
+                    </h6>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <div class="md:col-span-2">
+                            <label for="company_name" class="mb-2 block">
+                                {{ $t('clients.fields.company_name') }} <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                id="company_name"
+                                v-model="form.company_name"
+                                type="text"
+                                class="form-input"
+                                :class="{ 'border-danger': companyErrors.company_name }"
+                            />
+                            <p v-if="companyErrors.company_name" class="text-danger mt-1 text-sm">{{ companyErrors.company_name }}</p>
+                        </div>
+                        <div>
+                            <label for="trade_name" class="mb-2 block">{{ $t('clients.fields.trade_name') }}</label>
+                            <input id="trade_name" v-model="form.trade_name" type="text" class="form-input" />
+                        </div>
+                        <div>
+                            <label for="tax_id" class="mb-2 block">
+                                {{ $t('clients.fields.tax_id') }} <span class="text-danger">*</span>
+                            </label>
+                            <input
+                                id="tax_id"
+                                v-model="form.tax_id"
+                                type="text"
+                                class="form-input"
+                                :class="{ 'border-danger': companyErrors.tax_id }"
+                            />
+                            <p v-if="companyErrors.tax_id" class="text-danger mt-1 text-sm">{{ companyErrors.tax_id }}</p>
+                        </div>
+                        <div>
+                            <label for="industry" class="mb-2 block">{{ $t('clients.fields.industry') }}</label>
+                            <input id="industry" v-model="form.industry" type="text" class="form-input" />
+                        </div>
+                        <div>
+                            <label for="website" class="mb-2 block">{{ $t('clients.fields.website') }}</label>
+                            <input id="website" v-model="form.website" type="url" class="form-input" placeholder="https://" />
+                        </div>
+                        <div>
+                            <label for="legal_rep_name" class="mb-2 block">{{ $t('clients.fields.legal_rep_name') }}</label>
+                            <input id="legal_rep_name" v-model="form.legal_rep_name" type="text" class="form-input" />
+                        </div>
+                        <div>
+                            <label for="legal_rep_title" class="mb-2 block">{{ $t('clients.fields.legal_rep_title') }}</label>
+                            <input id="legal_rep_title" v-model="form.legal_rep_title" type="text" class="form-input" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Information Section (Spec 64 — person only) -->
+                <div v-if="clientType === 'person'" class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
                     <h6 class="text-lg font-semibold mb-4 flex items-center gap-2">
                         <icon-user class="w-5 h-5" />
                         {{ $t('clients.personal_information') }}
@@ -240,8 +304,8 @@
                     </div>
                 </div>
 
-                <!-- Canada Status Section -->
-                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
+                <!-- Canada Status Section (Spec 64 — person only) -->
+                <div v-if="clientType === 'person'" class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
                     <h6 class="text-lg font-semibold mb-4 flex items-center gap-2">
                         <icon-home class="w-5 h-5" />
                         {{ $t('clients.canada_legal_status') }}
@@ -370,6 +434,7 @@ import {
     ENTRY_POINT_OPTIONS,
     CLIENT_STATUS_OPTIONS,
 } from '@/types/client';
+import type { ClientType } from '@/types/client';
 import type { LegalDocument } from '@/types/legal-document';
 import DocumentRepeater from '@/components/DocumentRepeater.vue';
 import { legalDocumentService } from '@/services/legalDocumentService';
@@ -377,6 +442,8 @@ import { legalDocumentService } from '@/services/legalDocumentService';
 // Icons
 import IconArrowLeft from '@/components/icon/icon-arrow-left.vue';
 import IconUser from '@/components/icon/icon-user.vue';
+import IconBuilding from '@/components/icon/icon-building.vue';
+import IconInfoCircle from '@/components/icon/icon-info-circle.vue';
 import IconMail from '@/components/icon/icon-mail.vue';
 import IconHome from '@/components/icon/icon-home.vue';
 import IconSettings from '@/components/icon/icon-settings.vue';
@@ -453,6 +520,13 @@ const isLoadingClient = ref(true);
 const isSubmitting = ref(false);
 const errorMessage = ref('');
 
+// Spec 64 — Detected client type (immutable after creation)
+const clientType = ref<ClientType>('person');
+const companyErrors = reactive<{ company_name: string; tax_id: string }>({
+    company_name: '',
+    tax_id: '',
+});
+
 // Legal documents state
 const legalDocs = ref<LegalDocument[]>([]);
 const originalDocIds = ref<number[]>([]);
@@ -489,30 +563,60 @@ const form = reactive({
     iuc: '',
     status: 'prospect',
     description: '',
+    // Spec 64 — Company-specific fields
+    company_name: '',
+    trade_name: '',
+    tax_id: '',
+    industry: '',
+    website: '',
+    legal_rep_name: '',
+    legal_rep_title: '',
 });
 
-// Validation rules
-const rules = computed(() => ({
-    first_name: {
-        required: helpers.withMessage(() => t('clients.first_name_required'), required),
-    },
-    last_name: {
-        required: helpers.withMessage(() => t('clients.last_name_required'), required),
-    },
-    email: {
-        required: helpers.withMessage(() => t('clients.email_required'), required),
-        email: helpers.withMessage(() => t('clients.invalid_email'), email),
-    },
-    phone: {
-        required: helpers.withMessage(() => t('clients.phone_required'), required),
-    },
-}));
+// Validation rules — Spec 64: first/last name only required for persons
+const rules = computed(() => {
+    const isPerson = clientType.value === 'person';
+    return {
+        first_name: isPerson
+            ? { required: helpers.withMessage(() => t('clients.first_name_required'), required) }
+            : {},
+        last_name: isPerson
+            ? { required: helpers.withMessage(() => t('clients.last_name_required'), required) }
+            : {},
+        email: {
+            required: helpers.withMessage(() => t('clients.email_required'), required),
+            email: helpers.withMessage(() => t('clients.invalid_email'), email),
+        },
+        phone: {
+            required: helpers.withMessage(() => t('clients.phone_required'), required),
+        },
+    };
+});
 
 const v$ = useVuelidate(rules, form);
+
+const validateCompanyFields = (): boolean => {
+    companyErrors.company_name = '';
+    companyErrors.tax_id = '';
+    let valid = true;
+    if (!form.company_name?.trim()) {
+        companyErrors.company_name = t('clients.validation.company_name_required');
+        valid = false;
+    }
+    if (!form.tax_id?.trim()) {
+        companyErrors.tax_id = t('clients.validation.tax_id_required');
+        valid = false;
+    }
+    return valid;
+};
 
 const handleSubmit = async () => {
     const isValid = await v$.value.$validate();
     if (!isValid) return;
+
+    if (clientType.value === 'company' && !validateCompanyFields()) {
+        return;
+    }
 
     isSubmitting.value = true;
     errorMessage.value = '';
@@ -526,6 +630,32 @@ const handleSubmit = async () => {
         if (canada_status_other) {
             data.other_status_1 = canada_status_other;
         }
+
+        // Spec 64 — strip fields that don't belong to the client's actual type
+        if (clientType.value === 'company') {
+            delete data.first_name;
+            delete data.last_name;
+            delete data.date_of_birth;
+            delete data.gender;
+            delete data.marital_status;
+            delete data.nationality;
+            delete data.profession;
+            delete data.canada_status;
+            delete data.other_status_1;
+            delete data.entry_point;
+            delete data.arrival_date;
+            delete data.iuc;
+        } else {
+            delete data.company_name;
+            delete data.trade_name;
+            delete data.tax_id;
+            delete data.industry;
+            delete data.website;
+            delete data.legal_rep_name;
+            delete data.legal_rep_title;
+        }
+        // Never send type — backend rejects changes and infers it from existing record
+        delete data.type;
 
         await clientStore.updateClient(clientId.value, data as any);
 
@@ -577,6 +707,8 @@ const loadClient = async () => {
             legalDocumentService.getForClient(clientId.value),
         ]);
         if (client) {
+            // Spec 64 — detect type first so conditional rendering & rules apply
+            clientType.value = ((client as any).type as ClientType) || 'person';
             Object.keys(form).forEach((key) => {
                 const value = (client as any)[key];
                 (form as any)[key] = value ?? '';

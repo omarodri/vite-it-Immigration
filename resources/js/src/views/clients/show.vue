@@ -6,7 +6,7 @@
                 <router-link to="/clients" class="text-primary hover:underline">{{ $t('clients.clients') }}</router-link>
             </li>
             <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
-                <span>{{ client?.full_name }}</span>
+                <span>{{ displayName }}</span>
             </li>
         </ul>
 
@@ -30,18 +30,27 @@
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div class="flex items-center gap-4">
                         <div class="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold" :class="getStatusAvatarClass(client.status)">
-                            {{ client.initials || getInitials(client.first_name, client.last_name) }}
+                            <icon-building v-if="client.type === 'company'" class="w-10 h-10" />
+                            <template v-else>{{ client.initials || getInitials(client.first_name, client.last_name) }}</template>
                         </div>
                         <div>
                             <h4 class="text-xl font-bold dark:text-white-light">
-                                {{ client.full_name }}
+                                {{ displayName }}
                             </h4>
-                            <p class="text-gray-500">{{ client.profession || $t('clients.no_profession') }}</p>
+                            <p v-if="client.type === 'company'" class="text-gray-500">
+                                {{ client.industry || $t('clients.no_industry') }}
+                            </p>
+                            <p v-else class="text-gray-500">
+                                {{ client.profession || $t('clients.no_profession') }}
+                            </p>
                             <div class="flex items-center gap-2 mt-2">
                                 <span class="badge" :class="getStatusBadgeClass(client.status)">
                                     {{ $t(`clients.${client.status}`) }}
                                 </span>
-                                <span v-if="client.canada_status" class="badge badge-outline-primary">
+                                <span :class="client.type === 'company' ? 'badge badge-outline-success' : 'badge badge-outline-info'">
+                                    {{ client.type === 'company' ? $t('clients.type.company') : $t('clients.type.person') }}
+                                </span>
+                                <span v-if="client.type === 'person' && client.canada_status" class="badge badge-outline-primary">
                                     {{ formatCanadaStatus(client.canada_status) }}
                                 </span>
                             </div>
@@ -95,7 +104,7 @@
                             :class="activeTab === 'personal' ? 'border-primary text-primary' : 'border-transparent hover:text-primary'"
                             @click="activeTab = 'personal'"
                         >
-                            {{ $t('clients.personal_information') }}
+                            {{ client.type === 'company' ? $t('clients.company_information') : $t('clients.personal_information') }}
                         </button>
                     </li>
                     <li>
@@ -108,7 +117,7 @@
                             {{ $t('clients.contact_information') }}
                         </button>
                     </li>
-                    <li>
+                    <li v-if="client.type !== 'company'">
                         <button
                             type="button"
                             class="px-5 py-3 border-b-2 font-medium transition-colors"
@@ -136,7 +145,7 @@
                             :class="activeTab === 'companions' ? 'border-primary text-primary' : 'border-transparent hover:text-primary'"
                             @click="activeTab = 'companions'"
                         >
-                            {{ $t('clients.companions') }}
+                            {{ client.type === 'company' ? $t('clients.tabs.sponsored_employees') : $t('clients.tabs.companions') }}
                             <span v-if="companions.length" class="badge badge-outline-primary ml-2">{{ companions.length }}</span>
                         </button>
                     </li>
@@ -155,8 +164,48 @@
 
                 <!-- Tab Content -->
                 <div class="p-5">
-                    <!-- Personal Information Tab -->
-                    <div v-if="activeTab === 'personal'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Personal / Company Information Tab -->
+                    <div v-if="activeTab === 'personal' && client.type === 'company'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div>
+                            <label class="text-gray-500 text-sm">{{ $t('clients.fields.company_name') }}</label>
+                            <p class="font-semibold">{{ client.company_name || '-' }}</p>
+                        </div>
+                        <div>
+                            <label class="text-gray-500 text-sm">{{ $t('clients.fields.trade_name') }}</label>
+                            <p class="font-semibold">{{ client.trade_name || '-' }}</p>
+                        </div>
+                        <div>
+                            <label class="text-gray-500 text-sm">{{ $t('clients.fields.tax_id') }}</label>
+                            <p class="font-semibold">{{ client.tax_id || '-' }}</p>
+                        </div>
+                        <div>
+                            <label class="text-gray-500 text-sm">{{ $t('clients.fields.industry') }}</label>
+                            <p class="font-semibold">{{ client.industry || '-' }}</p>
+                        </div>
+                        <div>
+                            <label class="text-gray-500 text-sm">{{ $t('clients.fields.website') }}</label>
+                            <p class="font-semibold">
+                                <a v-if="client.website" :href="client.website" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">
+                                    {{ client.website }}
+                                </a>
+                                <span v-else>-</span>
+                            </p>
+                        </div>
+                        <div>
+                            <label class="text-gray-500 text-sm">{{ $t('clients.fields.legal_rep_name') }}</label>
+                            <p class="font-semibold">{{ client.legal_rep_name || '-' }}</p>
+                        </div>
+                        <div>
+                            <label class="text-gray-500 text-sm">{{ $t('clients.fields.legal_rep_title') }}</label>
+                            <p class="font-semibold">{{ client.legal_rep_title || '-' }}</p>
+                        </div>
+                        <div class="md:col-span-2 lg:col-span-3">
+                            <label class="text-gray-500 text-sm">{{ $t('clients.notes') }}</label>
+                            <p class="font-semibold whitespace-pre-wrap">{{ client.description || '-' }}</p>
+                        </div>
+                    </div>
+
+                    <div v-else-if="activeTab === 'personal'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div>
                             <label class="text-gray-500 text-sm">{{ $t('clients.first_name') }}</label>
                             <p class="font-semibold">{{ client.first_name }}</p>
@@ -278,10 +327,12 @@
                         />
                     </div>
 
-                    <!-- Companions Tab -->
+                    <!-- Companions / Sponsored Employees Tab -->
                     <div v-else-if="activeTab === 'companions'">
                         <div class="flex justify-between items-center mb-4">
-                            <h5 class="text-lg font-semibold">{{ $t('clients.family_companions') }}</h5>
+                            <h5 class="text-lg font-semibold">
+                                {{ client.type === 'company' ? $t('clients.tabs.sponsored_employees') : $t('clients.family_companions') }}
+                            </h5>
                             <button
                                 v-can="'clients.update'"
                                 type="button"
@@ -394,7 +445,7 @@
                             <h5 class="text-lg font-semibold">{{ $t('clients.assigned_cases') }}</h5>
                             <router-link
                                 v-can="'cases.create'"
-                                :to="`/cases/wizard?client_id=${client.id}&client_name=${encodeURIComponent(client.full_name)}`"
+                                :to="`/cases/wizard?client_id=${client.id}&client_name=${encodeURIComponent(displayName)}`"
                                 class="btn btn-primary btn-sm gap-2"
                             >
                                 <icon-plus class="w-4 h-4" />
@@ -499,6 +550,7 @@ import { legalDocumentService } from '@/services/legalDocumentService';
 
 // Icons
 import IconArrowLeft from '@/components/icon/icon-arrow-left.vue';
+import IconBuilding from '@/components/icon/icon-building.vue';
 import IconPencil from '@/components/icon/icon-pencil.vue';
 import IconArrowForward from '@/components/icon/icon-arrow-forward.vue';
 import IconUsers from '@/components/icon/icon-users.vue';
@@ -524,6 +576,17 @@ const { t } = useI18n();
 const client = ref<Client | null>(null);
 const isLoading = ref(true);
 const activeTab = ref('personal');
+
+// Spec 64 — Unified display name (company: trade/legal name; person: full name)
+const displayName = computed<string>(() => {
+    const c = client.value;
+    if (!c) return '';
+    if (c.display_name) return c.display_name;
+    if (c.type === 'company') {
+        return c.trade_name || c.company_name || `#${c.id}`;
+    }
+    return c.full_name || `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim() || `#${c.id}`;
+});
 
 // Companion state
 const companions = ref<Companion[]>([]);
@@ -675,7 +738,7 @@ const computeLocalEligibility = (c: Companion): EligibilityResult => {
     if (!c.phone?.trim())       reasons.push('missing_phone');
     if (!c.date_of_birth) {
         reasons.push('missing_date_of_birth');
-    } else if ((c.age ?? 0) < 22) {
+    } else if ((c.age ?? 0) < 18) {
         reasons.push('underage');
     }
     return { eligible: reasons.length === 0, reasons, alreadyPromoted: false };
@@ -755,7 +818,7 @@ const confirmConvert = async () => {
     if (!client.value) return;
 
     const confirmed = await confirmDialog({
-        title: t('clients.confirm_convert', { name: client.value.full_name }),
+        title: t('clients.confirm_convert', { name: displayName.value }),
         text: t('clients.convert_description'),
         icon: 'info',
         confirmButtonText: t('clients.yes_convert'),
@@ -792,7 +855,7 @@ const confirmDeleteClient = async () => {
         : t('clients.delete_warning');
 
     const confirmed = await confirmDialog({
-        title: t('clients.confirm_delete', { name: client.value.full_name }),
+        title: t('clients.confirm_delete', { name: displayName.value }),
         text: warningText,
         icon: 'warning',
         confirmButtonText: t('clients.yes_delete'),
@@ -817,6 +880,13 @@ watch(activeTab, (newTab) => {
     }
     if (newTab === 'documents' && client.value && !docsLoaded.value) {
         loadLegalDocs();
+    }
+});
+
+// Spec 64 — Companies don't have a Canada Legal Status tab; redirect to personal/company info
+watch(client, (newClient) => {
+    if (newClient?.type === 'company' && activeTab.value === 'canada') {
+        activeTab.value = 'personal';
     }
 });
 

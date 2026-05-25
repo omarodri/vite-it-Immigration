@@ -4,6 +4,7 @@
  */
 
 import type { CasePriority, ImportantDate, ServiceType, CaseFolderInput } from './case';
+import type { ClientType } from './client';
 
 // =============================================
 // Wizard Task Item
@@ -24,6 +25,11 @@ export interface WizardState {
     currentStep: number;
     caseTypeId: number | null;
     clientId: number | null;
+    /**
+     * Type of the currently-selected client (Spec 64).
+     * When 'company', the wizard requires a mandatory beneficiary companion (DT-09).
+     */
+    clientType: ClientType | null;
     selectedCompanionIds: number[];
     primaryApplicantType: 'client' | 'companion';
     primaryApplicantCompanionId: number | null;

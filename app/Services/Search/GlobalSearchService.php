@@ -34,18 +34,18 @@ class GlobalSearchService
                 return Client::where('tenant_id', $tenantId)
                     ->whereNull('deleted_at')
                     ->where(function ($q) use ($query) {
-                        $q->where('first_name', 'LIKE', "%{$query}%")
-                          ->orWhere('last_name', 'LIKE', "%{$query}%")
-                          ->orWhere('email', 'LIKE', "%{$query}%");
+                        $q->where('display_name', 'LIKE', "%{$query}%")
+                          ->orWhere('email', 'LIKE', "%{$query}%")
+                          ->orWhere('tax_id', 'LIKE', "%{$query}%");
                     })
                     ->limit($limit)
-                    ->get(['id', 'tenant_id', 'first_name', 'last_name', 'email', 'status']);
+                    ->get(['id', 'tenant_id', 'first_name', 'last_name', 'email', 'status', 'display_name', 'type', 'company_name', 'trade_name']);
             });
 
             $results['clients'] = $clients->map(fn ($c) => new SearchResultDTO(
                 id: $c->id,
                 type: 'client',
-                label: $c->full_name,
+                label: (string) ($c->display_name ?? $c->full_name),
                 description: "{$c->email} · {$c->status}",
                 route: "/clients/{$c->id}",
             ))->map(fn (SearchResultDTO $dto) => $dto->toArray())->values()->all();
@@ -153,19 +153,19 @@ class GlobalSearchService
                 return Client::onlyTrashed()
                     ->where('tenant_id', $tenantId)
                     ->where(function ($q) use ($query) {
-                        $q->where('first_name', 'LIKE', "%{$query}%")
-                          ->orWhere('last_name', 'LIKE', "%{$query}%")
-                          ->orWhere('email', 'LIKE', "%{$query}%");
+                        $q->where('display_name', 'LIKE', "%{$query}%")
+                          ->orWhere('email', 'LIKE', "%{$query}%")
+                          ->orWhere('tax_id', 'LIKE', "%{$query}%");
                     })
                     ->limit($limit)
-                    ->get(['id', 'tenant_id', 'first_name', 'last_name']);
+                    ->get(['id', 'tenant_id', 'first_name', 'last_name', 'display_name', 'type', 'company_name', 'trade_name']);
             });
 
             foreach ($trashedClients as $c) {
                 $trashResults->push(new SearchResultDTO(
                     id: $c->id,
                     type: 'trash',
-                    label: $c->full_name,
+                    label: (string) ($c->display_name ?? $c->full_name),
                     description: 'En papelera',
                     route: '/trash',
                 ));

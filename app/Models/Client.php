@@ -17,10 +17,23 @@ class Client extends Model
 {
     use BelongsToTenant, HasFactory, LogsActivity, SoftDeletes;
 
+    public const TYPE_PERSON  = 'person';
+    public const TYPE_COMPANY = 'company';
+
     protected $fillable = [
         'tenant_id',
         'user_id',
         'promoted_from_companion_id',
+        // STI discriminator
+        'type',
+        // Company Information
+        'company_name',
+        'trade_name',
+        'tax_id',
+        'industry',
+        'website',
+        'legal_rep_name',
+        'legal_rep_title',
         // Personal Information
         'first_name',
         'last_name',
@@ -117,9 +130,16 @@ class Client extends Model
 
     /**
      * Get the client's full name, respecting the tenant's name format preference.
+     *
+     * For company-type clients, returns the trade name when set, otherwise the
+     * legal company name. The persona branch keeps its existing behaviour.
      */
     public function getFullNameAttribute(): string
     {
+        if ($this->type === self::TYPE_COMPANY) {
+            return $this->trade_name ?? $this->company_name ?? '';
+        }
+
         $format = $this->getNameFormat();
 
         return $format === 'last_first'
@@ -129,9 +149,16 @@ class Client extends Model
 
     /**
      * Get the client's name in "Last, First" format (always, for sorting).
+     *
+     * For company-type clients, sorts by the legal name (company_name) to keep
+     * an "official register" style ordering, falling back to trade_name.
      */
     public function getSortNameAttribute(): string
     {
+        if ($this->type === self::TYPE_COMPANY) {
+            return $this->company_name ?? $this->trade_name ?? '';
+        }
+
         return "{$this->last_name}, {$this->first_name}";
     }
 
@@ -149,11 +176,20 @@ class Client extends Model
 
     /**
      * Get the client's initials.
+     *
+     * Companies use the first two letters of the trade/legal name; persons keep
+     * the legacy "first letter of first + first letter of last" rule. Both
+     * branches are NULL-safe now that name columns are nullable.
      */
     public function getInitialsAttribute(): string
     {
+        if ($this->type === self::TYPE_COMPANY) {
+            $name = $this->trade_name ?? $this->company_name ?? '';
+            return strtoupper(substr($name, 0, 2));
+        }
+
         return strtoupper(
-            substr($this->first_name, 0, 1) . substr($this->last_name, 0, 1)
+            substr($this->first_name ?? '', 0, 1) . substr($this->last_name ?? '', 0, 1)
         );
     }
 
@@ -174,16 +210,47 @@ class Client extends Model
     }
 
     /**
-     * Scope to search clients by name, email, or phone.
+     * Scope to search clients by name (persona or company), email, phone or tax id.
      */
     public function scopeSearch($query, string $search)
     {
         return $query->where(function ($q) use ($search) {
             $q->where('first_name', 'like', "%{$search}%")
                 ->orWhere('last_name', 'like', "%{$search}%")
+                ->orWhere('company_name', 'like', "%{$search}%")
+                ->orWhere('trade_name', 'like', "%{$search}%")
                 ->orWhere('email', 'like', "%{$search}%")
-                ->orWhere('phone', 'like', "%{$search}%");
+                ->orWhere('phone', 'like', "%{$search}%")
+                ->orWhere('tax_id', 'like', "%{$search}%");
         });
+    }
+
+    /**
+     * Scope filter by client type ('person' | 'company'). 'all' or null = no filter.
+     */
+    public function scopeOfType($query, ?string $type)
+    {
+        if (is_null($type) || $type === 'all') {
+            return $query;
+        }
+
+        return $query->where('type', $type);
+    }
+
+    /**
+     * Scope to persona-only rows.
+     */
+    public function scopePersons($query)
+    {
+        return $query->where('type', self::TYPE_PERSON);
+    }
+
+    /**
+     * Scope to company-only rows.
+     */
+    public function scopeCompanies($query)
+    {
+        return $query->where('type', self::TYPE_COMPANY);
     }
 
     /**
@@ -203,6 +270,7 @@ class Client extends Model
             ->logOnly([
                 'first_name', 'last_name', 'email', 'phone',
                 'status', 'canada_status',
+                'type', 'company_name', 'trade_name',
             ])
             ->logOnlyDirty()
             ->useLogName('clients')

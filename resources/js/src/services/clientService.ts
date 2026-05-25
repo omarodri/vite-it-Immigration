@@ -21,6 +21,7 @@ const clientService = {
 
         if (filters.search) params.append('search', filters.search);
         if (filters.status) params.append('status', filters.status);
+        if (filters.type && filters.type !== 'all') params.append('type', filters.type);
         if (filters.nationality) params.append('nationality', filters.nationality);
         if (filters.canada_status) params.append('canada_status', filters.canada_status);
         if (filters.date_from) params.append('date_from', filters.date_from);

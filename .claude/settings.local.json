@@ -72,7 +72,8 @@
       "Bash(xattr *)",
       "Bash(sort -t_ -k1 -n)",
       "Bash(git *)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(composer show *)"
     ]
   }
 }

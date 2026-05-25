@@ -84,12 +84,14 @@ class CaseResource extends JsonResource
 
             // Conditional Relations
             'client' => $this->whenLoaded('client', fn () => [
-                'id' => $this->client->id,
+                'id'         => $this->client->id,
+                'type'       => $this->client->type,
                 'first_name' => $this->client->first_name,
-                'last_name' => $this->client->last_name,
-                'full_name' => $this->client->full_name,
-                'email' => $this->client->email,
-                'phone' => $this->client->phone,
+                'last_name'  => $this->client->last_name,
+                'full_name'  => $this->client->full_name,
+                'initials'   => $this->client->initials,
+                'email'      => $this->client->email,
+                'phone'      => $this->client->phone,
             ]),
 
             'primary_applicant' => $this->when(

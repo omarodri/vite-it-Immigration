@@ -28,6 +28,7 @@ class ClientController extends Controller
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['prospect', 'active', 'inactive', 'archived'])),
             new OA\Parameter(name: 'nationality', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'canada_status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'type', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['person', 'company', 'all'])),
             new OA\Parameter(name: 'sort_by', in: 'query', required: false, schema: new OA\Schema(type: 'string', default: 'created_at')),
             new OA\Parameter(name: 'sort_direction', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['asc', 'desc'], default: 'desc')),
             new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 15)),
@@ -47,6 +48,8 @@ class ClientController extends Controller
                 'search', 'status', 'nationality', 'canada_status',
                 'date_from', 'date_to',
                 'sort_by', 'sort_direction',
+                // Spec 64 — Clientes Empresa.
+                'type',
             ]),
             (int) $request->get('per_page', 15)
         );

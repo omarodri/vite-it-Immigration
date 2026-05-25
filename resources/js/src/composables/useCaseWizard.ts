@@ -11,6 +11,7 @@ import { useNotification } from './useNotification';
 import type { WizardState, WizardStep, CaseDetailsForm, WizardTaskItem } from '@/types/wizard';
 import { WIZARD_STEPS } from '@/types/wizard';
 import type { ImmigrationCase, CreateCaseData, CaseFolderInput } from '@/types/case';
+import type { ClientType } from '@/types/client';
 
 const STORAGE_KEY = 'case_wizard_state';
 
@@ -19,6 +20,7 @@ const createDefaultState = (): WizardState => ({
     currentStep: 1,
     caseTypeId: null,
     clientId: null,
+    clientType: null,
     selectedCompanionIds: [],
     primaryApplicantType: 'client' as 'client' | 'companion',
     primaryApplicantCompanionId: null as number | null,
@@ -92,6 +94,15 @@ export function useCaseWizard() {
             case 2:
                 return state.clientId !== null;
             case 3:
+                // For company-type clients (DT-09) we additionally require a
+                // beneficiary companion to be selected as the primary applicant.
+                // For person clients we keep the previous rule.
+                if (state.clientType === 'company') {
+                    return (
+                        state.primaryApplicantType === 'companion' &&
+                        state.primaryApplicantCompanionId !== null
+                    );
+                }
                 return (
                     state.primaryApplicantType === 'client' ||
                     (state.primaryApplicantType === 'companion' && state.primaryApplicantCompanionId !== null)
@@ -146,14 +157,32 @@ export function useCaseWizard() {
         saveToSession();
     }
 
-    function setClient(id: number): void {
+    function setClient(id: number, type: ClientType | null = null): void {
         state.clientId = id;
+        state.clientType = type;
         // Clear companions when client changes
         state.selectedCompanionIds = [];
+        // Default primary applicant depends on client type. For companies the
+        // beneficiary companion (added in Step 3) will become the primary
+        // applicant; we keep 'client' here and let the beneficiary handler
+        // promote itself when added.
         state.primaryApplicantType = 'client';
         state.primaryApplicantCompanionId = null;
-        state.clientIsDependent = true;
+        // Companies are entities — they are never a "dependent" of the case.
+        state.clientIsDependent = type === 'company' ? false : true;
         state.errors = {};
+        saveToSession();
+    }
+
+    /**
+     * Update only the cached client type (e.g. after the client object loads
+     * from the server but the id was already in state).
+     */
+    function setClientType(type: ClientType | null): void {
+        state.clientType = type;
+        if (type === 'company') {
+            state.clientIsDependent = false;
+        }
         saveToSession();
     }
 
@@ -190,6 +219,7 @@ export function useCaseWizard() {
                 currentStep: state.currentStep,
                 caseTypeId: state.caseTypeId,
                 clientId: state.clientId,
+                clientType: state.clientType,
                 selectedCompanionIds: state.selectedCompanionIds,
                 primaryApplicantType: state.primaryApplicantType,
                 primaryApplicantCompanionId: state.primaryApplicantCompanionId,
@@ -213,6 +243,7 @@ export function useCaseWizard() {
                 state.currentStep = data.currentStep || 1;
                 state.caseTypeId = data.caseTypeId || null;
                 state.clientId = data.clientId || null;
+                state.clientType = data.clientType ?? null;
                 state.selectedCompanionIds = data.selectedCompanionIds || [];
                 state.primaryApplicantType = data.primaryApplicantType || 'client';
                 state.primaryApplicantCompanionId = data.primaryApplicantCompanionId ?? null;
@@ -356,6 +387,7 @@ export function useCaseWizard() {
         // Data setters
         setCaseType,
         setClient,
+        setClientType,
         toggleCompanion,
         setCompanions,
         updateDetails,
