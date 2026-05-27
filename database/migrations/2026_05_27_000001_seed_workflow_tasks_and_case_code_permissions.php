@@ -58,9 +58,17 @@ return new class extends Migration
 
         // Transitional migration: propagate the new case_code.* permissions
         // to whichever roles previously held the legacy `settings.case_code.manage`.
-        $legacyRoles = Role::permission('settings.case_code.manage')->get();
-        foreach ($legacyRoles as $role) {
-            $role->givePermissionTo(['case_code.view', 'case_code.update']);
+        // Guard: Role::permission() throws PermissionDoesNotExist if the permission
+        // never existed in this environment (e.g. prod that never ran the old seeder).
+        $legacyExists = Permission::where('name', 'settings.case_code.manage')
+            ->where('guard_name', 'web')
+            ->exists();
+
+        if ($legacyExists) {
+            $legacyRoles = Role::permission('settings.case_code.manage')->get();
+            foreach ($legacyRoles as $role) {
+                $role->givePermissionTo(['case_code.view', 'case_code.update']);
+            }
         }
 
         App::make(PermissionRegistrar::class)->forgetCachedPermissions();
