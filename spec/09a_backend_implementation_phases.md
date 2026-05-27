@@ -1,3 +1,13 @@
+---
+tipo: spec
+numero: 09a
+modulo: Expedientes
+dominio: CASES
+estado: HIST
+tags: [spec, expedientes, historico]
+relacionados:
+  - "[[09_epic_2.2_case_wizard|Spec 09]]"
+---
 # Epic 2.2 - Case Wizard: Backend Implementation Plan
 
 ## Metadata
@@ -111,7 +121,7 @@ php artisan make:migration create_case_companions_table
 
 ---
 
-### FASE 1.2: Modelo ImmigrationCase - Relacion companions (30min)
+### FASE 1.2: Modelo [[ImmigrationCase]] - Relacion companions (30min)
 
 **Objetivo:** Agregar relacion BelongsToMany al modelo de casos.
 
@@ -201,7 +211,7 @@ companion_ids:
 
 ---
 
-### FASE 1.5: CaseService - Manejar companions (1h)
+### FASE 1.5: [[CaseService]] - Manejar companions (1h)
 
 **Objetivo:** Modificar `createCase()` para adjuntar companions al caso creado.
 
@@ -526,7 +536,7 @@ curl http://localhost/api/users/staff \
 
 1. **Orden de rutas en api.php:** La ruta `/users/staff` DEBE definirse ANTES de `apiResource('users')` para evitar que Laravel la interprete como `/users/{user}` con `staff` como ID.
 
-2. **Validacion de companions:** Usar `Companion::withoutGlobalScopes()` no es necesario porque companions no tienen global scope de tenant en el request validation, pero `assigned_to` SI requiere bypass porque User tiene el trait BelongsToTenant implicitamente via tenant_id check.
+2. **Validacion de companions:** Usar `Companion::withoutGlobalScopes()` no es necesario porque companions no tienen global scope de tenant en el request validation, pero `assigned_to` SI requiere bypass porque User tiene el trait [[BelongsToTenant]] implicitamente via tenant_id check.
 
 3. **Activity Log:** El modelo ImmigrationCase ya tiene `LogsActivity` trait configurado. Los companions adjuntos deben registrarse en el log manual del CaseService, no automaticamente.
 

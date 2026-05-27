@@ -1,3 +1,16 @@
+---
+tipo: spec
+numero: 07
+modulo: Expedientes
+dominio: CASES
+estado: PART
+tags: [spec, expedientes, parcial]
+relacionados:
+  - "[[09_epic_2.2_case_wizard|Spec 09]]"
+  - "[[12_fechas_importantes_dinamicas|Spec 12]]"
+  - "[[13_campos_operativos_financieros|Spec 13]]"
+  - "[[14_ciclo_de_vida_checklist_dinamico|Spec 14]]"
+---
 # Plan de Implementación: Epic 2.1 - Expedientes Core
 
 ## Metadata
@@ -70,17 +83,17 @@ Crear los modelos Eloquent y la capa de repositorio siguiendo el patrón existen
 
 ### Tareas
 
-#### 1.1 Modelo CaseType (1h)
+#### 1.1 Modelo [[CaseType]] (1h)
 - [ ] Crear `app/Models/CaseType.php`
 - [ ] Definir fillable: name, code, category, description, is_active
 - [ ] Relación: `cases(): HasMany<ImmigrationCase>`
 - [ ] Scopes: `scopeActive()`, `scopeByCategory()`, `scopeGlobalOrTenant()`
 - [ ] Constantes de categorías con labels en español
 
-#### 1.2 Modelo ImmigrationCase (3h)
+#### 1.2 Modelo [[ImmigrationCase]] (3h)
 - [ ] Crear `app/Models/ImmigrationCase.php` (nombrado así porque 'case' es palabra reservada)
 - [ ] Configurar `protected $table = 'cases'`
-- [ ] Traits: BelongsToTenant, HasFactory, LogsActivity, SoftDeletes
+- [ ] Traits: [[BelongsToTenant]], HasFactory, LogsActivity, SoftDeletes
 - [ ] Definir fillable (15+ campos)
 - [ ] Casts para fechas: hearing_date, fda_deadline, etc.
 - [ ] Relaciones:
@@ -148,7 +161,7 @@ Implementar la lógica de negocio y autorización.
 
 ### Tareas
 
-#### 2.1 CaseService (4h)
+#### 2.1 [[CaseService]] (4h)
 - [ ] Crear `app/Services/Case/CaseService.php`
 - [ ] Inyectar CaseRepositoryInterface y CaseTypeRepositoryInterface
 - [ ] Métodos:

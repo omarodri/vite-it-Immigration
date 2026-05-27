@@ -37,8 +37,8 @@
                         {{ $t('wizard.step_companions.beneficiary_section_desc') }}
                     </p>
                 </div>
+                <!-- Add button always visible so user can add a new employee at any time -->
                 <button
-                    v-if="!hasBeneficiary"
                     v-can="'companions.create'"
                     type="button"
                     class="btn btn-primary btn-sm gap-2 shrink-0"
@@ -49,7 +49,21 @@
                 </button>
             </div>
 
-            <!-- Beneficiary card -->
+            <!-- Dropdown to pick from existing beneficiary employees -->
+            <div v-if="beneficiaryCompanions.length > 0" class="mb-3">
+                <select
+                    v-model="selectedBeneficiaryId"
+                    class="form-select"
+                    :class="{ 'border-danger': !hasBeneficiary && validationAttempted }"
+                >
+                    <option value="">{{ $t('wizard.step_companions.select_beneficiary') }}</option>
+                    <option v-for="c in beneficiaryCompanions" :key="c.id" :value="c.id">
+                        {{ c.full_name }}<template v-if="c.iuc"> — IUC: {{ c.iuc }}</template>
+                    </option>
+                </select>
+            </div>
+
+            <!-- Selected beneficiary card -->
             <div v-if="hasBeneficiary && beneficiaryCompanion" class="flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-gray-900 border border-success/30">
                 <div class="shrink-0 w-10 h-10 rounded-full bg-success/20 text-success flex items-center justify-center font-semibold">
                     {{ beneficiaryCompanion.initials || getInitials(beneficiaryCompanion.first_name, beneficiaryCompanion.last_name) }}
@@ -78,27 +92,23 @@
                 </button>
             </div>
 
-            <!-- No dedicated beneficiary companion yet -->
+            <!-- No beneficiary selected yet -->
             <p
-                v-else
-                class="text-sm flex items-center gap-2"
-                :class="wizard.state.primaryApplicantCompanionId ? 'text-gray-500 dark:text-gray-400' : 'text-warning'"
+                v-else-if="!hasBeneficiary"
+                class="text-sm flex items-center gap-2 text-warning"
             >
                 <icon-info-triangle class="w-4 h-4 shrink-0" aria-hidden="true" />
-                {{ wizard.state.primaryApplicantCompanionId
-                    ? $t('wizard.step_companions.beneficiary_optional_note')
-                    : $t('wizard.step_companions.beneficiary_required') }}
+                {{ $t('wizard.step_companions.beneficiary_required') }}
             </p>
         </section>
 
         <!-- ============================================================
-             PRIMARY APPLICANT SELECTION
-             Company cases: all companions shown (no client option); auto-set
-             when beneficiary is added but user can also pick manually.
-             Non-company cases: client + selected companions.
+             PRIMARY APPLICANT SELECTION — person cases only
+             For company cases the beneficiary IS the primary applicant;
+             the green "Empleado Beneficiario" box above handles this.
              ============================================================ -->
         <div
-            v-if="wizard.state.clientId && !loading && companions.length > 0"
+            v-if="wizard.state.clientId && !loading && companions.length > 0 && !isCompanyCase"
             class="mb-6 p-4 border border-primary/30 rounded-lg bg-primary/5"
         >
             <h4 class="font-semibold text-gray-900 dark:text-white mb-1">
@@ -291,11 +301,39 @@ const selectedClientName = ref('');
 
 const isCompanyCase = computed<boolean>(() => wizard.state.clientType === 'company');
 
+// All companions with relationship='beneficiary' (a company client can have multiple employees).
+const beneficiaryCompanions = computed<Companion[]>(() =>
+    companions.value.filter((c) => c.relationship === 'beneficiary')
+);
+
+// The currently selected beneficiary companion (matched by primaryApplicantCompanionId).
 const beneficiaryCompanion = computed<Companion | null>(() => {
-    return companions.value.find((c) => c.relationship === 'beneficiary') ?? null;
+    const id = wizard.state.primaryApplicantCompanionId;
+    if (!id) return null;
+    return companions.value.find((c) => c.id === id && c.relationship === 'beneficiary') ?? null;
 });
 
+// True when the user has actually selected a beneficiary for this case.
 const hasBeneficiary = computed<boolean>(() => beneficiaryCompanion.value !== null);
+
+// Writable computed — drives the beneficiary <select> in the green box.
+const selectedBeneficiaryId = computed<number | ''>({
+    get(): number | '' {
+        return wizard.state.primaryApplicantCompanionId ?? '';
+    },
+    set(value: number | '') {
+        const id = value === '' ? null : Number(value);
+        wizard.state.primaryApplicantType = id ? 'companion' : 'client';
+        wizard.state.primaryApplicantCompanionId = id;
+        if (id) {
+            if (!wizard.state.selectedCompanionIds.includes(id)) {
+                wizard.toggleCompanion(id);
+            }
+            wizard.state.clientIsDependent = false;
+        }
+        wizard.saveToSession();
+    },
+});
 
 const nonBeneficiaryCompanions = computed<Companion[]>(() => {
     return companions.value.filter((c) => c.relationship !== 'beneficiary');
@@ -428,9 +466,9 @@ async function confirmDeleteCompanion(id: number) {
             if (wizard.state.selectedCompanionIds.includes(id)) {
                 wizard.toggleCompanion(id);
             }
-            // If the deleted companion was the beneficiary, reset the primary
-            // applicant on the wizard so the user is forced to add one.
-            if (companion.relationship === 'beneficiary' && isCompanyCase.value) {
+            // If the deleted companion was the selected primary applicant, reset it.
+            if (companion.relationship === 'beneficiary' && isCompanyCase.value &&
+                wizard.state.primaryApplicantCompanionId === id) {
                 wizard.state.primaryApplicantType = 'client';
                 wizard.state.primaryApplicantCompanionId = null;
                 wizard.saveToSession();
@@ -481,26 +519,22 @@ watch(
     { immediate: true }
 );
 
-// Re-sync primary applicant assignment if companions list refreshes and a
-// beneficiary already exists (e.g. user comes back to the step after a reload).
+// For company cases: enforce clientIsDependent=false and ensure the restored
+// primaryApplicantCompanionId (from sessionStorage) is included in selectedCompanionIds.
+// No auto-assignment to the first beneficiary — the user must pick explicitly.
 watch(
-    [isCompanyCase, beneficiaryCompanion],
-    ([company, beneficiary]) => {
-        if (company && beneficiary) {
-            if (
-                wizard.state.primaryApplicantType !== 'companion' ||
-                wizard.state.primaryApplicantCompanionId !== beneficiary.id
-            ) {
-                wizard.state.primaryApplicantType = 'companion';
-                wizard.state.primaryApplicantCompanionId = beneficiary.id;
-                wizard.state.clientIsDependent = false;
-                wizard.saveToSession();
-            }
-            // Ensure the beneficiary is selected.
-            if (!wizard.state.selectedCompanionIds.includes(beneficiary.id)) {
-                wizard.toggleCompanion(beneficiary.id);
+    [isCompanyCase, companions],
+    ([company]) => {
+        if (!company) return;
+        wizard.state.clientIsDependent = false;
+        const id = wizard.state.primaryApplicantCompanionId;
+        if (id) {
+            wizard.state.primaryApplicantType = 'companion';
+            if (!wizard.state.selectedCompanionIds.includes(id)) {
+                wizard.toggleCompanion(id);
             }
         }
+        wizard.saveToSession();
     },
     { immediate: true }
 );

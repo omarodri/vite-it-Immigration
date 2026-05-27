@@ -1,3 +1,13 @@
+---
+tipo: spec
+numero: 06a
+modulo: Autenticación y Seguridad
+dominio: AUTH
+estado: HIST
+tags: [spec, auth, historico]
+relacionados:
+  - "[[06_role_permission_management|Spec 06]]"
+---
 # Fases de Implementacion Backend - Gestion de Roles y Permisos
 
 ## Metadata

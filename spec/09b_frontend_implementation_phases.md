@@ -1,3 +1,13 @@
+---
+tipo: spec
+numero: 09b
+modulo: Expedientes
+dominio: CASES
+estado: HIST
+tags: [spec, expedientes, historico]
+relacionados:
+  - "[[09_epic_2.2_case_wizard|Spec 09]]"
+---
 # Epic 2.2 - Case Wizard: Plan de Implementacion Frontend
 
 ## Resumen Ejecutivo
@@ -15,7 +25,7 @@ Este documento detalla el plan de implementacion frontend para el Case Wizard de
 #### Tipos y Modelos (Ya Existentes)
 | Archivo | Proposito | Estado |
 |---------|-----------|--------|
-| `resources/js/src/types/case.ts` | Interfaces ImmigrationCase, CaseType, CreateCaseData | Completo |
+| `resources/js/src/types/case.ts` | Interfaces [[ImmigrationCase]], [[CaseType]], CreateCaseData | Completo |
 | `resources/js/src/types/client.ts` | Interfaces Client, CreateClientData | Completo |
 | `resources/js/src/types/companion.ts` | Interfaces Companion, RelationshipType | Completo |
 | `resources/js/src/types/pagination.ts` | Interfaces de paginacion | Completo |
@@ -39,7 +49,7 @@ Este documento detalla el plan de implementacion frontend para el Case Wizard de
 |---------|-----------|-----------------|
 | `resources/js/src/composables/useNotification.ts` | Notificaciones toast | Estructura de composable |
 | `resources/js/src/composables/useDebounce.ts` | Debounce para busquedas | Debounce pattern |
-| `resources/js/src/composables/use-meta.ts` | Meta tags de pagina | useMeta() |
+| `resources/js/src/composables/use-meta.ts` | Meta tags de pagina | [[useMeta]]() |
 
 #### Componentes de Referencia UI
 | Archivo | Elementos a Reutilizar |

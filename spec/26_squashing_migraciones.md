@@ -1,4 +1,12 @@
-# Spec 26 — Squashing de Migraciones
+---
+tipo: spec
+numero: 26
+modulo: Sistema e Infraestructura
+dominio: SYS
+estado: DONE
+tags: [spec, sistema, done]
+---
+# [[26_squashing_migraciones|Spec 26]] — Squashing de Migraciones
 
 **Fecha:** 2026-03-17
 **Estado:** ✅ IMPLEMENTADO — 2026-03-17

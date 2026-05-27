@@ -1,3 +1,15 @@
+---
+tipo: spec
+numero: 06
+modulo: Autenticación y Seguridad
+dominio: AUTH
+estado: DONE
+tags: [spec, auth, done]
+relacionados:
+  - "[[06a_backend_implementation_phases|Spec 06a]]"
+  - "[[06b_frontend_implementation_phases|Spec 06b]]"
+  - "[[08_permisos_clientes_acompanantes_roles|Spec 08]]"
+---
 # Plan de Implementación: Gestión de Roles y Permisos
 
 **Proyecto:** Vristo POC - Laravel 12 + Vue 3 SPA
@@ -1299,7 +1311,7 @@ onMounted(async () => {
 **Dependencias:**
 - roleStore ✅
 - useNotification ✅
-- useDebounce ✅
+- [[useDebounce]] ✅
 - formatDate ✅
 - vue3-datatable ✅
 
@@ -2367,7 +2379,7 @@ public function cannot_update_protected_role()
 
 <!-- Check permission in script -->
 <script setup>
-import { usePermissions } from '@/composables/usePermissions';
+import { [[usePermissions]] } from '@/composables/usePermissions';
 const { can } = usePermissions();
 
 if (can('roles.update')) {
@@ -2673,7 +2685,7 @@ activity-logs.*
 
 **Plan validado contra:**
 - ✅ Código fuente actual
-- ✅ Patrones establecidos (UserController, UserService, UserPolicy)
+- ✅ Patrones establecidos (UserController, [[UserService]], UserPolicy)
 - ✅ Arquitectura Clean (Repository, Policy, FormRequest)
 - ✅ Frontend patterns (user.ts store, users/list.vue)
 - ✅ Spatie Permission constraints (solo name/guard_name)

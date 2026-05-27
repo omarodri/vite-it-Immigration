@@ -67,6 +67,14 @@ class TenantResource extends JsonResource
                 'google_configured' => $this->hasGoogleOAuth(),
             ],
 
+            // Spec 65 — Case-code pattern (defaults match Spec 55 if never customised)
+            'case_code' => [
+                'blocks'       => $this->caseCodeBlocks(),
+                'separator'    => $this->caseCodeSeparator(),
+                'include_name' => $this->caseCodeIncludeName(),
+                'updated_at'   => $settings['case_code_updated_at'] ?? null,
+            ],
+
             // Storage info
             'storage_type' => $this->storage_type ?? 'local',
             'storage_quota_mb' => $this->storage_quota_mb,

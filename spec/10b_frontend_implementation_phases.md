@@ -1,3 +1,13 @@
+---
+tipo: spec
+numero: 10b
+modulo: Expedientes
+dominio: CASES
+estado: HIST
+tags: [spec, expedientes, historico]
+relacionados:
+  - "[[10_companions_en_detalle_expediente|Spec 10]]"
+---
 # Fases de Implementacion Frontend - Companions en Vistas de Expediente
 
 | Campo | Valor |

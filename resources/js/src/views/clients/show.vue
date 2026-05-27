@@ -519,8 +519,9 @@
             v-model:show="showCompanionModal"
             :client-id="client?.id ?? 0"
             :companion="editingCompanion"
+            :preset-relationship="presetRelationshipForModal"
             @saved="onCompanionSaved"
-            @close="editingCompanion = null"
+            @close="editingCompanion = null; presetRelationshipForModal = null"
         />
 
         <!-- Companion View Modal -->
@@ -543,7 +544,7 @@ import { useNotification } from '@/composables/useNotification';
 import { useI18n } from 'vue-i18n';
 import { formatDate } from '@/utils/formatters';
 import type { Client, ClientStatus } from '@/types/client';
-import type { Companion } from '@/types/companion';
+import type { Companion, RelationshipType } from '@/types/companion';
 import type { LegalDocument } from '@/types/legal-document';
 import DocumentRepeater from '@/components/DocumentRepeater.vue';
 import { legalDocumentService } from '@/services/legalDocumentService';
@@ -593,6 +594,7 @@ const companions = ref<Companion[]>([]);
 const isLoadingCompanions = ref(false);
 const showCompanionModal = ref(false);
 const editingCompanion = ref<Companion | null>(null);
+const presetRelationshipForModal = ref<RelationshipType | null>(null);
 const showViewModal = ref(false);
 const viewingCompanion = ref<Companion | null>(null);
 
@@ -665,6 +667,7 @@ const getUrgencyBadgeClass = (status: string): string => {
 
 const formatRelationship = (relationship: string): string => {
     const labels: Record<string, string> = {
+        beneficiary: 'Empleado Beneficiario',
         spouse: 'Cónyuge',
         child: 'Hijo/a',
         parent: 'Padre/Madre',
@@ -698,6 +701,12 @@ const loadCompanions = async () => {
 
 const openCompanionModal = (companion?: Companion) => {
     editingCompanion.value = companion ?? null;
+    const isCompany = client.value?.type === 'company';
+    // Lock to 'beneficiary' for: (a) new companions of company clients, and
+    // (b) editing an existing beneficiary — the relationship is immutable.
+    presetRelationshipForModal.value = isCompany && (!companion || companion.relationship === 'beneficiary')
+        ? 'beneficiary'
+        : null;
     showCompanionModal.value = true;
 };
 
@@ -711,6 +720,10 @@ const openCompanionModalFromView = (companion: Companion | null) => {
     viewingCompanion.value = null;
     if (companion) {
         editingCompanion.value = companion;
+        const isCompany = client.value?.type === 'company';
+        presetRelationshipForModal.value = isCompany && companion.relationship === 'beneficiary'
+            ? 'beneficiary'
+            : null;
         showCompanionModal.value = true;
     }
 };

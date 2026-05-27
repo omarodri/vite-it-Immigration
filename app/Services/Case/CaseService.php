@@ -2,7 +2,6 @@
 
 namespace App\Services\Case;
 
-use App\Helpers\CaseCodeHelper;
 use App\Models\CaseType;
 use App\Models\Client;
 use App\Models\ImmigrationCase;
@@ -28,6 +27,7 @@ class CaseService
         private FolderService $folderService,
         private CaseFolderSyncService $caseFolderSyncService,
         private WorkflowInstantiator $workflowInstantiator,
+        private CaseCodeGeneratorService $caseCodeGenerator,
     ) {}
 
     /**
@@ -88,19 +88,35 @@ class CaseService
             $caseType = $this->caseTypeRepository->findById($data['case_type_id']);
             $client   = Client::findOrFail($data['client_id']);
 
-            // Resolver apellido del aplicante principal para el código de expediente
+            // Resolver el aplicante principal (cliente o acompañante) — apellido y nombre completo
+            // alimentan tanto el bloque AAAA como el bloque NOMBRE del nuevo generador (Spec 65).
             $primaryApplicantType        = $data['primary_applicant_type'] ?? 'client';
             $primaryApplicantCompanionId = $data['primary_applicant_companion_id'] ?? null;
 
             $primaryLastName = $client->last_name;
+            $primaryFullName = $client->full_name
+                ?? trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+
             if ($primaryApplicantType === 'companion' && $primaryApplicantCompanionId) {
                 $primaryCompanion = \App\Models\Companion::find($primaryApplicantCompanionId);
                 if ($primaryCompanion) {
                     $primaryLastName = $primaryCompanion->last_name;
+                    $primaryFullName = trim(($primaryCompanion->first_name ?? '') . ' ' . ($primaryCompanion->last_name ?? ''));
                 }
             }
 
-            $data['case_number'] = $this->generateCaseNumber($caseType, $primaryLastName);
+            // Spec 65 — delegar la construcción del código al servicio dedicado.
+            $ctx = new GenerationContext(
+                tenant: Auth::user()->tenant,
+                caseType: $caseType,
+                primaryFullName: $primaryFullName,
+                primaryLastName: $primaryLastName,
+            );
+
+            [$caseNumber, $caseSeq] = $this->caseCodeGenerator->generate($ctx);
+
+            $data['case_number']     = $caseNumber;
+            $data['case_number_seq'] = $caseSeq;
 
             // Set default values if not provided
             $data['status'] = $data['status'] ?? ImmigrationCase::STATUS_ACTIVE;
@@ -374,38 +390,4 @@ class CaseService
         ];
     }
 
-    /**
-     * Generate a unique case number.
-     * Format: {YY}-{TYPE_CODE}-{LAST4}-{SEQUENCE4}
-     * Example: 26-RT-RODR-0042
-     *
-     * NNNN is a global per-tenant counter (Spec 55): a single monotonic integer
-     * that advances regardless of case type or client last name.
-     * A retry loop with up to 5 attempts handles race conditions; after that an
-     * exception is raised so the transaction rolls back cleanly.
-     */
-    private function generateCaseNumber(CaseType $caseType, string $primaryLastName): string
-    {
-        $year2        = date('y');
-        $lastNameSlug = CaseCodeHelper::normalizeLastName($primaryLastName);
-        $sequence     = $this->caseRepository->getNextSequence(Auth::user()->tenant_id);
-
-        $caseNumber = sprintf('%s-%s-%s-%04d', $year2, $caseType->code, $lastNameSlug, $sequence);
-
-        // Safety net: retry up to 5 times on race-condition collisions
-        $attempts = 0;
-        while ($this->caseRepository->existsByCaseNumber($caseNumber) && $attempts < 5) {
-            $sequence++;
-            $attempts++;
-            $caseNumber = sprintf('%s-%s-%s-%04d', $year2, $caseType->code, $lastNameSlug, $sequence);
-        }
-
-        if ($this->caseRepository->existsByCaseNumber($caseNumber)) {
-            throw new \RuntimeException(
-                "No se pudo generar un código único para el expediente después de {$attempts} intentos."
-            );
-        }
-
-        return $caseNumber;
-    }
 }

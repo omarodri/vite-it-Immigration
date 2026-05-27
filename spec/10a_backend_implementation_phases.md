@@ -1,3 +1,13 @@
+---
+tipo: spec
+numero: 10a
+modulo: Expedientes
+dominio: CASES
+estado: HIST
+tags: [spec, expedientes, historico]
+relacionados:
+  - "[[10_companions_en_detalle_expediente|Spec 10]]"
+---
 # Fases de Implementacion Backend - Epic 2.3: Sincronizacion de Companions en Casos
 
 | Campo | Valor |
@@ -94,7 +104,7 @@
 
 ---
 
-## Fase 3: Sincronizacion de companions en CaseService::updateCase() (Gap 2) ✅ COMPLETADO
+## Fase 3: Sincronizacion de companions en [[CaseService]]::updateCase() (Gap 2) ✅ COMPLETADO
 
 **Objetivo:** Modificar el metodo `updateCase()` del servicio para que extraiga `companion_ids` del array de datos, ejecute el `sync()` en la relacion pivot dentro de la transaccion existente, y registre el cambio en el activity log.
 
@@ -207,7 +217,7 @@ Fase 5B (Tests Companion)
 | Fase 1 | Excepcion de dominio | 30 min | ✅ COMPLETADO |
 | Fase 2 | UpdateCaseRequest validacion | 45 min | ✅ COMPLETADO |
 | Fase 3 | CaseService sync companions | 1 hora | ✅ COMPLETADO |
-| Fase 4 | CompanionService proteccion delete | 45 min | ✅ COMPLETADO |
+| Fase 4 | [[CompanionService]] proteccion delete | 45 min | ✅ COMPLETADO |
 | Fase 5 | Tests de feature | 1 hora 30 min | ✅ COMPLETADO |
 | **Total** | | **4 horas 30 min** | ✅ |
 

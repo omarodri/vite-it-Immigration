@@ -1,3 +1,13 @@
+---
+tipo: spec
+numero: 05
+modulo: Arquitectura
+dominio: ARCH
+estado: HIST
+tags: [spec, arquitectura, historico]
+relacionados:
+  - "[[00_arquitectura_auth_sistema_completo|Spec 00]]"
+---
 # Analisis de Impacto: Laravel Socialite OAuth (Google/Microsoft)
 
 ## Metadata

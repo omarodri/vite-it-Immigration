@@ -1,3 +1,13 @@
+---
+tipo: spec
+numero: 08
+modulo: Autenticación y Seguridad
+dominio: AUTH
+estado: DONE
+tags: [spec, auth, done]
+relacionados:
+  - "[[06_role_permission_management|Spec 06]]"
+---
 # Plan de Implementación: Permisos de Clientes y Acompañantes en Gestión de Roles
 
 **Proyecto:** VITE-IT Immigration - Laravel 12 + Vue 3 SPA
@@ -83,7 +93,7 @@ Este plan detalla la implementación de permisos independientes para el módulo 
 ### Componentes No Afectados
 
 - ✅ CompanionController (ya usa Policy)
-- ✅ CompanionService (sin cambios)
+- ✅ [[CompanionService]] (sin cambios)
 - ✅ CompanionRepository (sin cambios)
 - ✅ Modelo Companion (sin cambios)
 - ✅ UI de Roles (agrupa automáticamente por recurso)

@@ -406,6 +406,7 @@ import { useI18n } from 'vue-i18n';
 import caseService from '@/services/caseService';
 import clientService from '@/services/clientService';
 import { useCompanionStore } from '@/stores/companion';
+import { useTenantStore } from '@/stores/tenant';
 import userService from '@/services/userService';
 import type { CaseType, CaseTypeCategory, CasePriority } from '@/types/case';
 import { SERVICE_TYPE_OPTIONS } from '@/types/case';
@@ -417,6 +418,7 @@ import type { StaffMember } from '@/types/wizard';
 const { t } = useI18n();
 const { can } = usePermissions();
 const canViewFees = computed(() => can('cases.view-fees'));
+const tenantStore = useTenantStore();
 
 const serviceTypeLabel = computed(() => {
     return SERVICE_TYPE_OPTIONS.find(o => o.value === wizard.state.caseDetails.service_type)?.label ?? '';
@@ -437,12 +439,15 @@ const assignedStaff = computed(() => {
 
 /**
  * Visual placeholder for the case number.
- * Builds: YY-TYPE-LAST4-???? using available wizard data.
- * The real consecutive is assigned server-side on save.
+ * Respects the tenant's configured block order + separator (Spec 65).
+ * NNNN is shown as '????' because the consecutive is assigned server-side on save.
+ * The applicant's full name is NEVER part of the case code.
  */
 const caseNumberPreview = computed(() => {
+    const tenantPattern = tenantStore.caseCodePattern;
     const year2    = new Date().getFullYear().toString().slice(-2);
-    const typeCode = selectedCaseType.value?.code ?? '???';
+    const typeCode = selectedCaseType.value?.code ?? '??';
+    const sep      = tenantPattern.separator;
 
     let lastName = selectedClient.value?.last_name ?? '';
     if (
@@ -452,14 +457,22 @@ const caseNumberPreview = computed(() => {
         const applicant = selectedCompanions.value.find(
             c => c.id === wizard.state.primaryApplicantCompanionId
         );
-        if (applicant) lastName = applicant.last_name;
+        if (applicant) lastName = applicant.last_name ?? '';
     }
 
     const slug = lastName
         ? lastName.toUpperCase().replace(/[^A-Z]/g, '').padEnd(4, 'X').slice(0, 4)
         : '????';
 
-    return `${year2}-${typeCode}-${slug}-????`;
+    const blockValues: Record<string, string> = {
+        YY:   year2,
+        TT:   typeCode,
+        AAAA: slug,
+        NNNN: '????',
+    };
+
+    const parts = tenantPattern.blocks.map(b => blockValues[b] ?? '??');
+    return parts.join(sep);
 });
 
 const isCompanyCase = computed<boolean>(() => wizard.state.clientType === 'company');

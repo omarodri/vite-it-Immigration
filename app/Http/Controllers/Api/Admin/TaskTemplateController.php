@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Workflow\CloneTaskTemplateRequest;
 use App\Http\Requests\Workflow\StoreTaskTemplateRequest;
 use App\Http\Requests\Workflow\UpdateTaskTemplateRequest;
 use App\Http\Resources\TaskTemplateResource;
@@ -48,12 +49,22 @@ class TaskTemplateController extends Controller
 
     public function reorder(Request $request, WorkflowStage $stage): JsonResponse
     {
-        $this->authorize('create', TaskTemplate::class);
+        $this->authorize('update', TaskTemplate::class);
         $request->validate([
             'ordered_ids'   => ['required', 'array'],
             'ordered_ids.*' => ['integer', 'exists:task_templates,id'],
         ]);
         $this->service->reorder($stage->id, $request->input('ordered_ids'));
         return response()->json(['message' => 'Templates reordered']);
+    }
+
+    public function clone(CloneTaskTemplateRequest $request, TaskTemplate $template): JsonResponse
+    {
+        $this->authorize('clone', $template);
+        $cloned = $this->service->clone(
+            $template,
+            (int) $request->validated('target_stage_id')
+        );
+        return response()->json(['data' => new TaskTemplateResource($cloned)], 201);
     }
 }

@@ -1,5 +1,10 @@
 import { defineStore } from 'pinia';
 import api from '@/services/api';
+import tenantService, {
+    type CaseCodeBlockKey,
+    type CaseCodeSeparator,
+    type CaseCodePatternPayload,
+} from '@/services/tenantService';
 
 interface TenantBranding {
     logo_url: string | null;
@@ -39,6 +44,14 @@ interface TenantTheme {
     show_customizer: boolean;
 }
 
+// Spec 65 — Case Code Pattern
+interface TenantCaseCodePattern {
+    blocks: CaseCodeBlockKey[];
+    separator: CaseCodeSeparator;
+    includeName: boolean;
+    updatedAt: string | null;
+}
+
 interface Tenant {
     id: number;
     name: string;
@@ -49,6 +62,7 @@ interface Tenant {
     preferences: TenantPreferences;
     integrations: TenantIntegrations;
     theme: TenantTheme | null;
+    case_code?: TenantCaseCodePattern | null;
     created_at: string;
     updated_at: string;
 }
@@ -106,6 +120,21 @@ export const useTenantStore = defineStore('tenant', {
 
         isCloudStorage(): boolean {
             return this.storageType !== 'local';
+        },
+
+        // Spec 65 — Case Code Pattern with safe defaults (Spec 55 originals)
+        caseCodePattern: (state): TenantCaseCodePattern => {
+            const stored = state.tenant?.case_code;
+            return {
+                blocks: (stored?.blocks?.length ? stored.blocks : ['YY', 'TT', 'AAAA', 'NNNN']) as CaseCodeBlockKey[],
+                separator: (stored?.separator ?? '-') as CaseCodeSeparator,
+                includeName: Boolean(stored?.include_name ?? false),
+                updatedAt: stored?.updated_at ?? null,
+            };
+        },
+
+        caseCodeWasUpdated(): boolean {
+            return Boolean(this.caseCodePattern.updatedAt);
         },
     },
 
@@ -190,6 +219,33 @@ export const useTenantStore = defineStore('tenant', {
                 return { success: true };
             } catch (error: any) {
                 return { success: false, error: error.response?.data?.message ?? 'Failed to update theme' };
+            }
+        },
+
+        async updateCaseCodePattern(payload: CaseCodePatternPayload) {
+            try {
+                const response = await tenantService.updateCaseCodePattern(payload);
+                const data = response.data;
+
+                if (this.tenant) {
+                    this.tenant = {
+                        ...this.tenant,
+                        case_code: {
+                            blocks: data.case_code_blocks,
+                            separator: data.case_code_separator,
+                            includeName: data.case_code_include_name,
+                            updatedAt: new Date().toISOString(),
+                        },
+                    };
+                }
+
+                return { success: true, data, message: response.message };
+            } catch (error: any) {
+                return {
+                    success: false,
+                    error: error.response?.data?.message ?? 'Failed to update case code pattern',
+                    validationErrors: error.response?.data?.errors as Record<string, string[]> | undefined,
+                };
             }
         },
 

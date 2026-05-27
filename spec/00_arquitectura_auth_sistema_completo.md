@@ -1,3 +1,15 @@
+---
+tipo: spec
+numero: 00
+modulo: Arquitectura
+dominio: ARCH
+estado: HIST
+tags: [spec, arquitectura, historico]
+relacionados:
+  - "[[02_implementation_specs|Spec 02]]"
+  - "[[03_backend_implementation_phases|Spec 03]]"
+  - "[[04_frontend_implementation_phases|Spec 04]]"
+---
 # Especificacion Tecnica: Sistema de Autenticacion y Arquitectura Base
 
 ## Metadata

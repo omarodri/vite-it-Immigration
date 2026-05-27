@@ -1,3 +1,13 @@
+---
+tipo: spec
+numero: 04
+modulo: Arquitectura
+dominio: ARCH
+estado: HIST
+tags: [spec, arquitectura, historico]
+relacionados:
+  - "[[02_implementation_specs|Spec 02]]"
+---
 # Plan de Implementacion Frontend: Vristo POC
 
 ## Metadata
@@ -43,7 +53,7 @@ Establecer la estructura base de tipos TypeScript y servicios que seran usados e
 
 #### 1.1 Estructura de Tipos (3h) ✅ COMPLETADO
 - [x] Crear directorio `resources/js/src/types/`
-- [x] Crear `types/user.ts` con interfaces User, UserProfile, CreateUserData, UpdateUserData
+- [x] Crear `types/user.ts` con interfaces User, [[UserProfile]], CreateUserData, UpdateUserData
 - [x] Crear `types/auth.ts` con interfaces LoginCredentials, RegisterData, AuthResponse
 - [x] Crear `types/pagination.ts` con interfaces PaginationParams, PaginatedResponse, Meta, Links
 - [x] Crear `types/role.ts` con interfaces Role, Permission
@@ -690,7 +700,7 @@ Mejorar la experiencia de usuario y optimizar rendimiento.
 - [x] role="search" en filtros de lista de usuarios
 
 #### 10.5 Performance (2h) ✅ COMPLETADO
-- [x] Composable useDebounce reutilizable con isDebouncing indicator
+- [x] Composable [[useDebounce]] reutilizable con isDebouncing indicator
 - [x] Debounce en busquedas (reemplazado setTimeout manual)
 - [x] Lazy loading de componentes ya implementado (todas las rutas)
 - [x] Bundle size verificado en build

@@ -1,3 +1,15 @@
+---
+tipo: spec
+numero: 09
+modulo: Expedientes
+dominio: CASES
+estado: DONE
+tags: [spec, expedientes, done]
+relacionados:
+  - "[[07_epic_2.1_expedientes_core|Spec 07]]"
+  - "[[10_companions_en_detalle_expediente|Spec 10]]"
+  - "[[56_seleccion_dinamica_directorios_wizard|Spec 56]]"
+---
 # Plan de Implementación: Epic 2.2 - Case Wizard
 
 ## Metadata
@@ -122,7 +134,7 @@ Schema::create('case_companions', function (Blueprint $table) {
 });
 ```
 
-#### 1.2 Actualizar Modelo ImmigrationCase (1h)
+#### 1.2 Actualizar Modelo [[ImmigrationCase]] (1h)
 - [ ] Agregar relación `companions(): BelongsToMany`
 - [ ] Usar tabla pivot `case_companions`
 - [ ] Incluir `withTimestamps()`
@@ -180,7 +192,7 @@ $validator->after(function ($validator) {
 });
 ```
 
-#### 1.5 Actualizar CaseService (1h)
+#### 1.5 Actualizar [[CaseService]] (1h)
 - [ ] Modificar `createCase()` para extraer y procesar `companion_ids`
 - [ ] Usar `$case->companions()->attach($companionIds)` después de crear caso
 - [ ] Cargar companions en la respuesta

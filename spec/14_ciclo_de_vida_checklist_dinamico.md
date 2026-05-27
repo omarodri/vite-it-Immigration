@@ -1,3 +1,14 @@
+---
+tipo: spec
+numero: 14
+modulo: Expedientes
+dominio: CASES
+estado: DONE
+tags: [spec, expedientes, done]
+relacionados:
+  - "[[07_epic_2.1_expedientes_core|Spec 07]]"
+  - "[[46_workflows_dinamicos_motor_etapas|Spec 46]]"
+---
 # Plan de Implementación: Ciclo de Vida / Checklist Dinámico por Expediente
 
 ## Metadata
@@ -280,7 +291,7 @@ Nueva tab en el array `tabs`. Contenido:
 
 | Archivo | Cambio |
 |---------|--------|
-| `resources/js/src/types/case.ts` | CaseTask, DefaultCaseTask, DEFAULT_CASE_TASKS; `tasks?` en ImmigrationCase; `case_tasks?` en CreateCaseData/UpdateCaseData |
+| `resources/js/src/types/case.ts` | [[CaseTask]], DefaultCaseTask, DEFAULT_CASE_TASKS; `tasks?` en [[ImmigrationCase]]; `case_tasks?` en CreateCaseData/UpdateCaseData |
 | `resources/js/src/types/wizard.ts` | WizardTaskItem; WIZARD_STEPS a 6; `selectedTasks` en WizardState |
 | `resources/js/src/composables/useCaseWizard.ts` | Estado selectedTasks; canGoNext < 6; isLastStep === 6; sessionStorage; payload submit |
 | `resources/js/src/views/cases/wizard/CaseWizard.vue` | Importar StepChecklist; case 5 nuevo; case 6 = summary |

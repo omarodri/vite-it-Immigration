@@ -25,7 +25,7 @@
                     <ul class="relative font-semibold space-y-0.5 p-4 py-0">
 
                         <!-- Admin Section (visible only for users with permission) -->
-                        <template v-if="canViewUsers || canViewRoles || canUpdateSettings || canViewWorkflows">
+                        <template v-if="canViewUsers || canViewRoles || canUpdateSettings || canSeeWorkflowTasks || canSeeCaseCode">
                             <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
                                 <icon-minus class="w-4 h-5 flex-none hidden" />
                                 <span>{{ $t('sidebar.admin') }}</span>
@@ -53,7 +53,7 @@
                                             </div>
                                         </router-link>
                                     </li>
-                                    <li v-if="canViewWorkflows" class="nav-item">
+                                    <li v-if="canSeeWorkflowTasks" class="nav-item">
                                         <router-link to="/admin/workflows" class="group" @click="toggleMobileMenu">
                                             <div class="flex items-center">
                                                 <icon-menu-scrumboard class="group-hover:!text-primary shrink-0" />
@@ -99,6 +99,16 @@
                                                 <icon-archive class="group-hover:!text-primary shrink-0" />
                                                 <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
                                                     {{ $t('sidebar.backups') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                    <li v-if="canSeeCaseCode" class="nav-item">
+                                        <router-link to="/admin/case-code-settings" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-code class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('settings.case_code.sidebar_label') }}
                                                 </span>
                                             </div>
                                         </router-link>
@@ -949,6 +959,7 @@
     import IconSettings from '@/components/icon/icon-settings.vue';
     import IconArchive from '@/components/icon/icon-archive.vue';
     import IconClock from '@/components/icon/icon-clock.vue';
+    import IconCode from '@/components/icon/icon-code.vue';
     import IconTrash from '@/components/icon/icon-trash.vue';
     import TenantLogo from '@/components/layout/TenantLogo.vue';
 
@@ -967,11 +978,22 @@
     const canViewUsers = computed(() => authStore.hasPermission('users.view'));
     const canViewRoles = computed(() => authStore.hasPermission('roles.view'));
     const canUpdateSettings = computed(() => authStore.hasPermission('settings.update'));
-    // Workflow admin module is gated by role (admin|super-admin) to align with backend route middleware.
-    // Otherwise users with workflows.view permission but no role would hit 401 on the admin endpoints.
-    const canViewWorkflows = computed(() =>
-        authStore.hasPermission('workflows.view') || (authStore.hasRole('admin') || authStore.hasRole('super-admin'))
-    );
+
+    // Spec 66 — RBAC granular: visibility is driven by any workflow_tasks.* permission.
+    // Admin / super-admin are covered by the bypass in useAuthStore.hasAnyPermission().
+    const canSeeWorkflowTasks = computed(() => authStore.hasAnyPermission([
+        'workflow_tasks.view',
+        'workflow_tasks.create',
+        'workflow_tasks.clone',
+        'workflow_tasks.update',
+        'workflow_tasks.delete',
+    ]));
+
+    // Spec 66 — RBAC granular: case-code panel visible if user can view or update the pattern.
+    const canSeeCaseCode = computed(() => authStore.hasAnyPermission([
+        'case_code.view',
+        'case_code.update',
+    ]));
 
     // Check if user has permission to view CRM sections
     const canViewClients = computed(() => authStore.hasPermission('clients.view'));

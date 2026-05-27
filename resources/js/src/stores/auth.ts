@@ -71,27 +71,27 @@ export const useAuthStore = defineStore('auth', {
         },
 
         hasPermission: (state) => (permission: string): boolean => {
-            // Admin has all permissions
+            // Admin / super-admin bypass: full permission set (aligned with backend Gate::before)
             const roles = state.user?.roles?.map(r => r.name) || [];
-            if (roles.includes('admin')) return true;
+            if (roles.includes('admin') || roles.includes('super-admin')) return true;
 
             const permissions = state.user?.permissions || [];
             return permissions.includes(permission);
         },
 
         hasAnyPermission: (state) => (permissions: string[]): boolean => {
-            // Admin has all permissions
+            // Admin / super-admin bypass: full permission set (aligned with backend Gate::before)
             const roles = state.user?.roles?.map(r => r.name) || [];
-            if (roles.includes('admin')) return true;
+            if (roles.includes('admin') || roles.includes('super-admin')) return true;
 
             const userPermissions = state.user?.permissions || [];
             return permissions.some(perm => userPermissions.includes(perm));
         },
 
         hasAllPermissions: (state) => (permissions: string[]): boolean => {
-            // Admin has all permissions
+            // Admin / super-admin bypass: full permission set (aligned with backend Gate::before)
             const roles = state.user?.roles?.map(r => r.name) || [];
-            if (roles.includes('admin')) return true;
+            if (roles.includes('admin') || roles.includes('super-admin')) return true;
 
             const userPermissions = state.user?.permissions || [];
             return permissions.every(perm => userPermissions.includes(perm));
@@ -99,7 +99,7 @@ export const useAuthStore = defineStore('auth', {
 
         isAdmin: (state): boolean => {
             const roles = state.user?.roles?.map(r => r.name) || [];
-            return roles.includes('admin');
+            return roles.includes('admin') || roles.includes('super-admin');
         },
     },
 

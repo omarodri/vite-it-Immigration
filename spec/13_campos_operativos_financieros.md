@@ -1,3 +1,14 @@
+---
+tipo: spec
+numero: 13
+modulo: Expedientes
+dominio: CASES
+estado: PEND
+tags: [spec, expedientes, pendiente]
+relacionados:
+  - "[[07_epic_2.1_expedientes_core|Spec 07]]"
+  - "[[15_estado_de_cuenta_facturas|Spec 15]]"
+---
 # Plan de Implementación: Campos Operativos y Financieros en Casos
 
 ## Metadata

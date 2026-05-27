@@ -1,3 +1,14 @@
+---
+tipo: spec
+numero: 01
+modulo: Arquitectura
+dominio: ARCH
+estado: HIST
+tags: [spec, arquitectura, historico]
+relacionados:
+  - "[[00_arquitectura_auth_sistema_completo|Spec 00]]"
+  - "[[02_implementation_specs|Spec 02]]"
+---
 # Análisis Arquitectónico: Vristo POC
 
 ## Información del Documento

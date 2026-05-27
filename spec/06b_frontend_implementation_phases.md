@@ -1,3 +1,13 @@
+---
+tipo: spec
+numero: 06b
+modulo: Autenticación y Seguridad
+dominio: AUTH
+estado: HIST
+tags: [spec, auth, historico]
+relacionados:
+  - "[[06_role_permission_management|Spec 06]]"
+---
 # Fases de Implementacion Frontend - Gestion de Roles
 
 **Proyecto:** Vristo POC - Laravel 12 + Vue 3 SPA

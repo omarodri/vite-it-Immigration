@@ -1,3 +1,14 @@
+---
+tipo: spec
+numero: 10
+modulo: Expedientes
+dominio: CASES
+estado: DONE
+tags: [spec, expedientes, done]
+relacionados:
+  - "[[09_epic_2.2_case_wizard|Spec 09]]"
+  - "[[39_companion_form_unificacion_componente|Spec 39]]"
+---
 # Plan de Implementación: Companions en Detalle de Expediente
 
 ## Metadata
@@ -5,7 +16,7 @@
 - **Version:** 1.0
 - **Arquitecto:** Claude (Architect Agent)
 - **Epic:** 2.3 - Vinculación y Visualización de Acompañantes en Expedientes
-- **Dependencias:** Spec 09 (Epic 2.2 Case Wizard) — infraestructura Many-to-Many ya implementada
+- **Dependencias:** [[09_epic_2.2_case_wizard|Spec 09]] (Epic 2.2 Case Wizard) — infraestructura Many-to-Many ya implementada
 - **Tiempo Total Estimado:** ~2.5 horas (~8 tareas)
 
 ---

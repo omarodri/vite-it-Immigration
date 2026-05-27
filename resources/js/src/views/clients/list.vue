@@ -435,7 +435,7 @@
                             <span class="badge" :class="getStatusBadgeClass(client.status)">
                                 {{ $t(`clients.${client.status}`) }}
                             </span>
-                            <span v-if="client.canada_status" class="badge badge-outline-primary">
+                            <span v-if="client.canada_status && typeFilter !== 'company'" class="badge badge-outline-primary">
                                 {{ formatCanadaStatus(client.canada_status) }}
                             </span>
                         </div>
@@ -618,7 +618,7 @@ const allColumns = [
 
 const columns = computed(() =>
     allColumns
-        .filter(col => isVisible(col.field))
+        .filter(col => isVisible(col.field) && !(col.field === 'canada_status' && typeFilter.value === 'company'))
         .map(col => ({ ...col, title: col.title() }))
 );
 

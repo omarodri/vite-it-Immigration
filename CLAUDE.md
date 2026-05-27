@@ -368,6 +368,20 @@ Used in `NewTaskModal` (`?permission=todo_core.delete&exclude_roles=admin,user`)
 ### G22. HTTP 202 from folder sync = job queued, not completed
 `DocumentService::syncFolders()` (and its underlying `SyncCaseFolderStructure` job) returns 202 when the sync job is dispatched to the queue — the folders are NOT yet synced at that point. The queue worker must be running (`php artisan queue:work`). In `documentStore.ts`, set `syncStatus = 'pending'` after a 202 response and show a "Sincronización en progreso" toast — never show a success toast. Only set `syncStatus = 'synced'` when confirmed complete via a subsequent status poll or webhook.
 
+### G24. `case_number_seq` is the canonical sequence — never parse `case_number` string (Spec 65)
+`immigration_cases.case_number_seq INT UNSIGNED` stores the monotonic per-tenant sequence number independently from the visible `case_number` string. Rules:
+- **Always read `case_number_seq`** to get the sequence value — never use `last(explode('-', $case->case_number))` or any regex on the string (the separator and block order are configurable, so parsing will break).
+- `CaseRepository::getNextSequence()` uses `MAX(case_number_seq)` + UNIQUE `(tenant_id, case_number_seq)` constraint — O(1) and race-condition safe.
+- The case code generator lives in `CaseCodeGeneratorService` (Strategy Pattern) with 5 block resolvers in `app/Services/Case/BlockResolvers/`. Adding a new block = new Resolver class, no changes to the orchestrator.
+- Tenant code pattern is cached in `Cache::remember('tenant:{id}:case_code_pattern', 3600)`. Call `CaseCodePatternResolver::invalidate($tenant)` after saving new settings.
+- `NameBlockResolver` sanitizes with `iconv TRANSLIT` + strips FolderNameValidator forbidden chars + collapses hyphens + truncates to 60 chars — safe for OneDrive/SharePoint/Google Drive paths.
+
+### G25. `auth.ts` bypass covers both `admin` and `super-admin` (Spec 66)
+`hasPermission`, `hasAnyPermission`, `hasAllPermissions`, and `isAdmin` in `useAuthStore` bypass the permission check for both `roles.includes('admin')` **and** `roles.includes('super-admin')`. This matches the backend `Gate::before` in `AuthServiceProvider` which also covers both. Never add a third bypass role without updating **both** the frontend store and the backend Gate.
+
+### G26. Sidebar menu group visibility uses `hasAnyPermission([...])` — never single permission (Spec 66)
+Menu groups in `Sidebar.vue` are hidden when a role has **none** of the permissions in a domain. Use `computed(() => authStore.hasAnyPermission(['perm.a', 'perm.b', ...]))` for group visibility — not `hasPermission('perm.single')`. Mixing `hasRole('admin')` with `hasPermission(...)` in a sidebar computed is an anti-pattern (the bypass in `hasAnyPermission` already covers privileged roles). Current patterns: `canSeeWorkflowTasks` (OR over `workflow_tasks.*`) and `canSeeCaseCode` (OR over `case_code.*`).
+
 ### G23. Clients have two types — always use `display_name` for UI (Spec 64)
 `Client.type` is `ENUM('person','company')`. The `display_name` column is a MySQL GENERATED STORED column that resolves automatically: company → `trade_name ?? company_name`, person → `"first_name last_name"`. Rules:
 - **Always use `display_name`** when showing a client name to the user (lists, badges, case headers). Never concatenate `first_name + last_name` directly — it returns empty string for companies.

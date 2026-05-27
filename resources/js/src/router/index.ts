@@ -540,13 +540,29 @@ const routes: RouteRecordRaw[] = [
         path: '/admin/workflows',
         name: 'admin-workflows',
         component: () => import('../views/admin/workflows/index.vue'),
-        meta: { permission: 'workflows.view' },
+        meta: {
+            permission: [
+                'workflow_tasks.view',
+                'workflow_tasks.create',
+                'workflow_tasks.clone',
+                'workflow_tasks.update',
+                'workflow_tasks.delete',
+            ],
+        },
     },
     {
         path: '/admin/workflows/:caseTypeId',
         name: 'admin-workflows-builder',
         component: () => import('../views/admin/workflows/builder.vue'),
-        meta: { permission: 'workflows.view' },
+        meta: {
+            permission: [
+                'workflow_tasks.view',
+                'workflow_tasks.create',
+                'workflow_tasks.clone',
+                'workflow_tasks.update',
+                'workflow_tasks.delete',
+            ],
+        },
     },
 
     // Tenant Settings
@@ -573,6 +589,19 @@ const routes: RouteRecordRaw[] = [
         name: 'admin-tenant-backups',
         component: () => import('../views/admin/tenant/TenantBackups.vue'),
         meta: { permission: 'settings.update' },
+    },
+
+    // Admin - Case Code Pattern (Spec 65)
+    {
+        path: '/admin/case-code-settings',
+        name: 'admin-case-code-settings',
+        component: () => import('../views/admin/CaseCodeSettings.vue'),
+        meta: {
+            requiresAuth: true,
+            requiresVerified: true,
+            permission: ['case_code.view', 'case_code.update'],
+            layout: 'app',
+        },
     },
 
     // Trash / Recycle Bin

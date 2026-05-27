@@ -1,3 +1,15 @@
+---
+tipo: spec
+numero: 12
+modulo: Expedientes
+dominio: CASES
+estado: PART
+tags: [spec, expedientes, parcial]
+relacionados:
+  - "[[07_epic_2.1_expedientes_core|Spec 07]]"
+  - "[[32_quick_event_from_important_dates|Spec 32]]"
+  - "[[57_alertas_fechas_importantes_expedientes|Spec 57]]"
+---
 # Plan de Implementación: Fechas Importantes Dinámicas (`case_important_dates`)
 
 ## Metadata

@@ -170,20 +170,22 @@ class CaseRepository implements CaseRepositoryInterface
     }
 
     /**
-     * Get the next global sequence number for a tenant (Spec 55).
+     * Get the next global sequence number for a tenant (Spec 65).
      *
-     * Scope: all cases for the tenant, including soft-deleted ones.
-     * Extracts the numeric last segment of each case_number to find the MAX,
-     * so legacy case_numbers with the old scoped format are handled transparently.
-     * withTrashed() prevents a deleted case from freeing its number for reuse.
+     * Spec 55 parsed the trailing segment of `case_number` to derive the
+     * counter — that approach broke as soon as the pattern (Spec 65) became
+     * configurable. The canonical source of truth is now the dedicated
+     * `case_number_seq` column (UNIQUE per tenant), backfilled by migration
+     * `2026_06_01_000001_add_case_number_seq_to_cases`.
+     *
+     * `withTrashed()` is preserved so soft-deleted cases do not free their
+     * counter for reuse.
      */
     public function getNextSequence(int $tenantId): int
     {
         $max = ImmigrationCase::withTrashed()
             ->where('tenant_id', $tenantId)
-            ->get()
-            ->map(fn ($case) => (int) last(explode('-', (string) $case->case_number)))
-            ->max();
+            ->max('case_number_seq');
 
         return (int) ($max ?? 0) + 1;
     }

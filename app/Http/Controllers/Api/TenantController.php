@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Contracts\DocumentStorageInterface;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tenant\UpdateCaseCodePatternRequest;
 use App\Http\Requests\Tenant\UpdateTenantSettingsRequest;
 use App\Http\Resources\TenantResource;
+use App\Services\Case\CaseCodePatternResolver;
 use App\Services\OAuthTokenService;
 use App\Services\Storage\StorageProviderFactory;
 use App\Services\TenantService;
@@ -318,5 +320,57 @@ class TenantController extends Controller
         }
 
         return response()->json($branding);
+    }
+
+    /**
+     * Spec 65 — Persist the per-tenant case-code pattern.
+     *
+     * Stores 3 keys inside `tenant.settings` (no schema change required), invalidates
+     * the in-cache pattern so queue workers pick up the new value within seconds,
+     * and returns a deterministic preview built from canned example data so the
+     * frontend can sync its display without re-computing anything.
+     */
+    public function updateCaseCodePattern(UpdateCaseCodePatternRequest $request): JsonResponse
+    {
+        $tenant = auth()->user()->tenant;
+
+        $validated   = $request->validated();
+        $blocks      = $validated['case_code_blocks'];
+        $separator   = (string) $validated['case_code_separator'];
+        $includeName = (bool) $validated['case_code_include_name'];
+
+        $tenant->settings = array_merge($tenant->settings ?? [], [
+            'case_code_blocks'       => $blocks,
+            'case_code_separator'    => $separator,
+            'case_code_include_name' => $includeName,
+            'case_code_updated_at'   => now()->toISOString(),
+        ]);
+        $tenant->save();
+
+        // Cross-process cache invalidation (queue workers, other web nodes).
+        app(CaseCodePatternResolver::class)->invalidate($tenant);
+
+        // Deterministic code preview (blocks only — NAME never appears in case_number).
+        $examples       = ['YY' => '26', 'TT' => 'SP', 'AAAA' => 'RODR', 'NNNN' => '0005'];
+        $parts          = array_map(fn (string $b) => $examples[$b] ?? '', $blocks);
+        $codePreview    = implode($separator, $parts);
+
+        // Directory preview: code + applicant name suffix when include_name is on.
+        $dirPreview = $codePreview;
+        if ($includeName) {
+            $sep        = $separator !== '' ? $separator : '-';
+            $dirPreview .= $sep . 'Omar-Andres-Rodriguez-Perez';
+        }
+
+        return response()->json([
+            'data' => [
+                'case_code_blocks'       => $blocks,
+                'case_code_separator'    => $separator,
+                'case_code_include_name' => $includeName,
+                'preview'                => $codePreview,
+                'dir_preview'            => $dirPreview,
+            ],
+            'message' => 'Configuración del código de expediente guardada.',
+        ]);
     }
 }

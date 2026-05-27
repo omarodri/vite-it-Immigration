@@ -1,3 +1,13 @@
+---
+tipo: spec
+numero: 03
+modulo: Arquitectura
+dominio: ARCH
+estado: HIST
+tags: [spec, arquitectura, historico]
+relacionados:
+  - "[[02_implementation_specs|Spec 02]]"
+---
 # Plan de Implementacion Backend: Vristo POC
 
 ## Metadata
@@ -457,9 +467,9 @@ Refactorizar codigo existente para implementar arquitectura Clean con capas de s
 - [x] Refactorizar AuthController y PasswordResetController
 
 #### 6.7 Refactorizar Controllers (1h) ✅ COMPLETADO
-- [x] Adelgazar UserController (inyecta UserService, metodos < 15 lineas)
-- [x] Adelgazar AuthController (inyecta AuthService, metodos < 15 lineas)
-- [x] Adelgazar PasswordResetController (inyecta PasswordResetService)
+- [x] Adelgazar UserController (inyecta [[UserService]], metodos < 15 lineas)
+- [x] Adelgazar AuthController (inyecta [[AuthService]], metodos < 15 lineas)
+- [x] Adelgazar PasswordResetController (inyecta [[PasswordResetService]])
 - [x] Adelgazar RoleController (inyecta RoleRepositoryInterface)
 - [x] Controllers solo manejan HTTP request/response
 
@@ -606,7 +616,7 @@ Optimizar rendimiento, completar documentacion y preparar para produccion.
 #### 8.3 Configuracion de Produccion (2h) ✅ COMPLETADO
 - [x] Configurar `config/cache.php` para Redis (ya soportado via CACHE_DRIVER env)
 - [x] Configurar queue driver (ya soportado via QUEUE_CONNECTION env)
-- [x] Revisar configuraciones de seguridad (CORS, SecurityHeaders, Sanctum OK)
+- [x] Revisar configuraciones de seguridad (CORS, [[SecurityHeaders]], Sanctum OK)
 - [x] Crear comando de deploy: `php artisan deploy:optimize`
 
 #### 8.4 Code Quality (2h) ✅ COMPLETADO

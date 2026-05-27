@@ -363,10 +363,10 @@ const maxBirthDate = computed(() => {
     return d
 })
 
-// Lock the relationship field when a preset is provided AND we are creating
-// a new companion (editing existing companions is not affected).
+// Lock the relationship field whenever a preset is provided (create AND edit).
+// Used for beneficiary companions of company clients — the relationship is immutable.
 const lockedRelationship = computed<RelationshipType | null>(() => {
-    return !props.companion && props.presetRelationship ? props.presetRelationship : null
+    return props.presetRelationship ?? null
 })
 
 const lockedRelationshipLabel = computed<string>(() => {

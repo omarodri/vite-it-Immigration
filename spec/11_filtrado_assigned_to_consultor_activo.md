@@ -1,3 +1,13 @@
+---
+tipo: spec
+numero: 11
+modulo: Expedientes
+dominio: CASES
+estado: PEND
+tags: [spec, expedientes, pendiente]
+relacionados:
+  - "[[07_epic_2.1_expedientes_core|Spec 07]]"
+---
 # Plan de Implementación: Filtrado `assigned_to` por Consultor Activo
 
 ## Metadata
@@ -535,7 +545,7 @@ Con solución:
 |------|------|-------------|----------------------------------|--------|
 | 1 | Fase 0: Migración | 15 min | — | ✅ COMPLETADO |
 | 2 | Fase 1: Modelo User | 20 min | — | ✅ COMPLETADO |
-| 3 | Fase 2: UserService | 30 min | — | ✅ COMPLETADO |
+| 3 | Fase 2: [[UserService]] | 30 min | — | ✅ COMPLETADO |
 | 4 | Fase 3: UserController | 15 min | — | ✅ COMPLETADO |
 | 5 | Fase 4: StoreCaseRequest | 20 min | Fases 5 y 6 | ✅ COMPLETADO |
 | 6 | Fase 5: UpdateCaseRequest | 30 min | Fases 4 y 6 | ✅ COMPLETADO |

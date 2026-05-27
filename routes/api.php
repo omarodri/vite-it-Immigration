@@ -261,6 +261,10 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant', 'ensure.single.sess
     Route::put('/tenant/sharepoint/config', [TenantController::class, 'saveSharePointConfig']);
     Route::put('/tenant/base-folder', [TenantController::class, 'updateBaseFolder']);
 
+    // Spec 65 — Case-code pattern (super-admin / admin only)
+    Route::put('/tenant/case-code-pattern', [TenantController::class, 'updateCaseCodePattern'])
+        ->middleware('permission:case_code.update');
+
     // Scrum Board routes
     Route::prefix('scrum')->group(function () {
         Route::get('/board', [ScrumBoardController::class, 'index']);
@@ -371,6 +375,8 @@ Route::prefix('admin/workflow')
         Route::patch('/stages/{stage}/templates/reorder', [AdminTaskTemplateController::class, 'reorder']);
         Route::put('/templates/{template}', [AdminTaskTemplateController::class, 'update']);
         Route::delete('/templates/{template}', [AdminTaskTemplateController::class, 'destroy']);
+        Route::post('/templates/{template}/clone', [AdminTaskTemplateController::class, 'clone'])
+            ->name('admin.workflow.templates.clone');
     });
 
 // OAuth callback route (no auth required - called by OAuth provider redirect)

@@ -26,6 +26,7 @@ class ImmigrationCase extends Model
     protected $fillable = [
         'tenant_id',
         'case_number',
+        'case_number_seq',
         'client_id',
         'case_type_id',
         'current_stage_id',

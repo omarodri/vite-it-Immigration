@@ -47,16 +47,96 @@
 
 ## Implementaciones Recientes
 
-### 2026-05-24 — Spec 64 DT-09: Wizard + Búsqueda Global para Empresas (COMPLETADO)
+### 2026-05-26 — Spec 66: RBAC Ultra-Granular workflow_tasks + case_code (COMPLETADO)
+
+**Permisos creados (migración `2026_05_27_000001`):**
+- `workflow_tasks.{view, create, clone, update, delete}` — catálogo maestro de tareas
+- `case_code.{view, update}` — fragmentación del legacy `settings.case_code.manage` (legacy mantenido 1 release; migración de transición copia a quienes ya lo tenían)
+- Asignación: `super-admin/admin` → todos; `consultor` → 4 sin delete; `apoyo` → solo view
+
+**Backend:**
+- `TaskTemplatePolicy` — namespace refactorizado `workflows.*` → `workflow_tasks.*`; método `clone()` agregado con validación cross-tenant `$template->tenant_id === $user->tenant_id`
+- `TaskTemplateService::clone()` — copia fillable + traducciones al stage destino; sort_order = MAX+1; DB::transaction
+- `TaskTemplateController::clone()` — nuevo endpoint; `reorder()` corregido de `authorize('create')` → `authorize('update')`
+- `CloneTaskTemplateRequest` — valida `target_stage_id` con `Rule::exists` scoped a `tenant_id` del tenant activo
+- `routes/api.php` — middleware `case-code-pattern` cambiado a `permission:case_code.update`; ruta clone agregada al grupo admin/workflow
+- `Gate::before` en `AuthServiceProvider` ya cubría super-admin Y admin — sin cambio necesario
+
+**Frontend:**
+- `auth.ts` — bug corregido: `hasPermission`, `hasAnyPermission`, `hasAllPermissions`, `isAdmin` ahora incluyen `super-admin` en bypass (alineados con backend `Gate::before`)
+- `Sidebar.vue` — `canSeeWorkflowTasks` (OR sobre 5 permisos) y `canSeeCaseCode` (OR sobre 2) reemplazan los legacy `canViewWorkflows` + `canManageCaseCode`; patrón limpio sin mezcla role+permiso
+- `router/index.ts` — `admin-workflows`, `admin-workflows-builder`, `admin-case-code-settings` usan `meta.permission: [array]`; OR lógico via `beforeEach` existente
+- 15 keys i18n FLAT por idioma (es/en/fr): `permissions.modules.*`, `permissions.labels.*`, `errors.permission_denied.*`
+- Build Vite: ✓ sin errores (9.58 s)
+
+**Pendiente residual (Spec 67 + DT-12):** botones `v-can` en vistas admin workflows, `groupPermissions()` en panel de roles, tests Feature/Unit; deprecación `settings.case_code.manage` en Release N+1 (DT-10)
+
+### 2026-05-26 — Bugs Spec 64: Relación "Empleado Beneficiario" en clientes empresa (2 fixes)
+
+**Fix 1 — `formatRelationship` no mostraba "Empleado Beneficiario" en la pestaña de companions**
+- `resources/js/src/views/clients/show.vue` — agregado `beneficiary: 'Empleado Beneficiario'` al mapa de labels en `formatRelationship()`. Antes caía al fallback mostrando el string crudo `"beneficiary"`.
+
+**Fix 2 — Al editar un beneficiario, el campo relación era modificable (debía estar bloqueado)**
+Tres archivos afectados:
+- `resources/js/src/components/companions/CompanionFormModal.vue` — `lockedRelationship` computed: eliminado `!props.companion` del guard. Ahora bloquea el dropdown tanto en creación como en edición cuando `presetRelationship` está definido.
+- `resources/js/src/views/clients/show.vue` · `openCompanionModal()` — extendida la condición del preset: antes solo se activaba al crear (`!companion && isCompany`), ahora también al editar un companion con `relationship === 'beneficiary'`.
+- `resources/js/src/views/clients/show.vue` · `openCompanionModalFromView()` — función que bypaseaba `openCompanionModal` completamente. Agregada la misma lógica de preset para edición desde la vista de detalle del companion.
+- Build Vite: ✓ sin errores (9.87 s)
+
+**Patrón consolidado:** `presetRelationship` en `CompanionFormModal` bloquea el campo en create **y** edit cuando se pasa. El label bloqueado usa `t('companions.beneficiary')` → "Empleado Beneficiario" (clave ya existente en es/en/fr).
+
+### 2026-05-25 — Spec 65: Panel Configuración Código de Expediente (COMPLETADO)
+
+**BD:** `case_number_seq INT UNSIGNED` + UNIQUE `(tenant_id, seq)` en tabla `cases` (G11). Backfill con `ROW_NUMBER()` — 47 casos migrados, 0 nulls. Permiso `settings.case_code.manage` creado y asignado a super-admin/admin.
+
+**Backend — Strategy Pattern:**
+- 10 archivos nuevos en `app/Services/Case/`: `CaseCodeGeneratorService`, `CaseCodePatternResolver` (Cache 1h key `tenant:{id}:case_code_pattern`), `CaseCodePattern` (value object), `GenerationContext` (DTO readonly), 5 BlockResolvers (`YY`,`TT`,`AAAA`,`NNNN`,`NOMBRE`)
+- `CaseService::generateCaseNumber()` eliminado — reemplazado por `$this->caseCodeGenerator->generate($ctx)`; `case_number_seq` persistido en `createCase()`
+- `CaseRepository::getNextSequence()` usa `MAX(case_number_seq)` (no parsea string)
+- Configuración guardada en `tenant.settings` JSON: `case_code_blocks[]`, `case_code_separator`, `case_code_include_name`
+- `PUT /api/tenant/case-code-pattern` con `permission:settings.case_code.manage`; `TenantResource` extendido con bloque `case_code`
+
+**Frontend:**
+- `CaseCodeBuilder.vue` — DnD con `vue-draggable-plus`, selector separador, toggle NOMBRE, preview síncrono (`computed` puro, sin debounce), modal SweetAlert2 con preview en el body
+- `CaseCodeSettings.vue` — vista con breadcrumb + spinner carga + panel
+- Ruta `/admin/case-code-settings` + sidebar entry con `v-can="'settings.case_code.manage'"`
+- Banner dismissable (sessionStorage) en `cases/list.vue` cuando `case_code_updated_at` existe
+- 30 keys FLAT `settings.case_code.*` en es/en/fr
+
+**Smoke test:** default `26-TO-RODR-0048`; custom `TO_26_RODR_0048_Omar-Andres-Rodriguez-Perez`. Build ✓ 9.18s.
+**Gotcha añadida a CLAUDE.md:** G24 — `case_number_seq` es la fuente canónica del consecutivo, nunca parsear `case_number` string.
+**Deuda técnica:** tests PHP (Unit + Feature) pendientes.
+
+### 2026-05-25 — Spec 64: Bugs post-implementación (3 fixes)
+
+**Fix 1 — `StoreCompanionRequest` / `UpdateCompanionRequest` rechazaban `relationship='beneficiary'` (422)**
+- `app/Http/Requests/Companion/StoreCompanionRequest.php`: añadido `'beneficiary'` al `Rule::in([...])` del campo `relationship`
+- `app/Http/Requests/Companion/UpdateCompanionRequest.php`: misma corrección
+- Causa: el valor `'beneficiary'` fue agregado al modelo PHP y al tipo TS pero no al whitelist de validación HTTP
+
+**Fix 2 — Botón "Promover a cliente" no aparecía para companions de 18+ años**
+- `resources/js/src/views/clients/show.vue` · `computeLocalEligibility()` línea ~741: threshold cambiado de `< 22` a `< 18`
+- Causa: typo simple; el backend siempre validó `< 18` correctamente
+
+**Fix 3 — Wizard Step 3 (empresa): no había forma de seleccionar solicitante principal si el cliente ya tenía companions**
+- `StepCompanions.vue` — el dropdown de solicitante principal estaba oculto para empresas (`v-if="!isCompanyCase"`); ahora se muestra para todos con lógica adaptada:
+  - Para empresa: usa `primaryApplicantCompanions = companions.value` (todos, no solo seleccionados); sin opción "cliente"
+  - Al seleccionar companion del dropdown en empresa → auto-agrega a `selectedCompanionIds` via `toggleCompanion()`
+  - Sección "Beneficiario" cambia a borde neutral (antes rojo) cuando ya hay `primaryApplicantCompanionId` set; mensaje pasa de error a nota informativa
+  - Computed `primaryApplicantCompanions` agregado al script
+  - `primaryApplicantSelection` setter ampliado con auto-include para empresa
+- 5 keys i18n nuevas en es/en/fr: `primary_applicant_company_title`, `primary_applicant_company_desc`, `beneficiary_optional_note`
+- Build Vite: ✓ sin errores (9.31s)
+
+### 2026-05-25 — Spec 64 DT-09: Wizard + Búsqueda Global para Empresas (COMPLETADO)
 - `Companion::RELATIONSHIP_BENEFICIARY = 'beneficiary'` + `scopeBeneficiaries()` + entrada en `RELATIONSHIP_TYPES`
 - `GlobalSearchService` — búsqueda de clientes por `display_name LIKE` + `tax_id LIKE` (reemplaza `first_name/last_name LIKE`); SELECT ampliado con `display_name`, `type`, `company_name`, `trade_name`; misma corrección en sección trash
 - `FolderService` — sin cambios requeridos: rutas usan `case_number`, no nombre de cliente
-- `StepCompanions.vue` — sección "Empleado Beneficiario" obligatoria para empresa (border rojo/verde por estado), botón "Agregar Empleado Beneficiario", preset `relationship='beneficiary'` bloqueado en modal, auto-set `primary_applicant_type='companion'` al guardar; sección "Integrantes de Familia" opcional abajo
-- `StepSummary.vue` — jerarquía empresa → empleado → familia con `isCompanyCase` + `familyMembers` computeds; layout persona sin cambios
-- `useCaseWizard.ts` — `clientType`, `setClientType()`, `setClient()` ya soportaban empresa; validación Step 3 requiere beneficiario para `type='company'`
+- `StepCompanions.vue` — sección "Empleado Beneficiario" + `StepSummary.vue` jerarquía empresa/empleado/familia; `isCompanyCase` + `familyMembers` computeds agregados
+- `useCaseWizard.ts` — validación Step 3 empresa: `primaryApplicantType='companion'` + `primaryApplicantCompanionId !== null`
 - 11 keys i18n FLAT en es/en/fr: `wizard.step_companions.*` + `wizard.step_summary.*`
 - Build Vite: ✓ sin errores (9.57s)
-- **Pendiente residual:** `StepClient.vue` nota informativa (baja prioridad), `StoreCaseRequest` validación server-side companion beneficiario, tests PHP
+- **Pendiente residual (baja prioridad):** `StepClient.vue` nota informativa para empresa, `StoreCaseRequest` validación server-side que companion sea beneficiario, tests PHP
 
 ### 2026-05-24 — Spec 64: Clientes Empresa — Patrocinador + Beneficiario (PART)
 - STI en tabla `clients`: columna `type ENUM('person','company') DEFAULT 'person'` + 7 campos empresa nullable (`company_name`, `trade_name`, `tax_id`, `industry`, `website`, `legal_rep_name`, `legal_rep_title`)
@@ -183,3 +263,8 @@
 | DT-07 | Spec 61 tests Feature/Unit pendientes; permiso `tasks.view` solo en seeder (no en migración — viola D-03) | BAJO | 61 |
 | DT-08 | Spec 62: `OAuthTokenService::refresh()` propagation si refresh falla irrecuperablemente; `activity_log` entry cuando `CalendarSyncStatus→status='error'`; tests Feature/Unit de CalendarSync multi-provider; eliminar wrapper `getConnectedProvider()` tras confirmar 0 callers | BAJO | 62 |
 | DT-09 | Spec 64 pendientes: (a) Wizard StepCompanions sección Beneficiario obligatoria para empresa + StepSummary jerarquía; (b) `Companion::RELATIONSHIP_BENEFICIARY` constante + scope; (c) `FolderService::buildCaseFolderName()` via `primaryApplicant()`; (d) `GlobalSearchService` busca por `display_name`; (e) tests PHP | MEDIO | 64 |
+| DT-10 | Eliminar permiso legacy `settings.case_code.manage` en Release N+1 — verificar con `grep -r 'settings.case_code.manage' app/ resources/` → debe ser 0 | BAJA | 66 |
+| DT-11 | Evaluar si `workflow_tasks.update_core` puede unificarse con `workflow_tasks.update` — requiere análisis de integración con Todos (G17) | BAJA | 66 |
+| DT-12 | Spec 66 tests pendientes: `TaskTemplateAuthorizationTest`, `CaseCodePatternAuthorizationTest`, `TaskTemplatePolicyTest` (clone cross-tenant) | MEDIA | 66 |
+| DT-13 | Spec 67 — botones `v-can` en vistas admin/workflows, `groupPermissions()` en panel de roles, deprecar `settings.case_code.manage` | ALTA | 67 |
+| DT-14 | Spec 68 — aplicar patrón RBAC granular (sidebar OR lógico + router arrays) a módulos: cases, documents, calendar, clients, dashboard | MEDIA | 68 |

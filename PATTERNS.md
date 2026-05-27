@@ -124,6 +124,27 @@ import api from '@/services/api';
 <!-- La seguridad real: $this->authorize() en el controller -->
 ```
 
+### Visibilidad de grupos de menú en Sidebar (Spec 66)
+Usar `hasAnyPermission([...])` con OR lógico sobre todos los permisos del dominio.
+**Nunca** mezclar `hasRole('admin')` con `hasPermission()` en un computed del sidebar — el bypass ya está en el store.
+
+```ts
+// ✅ Correcto: computed por grupo con OR lógico
+const canSeeWorkflowTasks = computed(() => authStore.hasAnyPermission([
+    'workflow_tasks.view', 'workflow_tasks.create',
+    'workflow_tasks.clone', 'workflow_tasks.update', 'workflow_tasks.delete',
+]));
+
+// ❌ Incorrecto: mezcla role + permiso (anti-pattern eliminado en Spec 66)
+// const canViewWorkflows = computed(() =>
+//     authStore.hasPermission('workflows.view') || authStore.hasRole('admin')
+// );
+```
+
+```vue
+<li v-if="canSeeWorkflowTasks">...</li>
+```
+
 ### Manejo de errores UI
 - Alertas usuario: SweetAlert2
 - Errores API: manejar en `catch` del servicio, propagar mensaje del backend

@@ -50,6 +50,24 @@
             </div>
         </div>
 
+        <!-- Spec 65 — Mixed case-code format notice -->
+        <div
+            v-if="showCaseCodeMixedNotice"
+            class="flex items-start gap-3 mb-5 p-4 rounded-lg border border-warning/40 bg-warning/10 text-warning-dark dark:text-warning"
+            role="status"
+        >
+            <icon-info-circle class="w-5 h-5 mt-0.5 shrink-0 text-warning" />
+            <div class="flex-1 text-sm">{{ $t('settings.case_code.mixed_format_notice') }}</div>
+            <button
+                type="button"
+                class="text-warning hover:text-warning/80 shrink-0"
+                :aria-label="$t('common.close') || 'Close'"
+                @click="dismissCaseCodeNotice"
+            >
+                <icon-x class="w-4 h-4" />
+            </button>
+        </div>
+
         <div class="panel">
             <!-- Header -->
             <div class="flex flex-wrap items-center gap-4 mb-5">
@@ -531,14 +549,34 @@ import IconEye from '@/components/icon/icon-eye.vue';
 import IconPencil from '@/components/icon/icon-pencil.vue';
 import IconTrashLines from '@/components/icon/icon-trash-lines.vue';
 import IconX from '@/components/icon/icon-x.vue';
+import IconInfoCircle from '@/components/icon/icon-info-circle.vue';
 import UserAvatar from '@/components/UserAvatar.vue';
+import { useTenantStore } from '@/stores/tenant';
 
 useMeta({ title: 'Case Management' });
 
 const { t } = useI18n();
 const caseStore = useCaseStore();
+const tenantStore = useTenantStore();
 const { confirm: confirmDialog, success, error } = useNotification();
 const { debounce, isDebouncing } = useDebounce(300);
+
+// Spec 65 — Mixed-format banner (only when tenant changed pattern at least once)
+const CASE_CODE_NOTICE_KEY = 'case_code_mixed_format_dismissed';
+const caseCodeNoticeDismissed = ref<boolean>(
+    typeof window !== 'undefined' && window.sessionStorage?.getItem(CASE_CODE_NOTICE_KEY) === '1',
+);
+const showCaseCodeMixedNotice = computed(
+    () => tenantStore.caseCodeWasUpdated && !caseCodeNoticeDismissed.value,
+);
+function dismissCaseCodeNotice() {
+    caseCodeNoticeDismissed.value = true;
+    try {
+        window.sessionStorage?.setItem(CASE_CODE_NOTICE_KEY, '1');
+    } catch {
+        /* ignore storage errors (private mode, quota) */
+    }
+}
 
 // Column chooser
 const { columns: columnConfigs, visibleOptions, toggleColumn, resetColumns, isVisible } = useCaseColumnChooser();

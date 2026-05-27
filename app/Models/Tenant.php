@@ -210,4 +210,25 @@ class Tenant extends Model
         $value = (int) data_get($this->settings, 'calendar_lookahead_months', 12);
         return max(1, min(24, $value));
     }
+
+    /**
+     * Spec 65 — Case-code pattern accessors (stored in `settings` JSON).
+     *
+     * Defaults match Spec 55 to keep backward compatibility for any tenant
+     * that has not yet customised the pattern.
+     */
+    public function caseCodeBlocks(): array
+    {
+        return data_get($this->settings, 'case_code_blocks', ['YY', 'TT', 'AAAA', 'NNNN']);
+    }
+
+    public function caseCodeSeparator(): string
+    {
+        return (string) data_get($this->settings, 'case_code_separator', '-');
+    }
+
+    public function caseCodeIncludeName(): bool
+    {
+        return (bool) data_get($this->settings, 'case_code_include_name', false);
+    }
 }

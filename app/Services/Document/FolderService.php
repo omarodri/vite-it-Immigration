@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\DocumentFolder;
 use App\Models\ImmigrationCase;
 use App\Models\Tenant;
+use App\Services\Case\BlockResolvers\NameBlockResolver;
 use App\Services\Document\FolderNameValidator;
 use App\Services\Storage\StorageProviderFactory;
 use Illuminate\Support\Collection;
@@ -216,9 +217,28 @@ class FolderService
 
         $tenant    = $case->tenant ?? Tenant::find($case->tenant_id);
         $isLocal   = !$tenant || !in_array($tenant->storage_type ?? 'local', ['onedrive', 'google_drive', 'sharepoint'], true);
+
+        $folderLabel = $case->case_number;
+        if ($tenant && $tenant->caseCodeIncludeName()) {
+            $applicant   = $case->primaryApplicant();
+            $fullName    = '';
+            if ($applicant) {
+                $firstName = method_exists($applicant, 'first_name') ? ($applicant->first_name ?? '') : ($applicant->first_name ?? '');
+                $lastName  = $applicant->last_name ?? '';
+                $fullName  = trim($firstName . ' ' . $lastName);
+            }
+            if ($fullName) {
+                $sep         = $tenant->caseCodeSeparator() !== '' ? $tenant->caseCodeSeparator() : '-';
+                $nameSegment = app(NameBlockResolver::class)->resolveFromString($fullName);
+                if ($nameSegment) {
+                    $folderLabel .= $sep . $nameSegment;
+                }
+            }
+        }
+
         $rootPath  = $tenant && $tenant->base_folder_path
-            ? "tenants/{$case->tenant_id}/{$tenant->base_folder_path}/cases/{$case->case_number}"
-            : "tenants/{$case->tenant_id}/cases/{$case->case_number}";
+            ? "tenants/{$case->tenant_id}/{$tenant->base_folder_path}/cases/{$folderLabel}"
+            : "tenants/{$case->tenant_id}/cases/{$folderLabel}";
 
         Log::info('FolderService: Creating selected folder structure', [
             'case_id'      => $case->id,
