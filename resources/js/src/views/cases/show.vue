@@ -257,7 +257,7 @@
                                         <div class="font-semibold text-gray-900 dark:text-white">{{ primaryApplicantCompanion.full_name }}</div>
                                         <div class="flex flex-wrap items-center gap-2 mt-1">
                                             <span class="badge badge-outline-secondary text-xs">
-                                                {{ primaryApplicantCompanion.relationship_label || primaryApplicantCompanion.relationship }}
+                                                {{ isCompanyCase ? $t('cases.beneficiary_employee') : (primaryApplicantCompanion.relationship_label || primaryApplicantCompanion.relationship) }}
                                             </span>
                                             <span v-if="primaryApplicantCompanion.age" class="text-xs text-gray-500">
                                                 · {{ $t('cases.companion_age', { age: primaryApplicantCompanion.age }) }}
@@ -281,14 +281,16 @@
                             <!-- Dependientes -->
                             <div>
                                 <div class="flex items-center justify-between mb-3">
-                                    <h3 class="font-semibold text-lg dark:text-white-light">{{ $t('cases.companions') }}</h3>
+                                    <h3 class="font-semibold text-lg dark:text-white-light">
+                                        {{ isCompanyCase ? $t('cases.included_family') : $t('cases.companions') }}
+                                    </h3>
                                     <span v-if="dependentsCount > 0" class="badge badge-outline-secondary">
                                         {{ dependentsCount }}
                                     </span>
                                 </div>
 
                                 <p v-if="dependentsCount === 0" class="text-sm text-gray-500 italic">
-                                    {{ $t('cases.no_companions') }}
+                                    {{ isCompanyCase ? $t('cases.no_family_included') : $t('cases.no_companions') }}
                                 </p>
 
                                 <div v-else class="space-y-3">
@@ -823,6 +825,24 @@ const primaryApplicantCompanion = computed(() => {
     return currentCase.value.companions?.find(
         c => c.id === currentCase.value!.primary_applicant_companion_id
     ) ?? null;
+});
+
+// Spec 69 — Company-case helpers: the beneficiary employee is the case's primary
+// applicant; included family members are direct children (parent_companion_id).
+const isCompanyCase = computed<boolean>(() => currentCase.value?.client?.type === 'company');
+
+const primaryEmployee = computed(() => {
+    if (!isCompanyCase.value) return null;
+    return currentCase.value?.companions?.find(
+        (c: Companion) => c.id === currentCase.value?.primary_applicant_companion_id
+    ) ?? null;
+});
+
+const includedFamily = computed<Companion[]>(() => {
+    if (!isCompanyCase.value) return [];
+    return currentCase.value?.companions?.filter(
+        (c: Companion) => c.parent_companion_id === currentCase.value?.primary_applicant_companion_id
+    ) ?? [];
 });
 
 // All dependents: companions minus the primary-applicant companion

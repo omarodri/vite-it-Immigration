@@ -39,10 +39,18 @@ class CaseFolderSyncService
                 throw new \RuntimeException("Case #{$case->id} has no associated client; cannot build root folder name.");
             }
 
-            $clientSlug = $this->normalizeClientNameForFolderSegment($case->client->full_name);
-            $rootFolderName = $clientSlug !== ''
-                ? $case->case_number.'-'.$clientSlug
-                : $case->case_number;
+            $rootFolderName = $case->case_number;
+            if ($tenant->caseCodeIncludeName()) {
+                $applicant   = $case->primaryApplicant();
+                $fullName    = trim(($applicant->first_name ?? '') . ' ' . ($applicant->last_name ?? ''));
+                if ($fullName !== '') {
+                    $sep         = $tenant->caseCodeSeparator() !== '' ? $tenant->caseCodeSeparator() : '-';
+                    $nameSegment = $this->normalizeClientNameForFolderSegment($fullName);
+                    if ($nameSegment !== '') {
+                        $rootFolderName .= $sep . $nameSegment;
+                    }
+                }
+            }
 
             try {
                 $baseFolderExternalId = $this->resolveBaseFolderExternalId($tenant, $provider);

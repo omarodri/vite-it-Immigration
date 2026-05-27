@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -22,6 +23,7 @@ class Companion extends Model
     protected $fillable = [
         'tenant_id',
         'client_id',
+        'parent_companion_id',
         'first_name',
         'last_name',
         'relationship',
@@ -55,6 +57,7 @@ class Companion extends Model
     public const RELATIONSHIP_TYPES = [
         'beneficiary'        => 'Beneficiary / Employee',
         'spouse'             => 'Cónyuge',
+        'child'              => 'Hijo/a',
         'common-law partner' => 'Pareja de hecho',
         'dependent child'    => 'Hijo/a dependiente',
         'grandchild'         => 'Nieto/a',
@@ -106,12 +109,49 @@ class Companion extends Model
         return $this->hasOne(Client::class, 'promoted_from_companion_id');
     }
 
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Companion::class, 'parent_companion_id');
+    }
+
+    public function familyMembers(): HasMany
+    {
+        return $this->hasMany(Companion::class, 'parent_companion_id');
+    }
+
     /**
      * Scope: only companions flagged as the case beneficiary (e.g. sponsored employee).
      */
     public function scopeBeneficiaries(Builder $query): Builder
     {
         return $query->where('relationship', self::RELATIONSHIP_BENEFICIARY);
+    }
+
+    public function scopeEmployees(Builder $query): Builder
+    {
+        return $query->whereNull('parent_companion_id')
+                     ->where('relationship', self::RELATIONSHIP_BENEFICIARY);
+    }
+
+    public function scopeFamilyOf(Builder $query, int $employeeId): Builder
+    {
+        return $query->where('parent_companion_id', $employeeId);
+    }
+
+    public function scopeRoots(Builder $query): Builder
+    {
+        return $query->whereNull('parent_companion_id');
+    }
+
+    public function isFamilyMember(): bool
+    {
+        return $this->parent_companion_id !== null;
+    }
+
+    public function canHaveFamily(): bool
+    {
+        return $this->relationship === self::RELATIONSHIP_BENEFICIARY
+            && $this->parent_companion_id === null;
     }
 
     /**

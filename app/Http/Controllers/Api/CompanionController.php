@@ -11,6 +11,7 @@ use App\Models\Companion;
 use App\Services\Companion\CompanionService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class CompanionController extends Controller
@@ -24,13 +25,28 @@ class CompanionController extends Controller
     /**
      * List all companions for a client.
      */
-    public function index(Client $client): AnonymousResourceCollection
+    public function index(Request $request, Client $client): AnonymousResourceCollection
     {
         $this->authorize('viewAny', [Companion::class, $client]);
 
-        $companions = $this->companionService->listCompanions($client);
+        $companions = $this->companionService->listCompanions($client, $request->only([
+            'tier', 'parent_id', 'with_family', 'with_family_count',
+        ]));
 
         return CompanionResource::collection($companions);
+    }
+
+    /**
+     * List family members of an employee companion.
+     */
+    public function family(Request $request, Companion $companion): AnonymousResourceCollection
+    {
+        $this->authorize('view', $companion);
+        abort_unless($companion->canHaveFamily(), 404);
+
+        $family = $this->companionService->listFamilyMembers($companion);
+
+        return CompanionResource::collection($family);
     }
 
     /**

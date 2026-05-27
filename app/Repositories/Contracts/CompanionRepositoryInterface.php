@@ -12,6 +12,8 @@ interface CompanionRepositoryInterface
 
     public function getByClient(Client $client): Collection;
 
+    public function getByClientFiltered(Client $client, array $params = []): Collection;
+
     public function create(array $data): Companion;
 
     public function update(Companion $companion, array $data): Companion;

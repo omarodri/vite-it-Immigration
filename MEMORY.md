@@ -47,6 +47,42 @@
 
 ## Implementaciones Recientes
 
+### 2026-05-27 — Spec 67: RBAC Granular Fase 2 — builder + labels i18n en panel de roles (COMPLETADO)
+
+**4 archivos modificados, build ✓ (9.61s):**
+
+- `admin/workflows/builder.vue` — botones del panel de task templates cambiados a `workflow_tasks.*`: "Add template" → `workflow_tasks.create`; drag handle → `v-can="'workflow_tasks.update'"`; edit → `workflow_tasks.update`; delete → `workflow_tasks.delete`. Los botones de etapas (Stage) conservan `workflows.*` (D-01 del spec).
+- `admin/roles/show.vue` — `useI18n` importado; `groupedPermissions` usa `t('permissions.modules.{name}')` con fallback al capitalize raw; `formatPermissionName` usa `t('permissions.labels.{group}.{action}')` con fallback al capitalize del action.
+- `admin/roles/edit.vue` — mismo patrón: `useI18n` + computed `translatedGroups` que envuelve `roleStore.permissionGroups` con display_name traducido; template usa `translatedGroups`; `formatPermissionName` con i18n lookup.
+- `UpdateCaseCodePatternRequest.php` — comentario stale actualizado: `settings.case_code.manage` → `case_code.update` (Spec 66 ya migró la ruta).
+
+**Patrón de fallback:** `t(key) === key` detecta clave ausente → muestra capitalize del raw. Grupos sin clave i18n nunca rompen la UI.
+
+### 2026-05-27 — Spec 69: Companions Jerárquicos para Clientes Empresa (COMPLETADO)
+
+**Arquitectura:** Self-reference `companions.parent_companion_id` (nullable FK, `ON DELETE CASCADE`, CHECK constraint MySQL 8 `chk_companions_family_not_beneficiary`). Jerarquía de profundidad máxima 1: `beneficiary` (empleado) → N familiares. No se creó tabla pivote — relación 1-a-N estricta.
+
+**Backend:**
+- Migraciones `2026_05_27_000001` (columna + índice + CHECK) y `2026_05_27_000002` (permiso `companions.manage_family` → super-admin, admin, consultor, apoyo)
+- `Companion`: relaciones `parent()`/`familyMembers()`, scopes `employees`/`familyOf`/`roots`, helpers `canHaveFamily()`/`isFamilyMember()`
+- `CompanionObserver`: cascade soft-delete/restore a `familyMembers` cuando `canHaveFamily()`
+- `CompanionService`: `createFamilyMember()` (abort_if profundidad > 1), `listFamilyMembers()`, `listCompanions($params)` con `tier/parent_id/with_family/with_family_count`
+- `StoreCompanionRequest`: regla `parent_companion_id` scoped a tenant + `withValidator()` anti-abuelo
+- `UpdateCompanionRequest`: `passedValidation()` hace `parent_companion_id` inmutable
+- `CompanionResource`: 5 campos nuevos; endpoint `GET /api/companions/{companion}/family`
+
+**Frontend:**
+- `types/companion.ts`: `parent_companion_id`, `is_employee`, `is_family_member`, `family_count`, `family_members`, `CompanionListParams`
+- `companionService.ts`: `list(params)` + `getFamilyMembers(employeeId)`
+- `CompanionFormModal`: prop `parentCompanionId` → incluido en payload POST
+- `clients/show.vue`: accordion por empleado (empresa) / render plano preservado (persona); 2 instancias de `CompanionFormModal` (empleado + familiar)
+- `StepCompanions.vue`: `displayableCompanions` computed + watcher limpia selección al cambiar empleado + empty state
+- `cases/show.vue`: header empleado + familiares incluidos para company cases
+- `cases/edit.vue`: `loadAddableCompanions()` filtrada por `getFamilyMembers(employeeId)`
+- 18 claves i18n FLAT en es/en/fr — Build Vite ✓ 9.89s
+
+**Pendiente residual (DT-15):** tests Feature PHP (`CompanionHierarchyTest`, cascade soft-delete) y smoke test E2E manual.
+
 ### 2026-05-26 — Spec 66: RBAC Ultra-Granular workflow_tasks + case_code (COMPLETADO)
 
 **Permisos creados (migración `2026_05_27_000001`):**
@@ -268,3 +304,4 @@ Tres archivos afectados:
 | DT-12 | Spec 66 tests pendientes: `TaskTemplateAuthorizationTest`, `CaseCodePatternAuthorizationTest`, `TaskTemplatePolicyTest` (clone cross-tenant) | MEDIA | 66 |
 | DT-13 | Spec 67 — botones `v-can` en vistas admin/workflows, `groupPermissions()` en panel de roles, deprecar `settings.case_code.manage` | ALTA | 67 |
 | DT-14 | Spec 68 — aplicar patrón RBAC granular (sidebar OR lógico + router arrays) a módulos: cases, documents, calendar, clients, dashboard | MEDIA | 68 |
+| DT-15 | Spec 69 — tests Feature PHP (`CompanionHierarchyTest`: jerarquía, profundidad, cross-tenant, inmutabilidad; cascade soft-delete/restore) y smoke test E2E manual | BAJA | 69 |

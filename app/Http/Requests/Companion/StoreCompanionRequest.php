@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Companion;
 
+use App\Models\Companion;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -18,7 +20,15 @@ class StoreCompanionRequest extends FormRequest
         return [
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'relationship' => ['required', Rule::in(['beneficiary', 'spouse', 'child', 'parent', 'sibling', 'common-law partner', 'dependent child', 'grandchild', 'grandparent', 'half-sibling', 'step-sibling', 'aunt / uncle', 'niece / nephew', 'cousin', 'child-in-law', 'parent-in-law', 'employee', 'other'])],
+            'relationship' => [
+                'required',
+                Rule::in(array_keys(Companion::RELATIONSHIP_TYPES)),
+                function ($attribute, $value, $fail) {
+                    if ($this->input('parent_companion_id') && $value === Companion::RELATIONSHIP_BENEFICIARY) {
+                        $fail('Un familiar no puede ser registrado como empleado beneficiario.');
+                    }
+                },
+            ],
             'relationship_other' => ['nullable', 'string', 'max:255', 'required_if:relationship,other'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', Rule::in(['male', 'female', 'other'])],
@@ -45,7 +55,37 @@ class StoreCompanionRequest extends FormRequest
                         ))]
                 ),
             ],
+            'parent_companion_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('companions', 'id')
+                    ->where('tenant_id', auth()->user()->tenant_id)
+                    ->whereNull('deleted_at'),
+            ],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function ($v) {
+            $parentId = $this->input('parent_companion_id');
+            if (! $parentId) {
+                return;
+            }
+
+            $parent = Companion::find($parentId);
+            if (! $parent) {
+                return;
+            }
+
+            if ($parent->relationship !== Companion::RELATIONSHIP_BENEFICIARY) {
+                $v->errors()->add('parent_companion_id', 'El acompañante padre debe ser un empleado beneficiario.');
+            }
+
+            if ($parent->parent_companion_id !== null) {
+                $v->errors()->add('parent_companion_id', 'No se permiten más de un nivel de jerarquía familiar.');
+            }
+        });
     }
 
     protected function prepareForValidation(): void

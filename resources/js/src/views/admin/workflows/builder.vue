@@ -127,7 +127,7 @@
                         <span v-if="selectedStage" class="text-sm text-gray-500 ml-2">- {{ getName(selectedStage.translations) }}</span>
                     </h3>
                     <button
-                        v-can="'workflows.create'"
+                        v-can="'workflow_tasks.create'"
                         type="button"
                         class="btn btn-primary btn-sm"
                         :disabled="!selectedStage"
@@ -158,7 +158,7 @@
                         class="border border-[#e0e6ed] dark:border-[#1b2e4b] rounded p-3 bg-white dark:bg-gray-900"
                     >
                         <div class="flex items-center gap-2">
-                            <span class="template-drag-handle cursor-grab text-gray-400 shrink-0">
+                            <span v-can="'workflow_tasks.update'" class="template-drag-handle cursor-grab text-gray-400 shrink-0">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 6a2 2 0 1 1 4 0 2 2 0 0 1-4 0zM14 12a2 2 0 1 1 4 0 2 2 0 0 1-4 0zM14 18a2 2 0 1 1 4 0 2 2 0 0 1-4 0z"/>
                                 </svg>
@@ -180,7 +180,7 @@
                                 {{ $t('workflow.inactive_short') }}
                             </span>
                             <button
-                                v-can="'workflows.update'"
+                                v-can="'workflow_tasks.update'"
                                 type="button"
                                 class="text-primary hover:text-primary/80"
                                 @click="openTemplateModal(tmpl)"
@@ -190,7 +190,7 @@
                                 </svg>
                             </button>
                             <button
-                                v-can="'workflows.delete'"
+                                v-can="'workflow_tasks.delete'"
                                 type="button"
                                 class="text-danger hover:text-danger/80"
                                 @click="confirmDeleteTemplate(tmpl)"

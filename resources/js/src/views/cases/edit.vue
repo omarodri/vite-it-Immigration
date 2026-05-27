@@ -348,6 +348,7 @@ import { useI18n } from 'vue-i18n';
 import { useMeta } from '@/composables/use-meta';
 import { useCaseStore } from '@/stores/case';
 import { useCompanionStore } from '@/stores/companion';
+import companionService from '@/services/companionService';
 import { useNotification } from '@/composables/useNotification';
 import type { UpdateCaseData, ImportantDate, CaseTask, CaseStage, IrccStatus, FinalResult, ServiceType } from '@/types/case';
 import { IRCC_STATUS_OPTIONS, FINAL_RESULT_OPTIONS, SERVICE_TYPE_OPTIONS } from '@/types/case';
@@ -613,12 +614,21 @@ onMounted(async () => {
             if (currentCase.value.companions) {
                 selectedCompanionIds.value = currentCase.value.companions.map((c: any) => c.id);
             }
-            // Load available companions from the client
+            // Load available companions to add to the case.
+            // Spec 69 — Company cases: only show direct family of the beneficiary employee
+            //   (parent_companion_id === primary_applicant_companion_id).
+            // Person cases: show all companions of the client (legacy behaviour).
             if (currentCase.value.client_id) {
                 isLoadingCompanions.value = true;
                 try {
-                    await companionStore.fetchCompanions(currentCase.value.client_id);
-                    availableCompanions.value = companionStore.companions;
+                    const isCompany = currentCase.value.client?.type === 'company';
+                    const employeeId = currentCase.value.primary_applicant_companion_id;
+                    if (isCompany && employeeId) {
+                        availableCompanions.value = await companionService.getFamilyMembers(employeeId);
+                    } else {
+                        await companionStore.fetchCompanions(currentCase.value.client_id);
+                        availableCompanions.value = companionStore.companions;
+                    }
                 } finally {
                     isLoadingCompanions.value = false;
                 }

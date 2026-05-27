@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Companion;
 
+use App\Models\Companion;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -18,7 +19,7 @@ class UpdateCompanionRequest extends FormRequest
         return [
             'first_name' => ['sometimes', 'string', 'max:255'],
             'last_name' => ['sometimes', 'string', 'max:255'],
-            'relationship' => ['sometimes', Rule::in(['beneficiary', 'spouse', 'child', 'parent', 'sibling', 'common-law partner', 'dependent child', 'grandchild', 'grandparent', 'half-sibling', 'step-sibling', 'aunt / uncle', 'niece / nephew', 'cousin', 'child-in-law', 'parent-in-law', 'employee', 'other'])],
+            'relationship' => ['sometimes', Rule::in(array_keys(Companion::RELATIONSHIP_TYPES))],
             'relationship_other' => ['nullable', 'string', 'max:255'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', Rule::in(['male', 'female', 'other'])],
@@ -57,6 +58,11 @@ class UpdateCompanionRequest extends FormRequest
         if ($this->canada_status_other) {
             $this->merge(['canada_status_other' => ucfirst(trim($this->canada_status_other))]);
         }
+    }
+
+    protected function passedValidation(): void
+    {
+        $this->offsetUnset('parent_companion_id');
     }
 
     public function messages(): array

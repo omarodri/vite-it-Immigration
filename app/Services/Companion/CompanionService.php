@@ -15,9 +15,44 @@ class CompanionService
         private CompanionRepositoryInterface $companionRepository
     ) {}
 
-    public function listCompanions(Client $client): Collection
+    public function listCompanions(Client $client, array $params = []): Collection
     {
-        return $this->companionRepository->getByClient($client);
+        return $this->companionRepository->getByClientFiltered($client, $params);
+    }
+
+    public function listFamilyMembers(Companion $employee): Collection
+    {
+        return $employee->familyMembers()->orderBy('first_name')->get();
+    }
+
+    public function createFamilyMember(Companion $employee, array $data): Companion
+    {
+        abort_if(
+            $employee->relationship !== Companion::RELATIONSHIP_BENEFICIARY,
+            422,
+            'El companion padre debe ser un empleado beneficiario.'
+        );
+        abort_if(
+            $employee->parent_companion_id !== null,
+            422,
+            'No se permiten más de un nivel de jerarquía familiar.'
+        );
+
+        $data['parent_companion_id'] = $employee->id;
+        $data['client_id']           = $employee->client_id;
+        $data['tenant_id']           = $employee->tenant_id;
+
+        return DB::transaction(function () use ($employee, $data) {
+            $companion = $this->companionRepository->create($data);
+
+            activity()
+                ->causedBy(Auth::user())
+                ->performedOn($companion)
+                ->withProperties(['employee' => $employee->full_name])
+                ->log('Added family member: '.$companion->full_name.' to employee '.$employee->full_name);
+
+            return $companion;
+        });
     }
 
     public function getCompanion(Companion $companion): Companion

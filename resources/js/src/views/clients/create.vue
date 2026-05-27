@@ -78,13 +78,29 @@
                         <router-link to="/clients" class="btn btn-outline-danger">
                             {{ $t('clients.cancel') }}
                         </router-link>
+                        <!-- Save & Create Case Button -->
+                        <button
+                            type="button"
+                            class="btn btn-success gap-2"
+                            :disabled="isSubmitting"
+                            @click="handleSubmitAndCreateCase"
+                        >
+                            <template v-if="isSubmitting && pendingRedirectToWizard">
+                                <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-5 h-5 inline-block"></span>
+                                {{ $t('clients.creating') }}
+                            </template>
+                            <template v-else>
+                                <icon-plus class="w-5 h-5" />
+                                {{ $t('clients.save_and_create_case') }}
+                            </template>
+                        </button>
                         <!-- Create Client Button -->
                         <button
                             type="submit"
                             class="btn btn-primary"
                             :disabled="isSubmitting"
                         >
-                            <template v-if="isSubmitting">
+                            <template v-if="isSubmitting && !pendingRedirectToWizard">
                                 <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-5 h-5 inline-block mr-2"></span>
                                 {{ $t('clients.creating') }}
                             </template>
@@ -476,12 +492,28 @@
                     <router-link to="/clients" class="btn btn-outline-danger">
                         {{ $t('clients.cancel') }}
                     </router-link>
+                    <!-- Save & Create Case Button -->
+                    <button
+                        type="button"
+                        class="btn btn-success gap-2"
+                        :disabled="isSubmitting"
+                        @click="handleSubmitAndCreateCase"
+                    >
+                        <template v-if="isSubmitting && pendingRedirectToWizard">
+                            <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-5 h-5 inline-block"></span>
+                            {{ $t('clients.creating') }}
+                        </template>
+                        <template v-else>
+                            <icon-plus class="w-5 h-5" />
+                            {{ $t('clients.save_and_create_case') }}
+                        </template>
+                    </button>
                     <button
                         type="submit"
                         class="btn btn-primary"
                         :disabled="isSubmitting"
                     >
-                        <template v-if="isSubmitting">
+                        <template v-if="isSubmitting && !pendingRedirectToWizard">
                             <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-5 h-5 inline-block mr-2"></span>
                             {{ $t('clients.creating') }}
                         </template>
@@ -520,6 +552,7 @@ import IconMail from '@/components/icon/icon-mail.vue';
 import IconHome from '@/components/icon/icon-home.vue';
 import IconSettings from '@/components/icon/icon-settings.vue';
 import IconSave from '@/components/icon/icon-save.vue';
+import IconPlus from '@/components/icon/icon-plus.vue';
 import IconX from '@/components/icon/icon-x.vue';
 import CountrySelect from '@/components/CountrySelect.vue';
 import PhoneInput from '@/components/PhoneInput.vue';
@@ -587,6 +620,7 @@ const isSubmitting = ref(false);
 const errorMessage = ref('');
 const legalDocs = ref<LegalDocument[]>([]);
 const createdClientId = ref<number | null>(null);
+const pendingRedirectToWizard = ref(false);
 
 // Spec 64 — Client type selector state
 const selectedType = ref<ClientType | null>(null);
@@ -686,7 +720,7 @@ const validateCompanyFields = (): boolean => {
     return valid;
 };
 
-const handleSubmit = async () => {
+const saveClient = async (redirectToWizard: boolean): Promise<void> => {
     if (!selectedType.value) {
         errorMessage.value = t('clients.validation.type_required');
         return;
@@ -699,11 +733,11 @@ const handleSubmit = async () => {
         return;
     }
 
+    pendingRedirectToWizard.value = redirectToWizard;
     isSubmitting.value = true;
     errorMessage.value = '';
 
     try {
-        // Filter out empty string values and map canada_status_other to other_status_1
         const { canada_status_other, ...rest } = form;
         const data: Record<string, any> = Object.fromEntries(
             Object.entries(rest).filter(([_, v]) => v !== '' && v !== null)
@@ -712,10 +746,8 @@ const handleSubmit = async () => {
             data.other_status_1 = canada_status_other;
         }
 
-        // Spec 64 — always include type, strip fields that don't apply to the selected type
         data.type = selectedType.value;
         if (selectedType.value === 'company') {
-            // Remove person-only fields
             delete data.first_name;
             delete data.last_name;
             delete data.date_of_birth;
@@ -729,7 +761,6 @@ const handleSubmit = async () => {
             delete data.arrival_date;
             delete data.iuc;
         } else {
-            // Remove company-only fields
             delete data.company_name;
             delete data.trade_name;
             delete data.tax_id;
@@ -742,7 +773,6 @@ const handleSubmit = async () => {
         const newClient = await clientStore.createClient(data as any);
         const clientId = (newClient as any)?.client?.id;
 
-        // Save legal documents after client is created
         if (clientId && legalDocs.value.length > 0) {
             await Promise.all(
                 legalDocs.value.map(doc => legalDocumentService.createForClient(clientId, doc))
@@ -750,7 +780,15 @@ const handleSubmit = async () => {
         }
 
         success(t('clients.created_successfully'));
-        router.push('/clients');
+
+        if (redirectToWizard && clientId) {
+            const displayName = selectedType.value === 'company'
+                ? (form.trade_name || form.company_name)
+                : `${form.first_name} ${form.last_name}`.trim();
+            router.push({ path: '/cases/wizard', query: { client_id: clientId, client_name: displayName } });
+        } else {
+            router.push('/clients');
+        }
     } catch (err: any) {
         if (err.response?.data?.errors) {
             const errors = err.response.data.errors;
@@ -761,8 +799,12 @@ const handleSubmit = async () => {
         }
     } finally {
         isSubmitting.value = false;
+        pendingRedirectToWizard.value = false;
     }
 };
+
+const handleSubmit = () => saveClient(false);
+const handleSubmitAndCreateCase = () => saveClient(true);
 
 
 const easyMDE = ref<EasyMDE | null>(null);

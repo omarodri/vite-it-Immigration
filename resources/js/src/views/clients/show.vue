@@ -329,9 +329,152 @@
 
                     <!-- Companions / Sponsored Employees Tab -->
                     <div v-else-if="activeTab === 'companions'">
+
+                        <!-- ===== EMPRESA: accordion de empleados con familiares ===== -->
+                        <template v-if="client.type === 'company'">
+                            <div class="flex justify-between items-center mb-4">
+                                <h5 class="text-lg font-semibold">
+                                    {{ $t('clients.tabs.sponsored_employees') }}
+                                </h5>
+                                <button
+                                    v-can="'companions.create'"
+                                    type="button"
+                                    class="btn btn-primary btn-sm gap-2"
+                                    @click="openCompanionModal()"
+                                >
+                                    <icon-plus class="w-4 h-4" />
+                                    {{ $t('clients.add_employee') }}
+                                </button>
+                            </div>
+
+                            <div v-if="isLoadingCompanions" class="text-center py-10">
+                                <div class="animate-spin inline-block w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                            </div>
+
+                            <div v-else-if="!companions.length" class="text-center py-10">
+                                <icon-users class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                                <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">{{ $t('companions.no_companions') }}</h3>
+                                <p class="text-gray-500 mb-4">{{ $t('clients.no_employees_yet') }}</p>
+                            </div>
+
+                            <div v-else class="space-y-3">
+                                <div
+                                    v-for="employee in companions"
+                                    :key="employee.id"
+                                    class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
+                                >
+                                    <!-- Header del empleado -->
+                                    <div
+                                        class="flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                                        @click="toggleEmployee(employee.id)"
+                                    >
+                                        <div class="w-11 h-11 rounded-full bg-success/10 text-success flex items-center justify-center text-sm font-bold shrink-0">
+                                            {{ employee.initials || getInitials(employee.first_name, employee.last_name) }}
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <h6 class="font-semibold truncate">{{ employee.full_name }}</h6>
+                                            <p class="text-xs text-gray-500">
+                                                {{ $t('companions.beneficiary_employee') }}
+                                                <span v-if="employee.iuc" class="ml-2">· IUC: {{ employee.iuc }}</span>
+                                            </p>
+                                        </div>
+                                        <span class="badge badge-outline-primary text-xs shrink-0">
+                                            {{ employee.family_count ?? (employee.family_members?.length ?? 0) }}
+                                            {{ $t('clients.family_members_count') }}
+                                        </span>
+                                        <div class="flex gap-1 shrink-0" @click.stop>
+                                            <button
+                                                v-can="'clients.update'"
+                                                type="button"
+                                                class="btn btn-sm btn-outline-primary p-1.5"
+                                                :title="$t('companions.edit_companion')"
+                                                @click="openCompanionModal(employee)"
+                                            >
+                                                <icon-pencil class="w-3.5 h-3.5" />
+                                            </button>
+                                            <button
+                                                v-can="'companions.delete'"
+                                                type="button"
+                                                class="btn btn-sm btn-outline-danger p-1.5"
+                                                :title="$t('companions.delete_companion')"
+                                                @click="confirmDeleteEmployee(employee)"
+                                            >
+                                                <icon-trash class="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                        <icon-caret-down
+                                            class="w-5 h-5 text-gray-400 shrink-0 transition-transform duration-200"
+                                            :class="{ 'rotate-180': expandedEmployees.has(employee.id) }"
+                                        />
+                                    </div>
+
+                                    <!-- Panel familia (expandible) -->
+                                    <div
+                                        v-show="expandedEmployees.has(employee.id)"
+                                        class="border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 p-4"
+                                    >
+                                        <div class="flex justify-between items-center mb-3">
+                                            <h6 class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                {{ $t('clients.family_of', { name: employee.first_name }) }}
+                                            </h6>
+                                            <button
+                                                v-can="'companions.create'"
+                                                type="button"
+                                                class="btn btn-outline-primary btn-xs gap-1"
+                                                @click="openFamilyMemberModal(employee)"
+                                            >
+                                                <icon-plus class="w-3 h-3" />
+                                                {{ $t('clients.add_family_member') }}
+                                            </button>
+                                        </div>
+
+                                        <p v-if="!employee.family_members?.length" class="text-sm text-gray-500 text-center py-4">
+                                            {{ $t('clients.no_family_yet') }}
+                                        </p>
+
+                                        <div v-else class="grid sm:grid-cols-2 gap-2">
+                                            <div
+                                                v-for="fm in employee.family_members"
+                                                :key="fm.id"
+                                                class="flex items-center gap-2 p-2.5 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-700"
+                                            >
+                                                <div class="w-8 h-8 rounded-full bg-secondary/10 text-secondary flex items-center justify-center text-xs font-bold shrink-0">
+                                                    {{ fm.initials || getInitials(fm.first_name, fm.last_name) }}
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-sm font-medium truncate">{{ fm.full_name }}</p>
+                                                    <p class="text-xs text-gray-500">{{ formatRelationship(fm.relationship) }}</p>
+                                                </div>
+                                                <div class="flex gap-1 shrink-0">
+                                                    <button
+                                                        v-can="'clients.update'"
+                                                        type="button"
+                                                        class="btn btn-xs btn-outline-primary p-1"
+                                                        @click="openFamilyMemberModal(employee, fm)"
+                                                    >
+                                                        <icon-pencil class="w-3 h-3" />
+                                                    </button>
+                                                    <button
+                                                        v-can="'companions.delete'"
+                                                        type="button"
+                                                        class="btn btn-xs btn-outline-danger p-1"
+                                                        @click="confirmDeleteCompanion(fm)"
+                                                    >
+                                                        <icon-trash class="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- ===== PERSONA: render plano original ===== -->
+                        <template v-else>
                         <div class="flex justify-between items-center mb-4">
                             <h5 class="text-lg font-semibold">
-                                {{ client.type === 'company' ? $t('clients.tabs.sponsored_employees') : $t('clients.family_companions') }}
+                                {{ $t('clients.family_companions') }}
                             </h5>
                             <button
                                 v-can="'clients.update'"
@@ -437,6 +580,7 @@
                                 </div>
                             </div>
                         </div>
+                        </template>
                     </div>
 
                     <!-- Cases Tab -->
@@ -524,6 +668,18 @@
             @close="editingCompanion = null; presetRelationshipForModal = null"
         />
 
+        <!-- Spec 69 — Family member modal (children of an employee, company clients) -->
+        <CompanionFormModal
+            v-if="showFamilyMemberModal && employeeToAddFamily"
+            :show="showFamilyMemberModal"
+            :client-id="client?.id ?? 0"
+            :companion="editingFamilyMember"
+            :parent-companion-id="employeeToAddFamily.id"
+            @update:show="showFamilyMemberModal = $event"
+            @saved="onFamilyMemberSaved"
+            @close="showFamilyMemberModal = false; editingFamilyMember = null; employeeToAddFamily = null"
+        />
+
         <!-- Companion View Modal -->
         <CompanionViewModal
             :show="showViewModal"
@@ -560,9 +716,11 @@ import IconPlus from '@/components/icon/icon-plus.vue';
 import IconTrash from '@/components/icon/icon-trash.vue';
 import IconEye from '@/components/icon/icon-eye.vue';
 import IconUserPlus from '@/components/icon/icon-user-plus.vue';
+import IconCaretDown from '@/components/icon/icon-caret-down.vue';
 import CompanionFormModal from '@/components/companions/CompanionFormModal.vue';
 import CompanionViewModal from '@/components/companions/CompanionViewModal.vue';
 import companionPromotionService from '@/services/companionPromotionService';
+import companionService from '@/services/companionService';
 import Swal from 'sweetalert2';
 
 useMeta({ title: 'Client Profile' });
@@ -597,6 +755,12 @@ const editingCompanion = ref<Companion | null>(null);
 const presetRelationshipForModal = ref<RelationshipType | null>(null);
 const showViewModal = ref(false);
 const viewingCompanion = ref<Companion | null>(null);
+
+// Spec 69 — hierarchical companions (company clients)
+const expandedEmployees = ref(new Set<number>());
+const employeeToAddFamily = ref<Companion | null>(null);
+const editingFamilyMember = ref<Companion | null>(null);
+const showFamilyMemberModal = ref(false);
 
 // Legal documents state
 const legalDocs = ref<LegalDocument[]>([]);
@@ -686,8 +850,28 @@ const formatRelationship = (relationship: string): string => {
     return labels[relationship] || relationship;
 };
 
+const loadEmployees = async () => {
+    if (!client.value) return;
+    isLoadingCompanions.value = true;
+    try {
+        // Employees only (tier=employees) + eager-load family members for the accordion
+        companions.value = await companionService.list(client.value.id, {
+            tier: 'employees',
+            with_family: true,
+            with_family_count: true,
+        });
+    } catch (err) {
+        console.error('Failed to load employees:', err);
+    } finally {
+        isLoadingCompanions.value = false;
+    }
+};
+
 const loadCompanions = async () => {
     if (!client.value) return;
+    if (client.value.type === 'company') {
+        return loadEmployees();
+    }
     isLoadingCompanions.value = true;
     try {
         await companionStore.fetchCompanions(client.value.id);
@@ -696,6 +880,42 @@ const loadCompanions = async () => {
         console.error('Failed to load companions:', err);
     } finally {
         isLoadingCompanions.value = false;
+    }
+};
+
+const toggleEmployee = (id: number) => {
+    if (expandedEmployees.value.has(id)) {
+        expandedEmployees.value.delete(id);
+    } else {
+        expandedEmployees.value.add(id);
+    }
+};
+
+const openFamilyMemberModal = (employee: Companion, familyMember?: Companion) => {
+    employeeToAddFamily.value = employee;
+    editingFamilyMember.value = familyMember ?? null;
+    showFamilyMemberModal.value = true;
+};
+
+const onFamilyMemberSaved = async () => {
+    showFamilyMemberModal.value = false;
+    editingFamilyMember.value = null;
+    employeeToAddFamily.value = null;
+    await loadEmployees();
+};
+
+const confirmDeleteEmployee = async (companion: Companion) => {
+    const result = await Swal.fire({
+        icon: 'warning',
+        title: t('companions.confirm_delete_employee_title'),
+        text: t('companions.confirm_delete_employee_text'),
+        showCancelButton: true,
+        confirmButtonColor: '#e7515a',
+        confirmButtonText: t('companions.delete'),
+        cancelButtonText: t('companions.cancel'),
+    });
+    if (result.isConfirmed) {
+        await confirmDeleteCompanion(companion);
     }
 };
 

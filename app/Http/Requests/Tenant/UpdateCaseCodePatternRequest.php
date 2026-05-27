@@ -18,9 +18,9 @@ use Illuminate\Validation\Validator;
 class UpdateCaseCodePatternRequest extends FormRequest
 {
     /**
-     * The route already enforces the `settings.case_code.manage` permission
-     * via middleware. Returning true here keeps the request portable in case
-     * the route is mounted under a different guard in the future.
+     * The route enforces the `case_code.update` permission via middleware
+     * (migrated from the deprecated `settings.case_code.manage` in Spec 66).
+     * Returning true keeps the request portable if the route guard changes.
      */
     public function authorize(): bool
     {

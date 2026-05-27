@@ -229,6 +229,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useMeta } from '@/composables/use-meta';
 import { useRoleStore } from '@/stores/role';
 import { useNotification } from '@/composables/useNotification';
@@ -248,6 +249,7 @@ useMeta({ title: 'View Role' });
 
 const router = useRouter();
 const route = useRoute();
+const { t } = useI18n();
 const roleStore = useRoleStore();
 const { success, error, confirmDelete } = useNotification();
 
@@ -273,11 +275,15 @@ const groupedPermissions = computed(() => {
         groups[groupName].push(permission);
     }
 
-    return Object.entries(groups).map(([name, permissions]) => ({
-        name,
-        display_name: name.charAt(0).toUpperCase() + name.slice(1),
-        permissions,
-    }));
+    return Object.entries(groups).map(([name, permissions]) => {
+        const moduleKey = `permissions.modules.${name}`;
+        const translated = t(moduleKey);
+        return {
+            name,
+            display_name: translated !== moduleKey ? translated : name.charAt(0).toUpperCase() + name.slice(1),
+            permissions,
+        };
+    });
 });
 
 // Methods
@@ -286,8 +292,10 @@ const capitalizeFirst = (str: string): string => {
 };
 
 const formatPermissionName = (name: string): string => {
-    const parts = name.split('.');
-    const action = parts[parts.length - 1];
+    const [group, action] = name.split('.');
+    const labelKey = `permissions.labels.${group}.${action}`;
+    const translated = t(labelKey);
+    if (translated !== labelKey) return translated;
     return action.charAt(0).toUpperCase() + action.slice(1);
 };
 

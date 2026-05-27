@@ -33,7 +33,11 @@
                                 <icon-x />
                             </button>
                             <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900 dark:text-white mb-4">
-                                {{ companion ? $t('companions.edit_companion') : $t('companions.add_companion') }}
+                                {{ companion
+                                    ? $t('companions.edit_companion')
+                                    : (props.parentCompanionId
+                                        ? $t('companions.add_family_member_title')
+                                        : $t('companions.add_companion')) }}
                             </DialogTitle>
 
                             <form @submit.prevent="handleSave" class="space-y-4">
@@ -86,9 +90,9 @@
                                         >
                                             <option value="">{{ $t('companions.select_relationship') }}</option>
                                             <option value="spouse">{{ $t('companions.spouse') }}</option>
-                                            <option value="common-law partner">{{ $t('companions.common-law partner') }}</option>
                                             <option value="child">{{ $t('companions.child') }}</option>
                                             <option value="dependent child">{{ $t('companions.dependent child') }}</option>
+                                            <option value="common-law partner">{{ $t('companions.common-law partner') }}</option>
                                             <option value="parent">{{ $t('companions.parent') }}</option>
                                             <option value="sibling">{{ $t('companions.sibling') }}</option>
                                             <option value="half-sibling">{{ $t('companions.half-sibling') }}</option>
@@ -100,7 +104,6 @@
                                             <option value="cousin">{{ $t('companions.cousin') }}</option>
                                             <option value="child-in-law">{{ $t('companions.child-in-law') }}</option>
                                             <option value="parent-in-law">{{ $t('companions.parent-in-law') }}</option>
-                                            <option value="employee">{{ $t('companions.employee') }}</option>
                                             <option value="other">{{ $t('companions.other') }}</option>
                                         </select>
                                         <p v-if="companionErrors.relationship" class="text-danger text-xs mt-1">{{ companionErrors.relationship[0] }}</p>
@@ -308,10 +311,17 @@ const props = withDefaults(defineProps<{
      * for company-type clients (DT-09).
      */
     presetRelationship?: RelationshipType | null
+    /**
+     * Spec 69 — When set, the new companion is created as a family member of the
+     * parent employee companion (parent_companion_id is forwarded to the API).
+     * Only applies on CREATE; ignored when editing.
+     */
+    parentCompanionId?: number | null
 }>(), {
     companion: null,
     showDocuments: true,
     presetRelationship: null,
+    parentCompanionId: null,
 })
 
 const emit = defineEmits<{
@@ -466,9 +476,13 @@ async function handleSave() {
             success(t('companions.updated_successfully'))
         } else {
             // Create new companion
+            const createData = {
+                ...(companionForm.value as CreateCompanionData),
+                ...(props.parentCompanionId ? { parent_companion_id: props.parentCompanionId } : {}),
+            } as CreateCompanionData
             const newCompanion = await companionStore.createCompanion(
                 props.clientId,
-                companionForm.value as CreateCompanionData
+                createData
             )
             // Save docs for newly created companion if any
             if (props.showDocuments && newCompanion?.id && companionDocs.value.length > 0) {
@@ -497,7 +511,8 @@ async function handleSave() {
 
 const handleClose = guardClose
 
-// Watch for modal open
+// Watch for modal open. { immediate: true } handles the v-if mount pattern
+// where the component mounts with show=true already set (no false→true transition).
 watch(() => props.show, async (newVal) => {
     if (newVal) {
         if (props.companion) {
@@ -507,5 +522,5 @@ watch(() => props.show, async (newVal) => {
         }
         captureSnapshot()
     }
-})
+}, { immediate: true })
 </script>

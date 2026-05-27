@@ -23,6 +23,38 @@ class CompanionRepository implements CompanionRepositoryInterface
             ->get();
     }
 
+    public function getByClientFiltered(Client $client, array $params = []): Collection
+    {
+        $query = $client->companions()
+            ->orderBy('relationship')
+            ->orderBy('first_name');
+
+        $tier = $params['tier'] ?? 'all';
+        if ($tier === 'employees') {
+            $query->whereNull('parent_companion_id')
+                  ->where('relationship', Companion::RELATIONSHIP_BENEFICIARY);
+        } elseif (isset($params['parent_id'])) {
+            $parentId = $params['parent_id'];
+            if ($parentId === 'null' || $parentId === null) {
+                $query->whereNull('parent_companion_id');
+            } else {
+                $query->where('parent_companion_id', (int) $parentId);
+            }
+        }
+
+        if (! empty($params['with_family_count'])) {
+            $query->withCount('familyMembers as family_count');
+        }
+
+        $result = $query->get();
+
+        if (! empty($params['with_family']) && $result->isNotEmpty()) {
+            $result->load('familyMembers');
+        }
+
+        return $result;
+    }
+
     public function create(array $data): Companion
     {
         $data['tenant_id'] = Auth::user()->tenant_id;

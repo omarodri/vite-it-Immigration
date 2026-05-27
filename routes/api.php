@@ -115,6 +115,9 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant', 'ensure.single.sess
     // Companion management routes (nested under clients)
     Route::apiResource('clients.companions', CompanionController::class);
 
+    Route::get('companions/{companion}/family', [CompanionController::class, 'family'])
+        ->name('companions.family');
+
     // Companion promotion routes (Spec 59)
     Route::post('companions/{companion}/promote-to-client',
         [\App\Http\Controllers\Api\ClientPromotionController::class, 'store'])

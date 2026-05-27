@@ -178,9 +178,25 @@
             </p>
         </div>
 
-        <!-- No Companions (excluding beneficiary) -->
+        <!-- Spec 69 — Company case: employee picked but has no family members -->
         <div
-            v-if="!loading && wizard.state.clientId && nonBeneficiaryCompanions.length === 0 && (!isCompanyCase || hasBeneficiary)"
+            v-if="!loading && isCompanyCase && wizard.state.primaryApplicantCompanionId && !displayableCompanions.length"
+            class="text-center py-8 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg"
+            role="status"
+            aria-live="polite"
+        >
+            <icon-users class="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" aria-hidden="true" />
+            <p class="font-medium text-gray-600 dark:text-gray-400">
+                {{ $t('wizard.step_companions.no_family_yet') }}
+            </p>
+            <p class="text-sm text-gray-500 mt-1">
+                {{ $t('wizard.step_companions.go_to_client_to_add_family') }}
+            </p>
+        </div>
+
+        <!-- No Companions (excluding beneficiary) — person cases only -->
+        <div
+            v-else-if="!loading && wizard.state.clientId && !isCompanyCase && displayableCompanions.length === 0"
             class="text-center py-10"
             role="status"
             aria-live="polite"
@@ -195,7 +211,7 @@
         </div>
 
         <!-- Companions List (excluding beneficiary, which has its own dedicated section) -->
-        <fieldset v-else-if="!loading && nonBeneficiaryCompanions.length > 0" class="space-y-3">
+        <fieldset v-else-if="!loading && displayableCompanions.length > 0" class="space-y-3">
             <h3 v-if="!isCompanyCase" class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 {{ $t('wizard.step3.title') }}
             </h3>
@@ -238,7 +254,7 @@
             </div>
 
             <CompanionCheckbox
-                v-for="companion in nonBeneficiaryCompanions"
+                v-for="companion in displayableCompanions"
                 :key="companion.id"
                 :companion="companion"
                 :is-selected="isSelected(companion.id)"
@@ -249,18 +265,23 @@
         </fieldset>
 
         <!-- Selection Summary -->
-        <div v-if="nonBeneficiaryCompanions.length > 0" class="mt-6 p-4 bg-info/10 rounded-lg" role="status" aria-live="polite">
+        <div v-if="displayableCompanions.length > 0" class="mt-6 p-4 bg-info/10 rounded-lg" role="status" aria-live="polite">
             <p class="text-sm text-info">
                 <strong>{{ selectedNonBeneficiaryCount }}</strong> {{ $t('wizard.step3.companions_selected') }}
             </p>
         </div>
 
         <!-- Companion Form Modal (shared component) -->
+        <!-- parent-companion-id is set for company cases when adding a family member
+             (not when adding the beneficiary employee itself, which has no parent). -->
         <CompanionFormModal
             v-model:show="showCompanionModal"
             :client-id="wizard.state.clientId ?? 0"
             :companion="null"
             :preset-relationship="presetRelationshipForModal"
+            :parent-companion-id="isCompanyCase && presetRelationshipForModal !== 'beneficiary'
+                ? (wizard.state.primaryApplicantCompanionId ?? null)
+                : null"
             @saved="onCompanionSaved"
         />
     </div>
@@ -337,6 +358,22 @@ const selectedBeneficiaryId = computed<number | ''>({
 
 const nonBeneficiaryCompanions = computed<Companion[]>(() => {
     return companions.value.filter((c) => c.relationship !== 'beneficiary');
+});
+
+// Spec 69 — Companions shown in the selectable list:
+// - Person cases: all non-beneficiary companions (unchanged behaviour)
+// - Company cases: only direct family members (parent_companion_id) of the
+//   currently selected beneficiary employee. Empty until an employee is picked.
+const displayableCompanions = computed<Companion[]>(() => {
+    if (!isCompanyCase.value) {
+        return nonBeneficiaryCompanions.value;
+    }
+    if (!wizard.state.primaryApplicantCompanionId) {
+        return [];
+    }
+    return companions.value.filter(
+        (c) => c.parent_companion_id === wizard.state.primaryApplicantCompanionId
+    );
 });
 
 const selectedNonBeneficiaryCount = computed<number>(() => {
@@ -517,6 +554,25 @@ watch(
         }
     },
     { immediate: true }
+);
+
+// Spec 69 — when the beneficiary employee changes, drop any family members
+// from the previously selected employee out of the case selection so the
+// summary/save payload stays consistent.
+watch(
+    () => wizard.state.primaryApplicantCompanionId,
+    (newId, oldId) => {
+        if (!isCompanyCase.value || newId === oldId) return;
+        if (oldId !== null && oldId !== undefined) {
+            const staleIds = companions.value
+                .filter((c) => c.parent_companion_id === oldId)
+                .map((c) => c.id);
+            wizard.state.selectedCompanionIds = wizard.state.selectedCompanionIds
+                .filter((id) => !staleIds.includes(id));
+            wizard.saveToSession?.();
+        }
+    },
+    { immediate: false }
 );
 
 // For company cases: enforce clientIsDependent=false and ensure the restored

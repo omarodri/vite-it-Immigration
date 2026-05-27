@@ -43,6 +43,14 @@ class CompanionResource extends JsonResource
             'legal_documents' => LegalDocumentResource::collection($this->whenLoaded('legalDocuments')),
             'already_promoted'      => $this->promotedClient()->exists(),
             'promoted_to_client_id' => $this->promotedClient()->value('id'),
+            'parent_companion_id' => $this->parent_companion_id,
+            'is_employee'         => $this->resource->canHaveFamily(),
+            'is_family_member'    => $this->resource->isFamilyMember(),
+            'family_count'        => $this->when(
+                array_key_exists('family_count', $this->resource->getAttributes()) || isset($this->family_count),
+                fn () => $this->family_count ?? 0
+            ),
+            'family_members'      => CompanionResource::collection($this->whenLoaded('familyMembers')),
         ];
     }
 }

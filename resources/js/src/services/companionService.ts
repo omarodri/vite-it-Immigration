@@ -4,7 +4,7 @@
  */
 
 import api from './api';
-import type { Companion, CreateCompanionData, UpdateCompanionData } from '@/types/companion';
+import type { Companion, CreateCompanionData, UpdateCompanionData, CompanionListParams } from '@/types/companion';
 
 export interface CompanionResponse {
     data: Companion;
@@ -20,6 +20,23 @@ const companionService = {
      */
     async getCompanions(clientId: number): Promise<Companion[]> {
         const response = await api.get<CompanionsListResponse>(`/clients/${clientId}/companions`);
+        return response.data.data;
+    },
+
+    /**
+     * List companions for a client with hierarchical filters (Spec 69).
+     * Modern alias of getCompanions that supports tier/parent_id/eager loading params.
+     */
+    async list(clientId: number, params?: CompanionListParams): Promise<Companion[]> {
+        const response = await api.get<CompanionsListResponse>(`/clients/${clientId}/companions`, { params });
+        return response.data.data;
+    },
+
+    /**
+     * Get family members (direct children) of an employee companion (Spec 69).
+     */
+    async getFamilyMembers(employeeId: number): Promise<Companion[]> {
+        const response = await api.get<CompanionsListResponse>(`/companions/${employeeId}/family`);
         return response.data.data;
     },
 

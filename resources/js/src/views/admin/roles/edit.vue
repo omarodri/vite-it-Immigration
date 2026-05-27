@@ -94,7 +94,7 @@
 
                     <div v-else class="space-y-4">
                         <div
-                            v-for="group in roleStore.permissionGroups"
+                            v-for="group in translatedGroups"
                             :key="group.name"
                             class="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
                         >
@@ -163,6 +163,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useVuelidate } from '@vuelidate/core';
 import { required, helpers } from '@vuelidate/validators';
+import { useI18n } from 'vue-i18n';
 import { useMeta } from '@/composables/use-meta';
 import { useRoleStore } from '@/stores/role';
 import { useNotification } from '@/composables/useNotification';
@@ -179,6 +180,7 @@ useMeta({ title: 'Edit Role' });
 
 const router = useRouter();
 const route = useRoute();
+const { t } = useI18n();
 const roleStore = useRoleStore();
 const { success, error } = useNotification();
 
@@ -207,10 +209,24 @@ const rules = computed(() => ({
 
 const v$ = useVuelidate(rules, form);
 
+// Computed
+const translatedGroups = computed(() =>
+    roleStore.permissionGroups.map(group => {
+        const moduleKey = `permissions.modules.${group.name}`;
+        const translated = t(moduleKey);
+        return {
+            ...group,
+            display_name: translated !== moduleKey ? translated : group.display_name,
+        };
+    })
+);
+
 // Methods
 const formatPermissionName = (name: string): string => {
-    const parts = name.split('.');
-    const action = parts[parts.length - 1];
+    const [group, action] = name.split('.');
+    const labelKey = `permissions.labels.${group}.${action}`;
+    const translated = t(labelKey);
+    if (translated !== labelKey) return translated;
     return action.charAt(0).toUpperCase() + action.slice(1);
 };
 
