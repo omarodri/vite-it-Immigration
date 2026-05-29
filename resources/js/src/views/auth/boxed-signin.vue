@@ -57,7 +57,7 @@
                     <div class="mx-auto w-full max-w-[440px]">
                         <div class="mb-10">
                             <h1 class="text-3xl font-extrabold uppercase !leading-snug text-primary md:text-4xl">{{ $t('signin') }}</h1>
-                            <p class="text-base font-bold leading-normal text-white-dark">Enter your email and password to login</p>
+                            <p class="text-base font-bold leading-normal text-white-dark">{{ $t('enter_email_and_password_to_login') }}</p>
                         </div>
                         <form class="space-y-5 dark:text-white" @submit.prevent="handleSubmit">
                             <!-- Account security locked alert -->
@@ -94,13 +94,13 @@
                                 </button>
                             </div>
                             <div>
-                                <label for="Email">Email</label>
+                                <label for="Email">{{ $t('email') }}</label>
                                 <div class="relative text-white-dark">
                                     <input
                                         id="Email"
                                         v-model="form.email"
                                         type="email"
-                                        placeholder="Enter Email"
+                                        :placeholder="$t('enter_email')"
                                         class="form-input ps-10 placeholder:text-white-dark"
                                         :class="{ 'border-danger': v$.email.$error }"
                                     />
@@ -113,7 +113,7 @@
                                 </template>
                             </div>
                             <div>
-                                <label for="Password">Password</label>
+                                <label for="Password">{{ $t('password') }}</label>
                                 <div class="relative text-white-dark">
                                     <input
                                         id="Password"
@@ -134,7 +134,7 @@
                             <div>
                                 <label class="flex cursor-pointer items-center">
                                     <input type="checkbox" class="form-checkbox bg-white dark:bg-black" />
-                                    <span class="text-white-dark">Remember me</span>
+                                    <span class="text-white-dark">{{ $t('remember_me') }}</span>
                                 </label>
                             </div>
                             <button
@@ -144,18 +144,21 @@
                             >
                                 <span v-if="isSubmitting" class="flex items-center justify-center gap-2">
                                     <span class="animate-spin border-2 border-white border-l-transparent rounded-full w-5 h-5 inline-block"></span>
-                                    Signing in...
+                                    {{ $t('signing_in') }}...
                                 </span>
                                 <span v-else>{{ $t('signin') }}</span>
                             </button>
                         </form>
+
+                        <!-- Social login
                         <div class="relative my-7 text-center md:mb-9">
                             <span class="absolute inset-x-0 top-1/2 h-px w-full -translate-y-1/2 bg-white-light dark:bg-white-dark"></span>
                             <span class="relative bg-white px-2 font-bold uppercase text-white-dark dark:bg-dark dark:text-white-light">or</span>
                         </div>
+                       
                         <div class="mb-10 md:mb-[60px]">
                             <ul class="flex justify-center gap-3.5 text-white">
-                                <!-- <li>
+                                 <li>
                                     <a
                                         href="javascript:"
                                         class="inline-flex h-8 w-8 items-center justify-center rounded-full p-0 transition hover:scale-110"
@@ -163,8 +166,8 @@
                                     >
                                         <icon-instagram />
                                     </a>
-                                </li> -->
-                                <!-- <li>
+                                </li> 
+                                 <li>
                                     <a
                                         href="javascript:"
                                         class="inline-flex h-8 w-8 items-center justify-center rounded-full p-0 transition hover:scale-110"
@@ -172,8 +175,8 @@
                                     >
                                         <icon-facebook-circle />
                                     </a>
-                                </li> -->
-                                <!-- <li>
+                                </li> 
+                                 <li>
                                     <a
                                         href="javascript:"
                                         class="inline-flex h-8 w-8 items-center justify-center rounded-full p-0 transition hover:scale-110"
@@ -181,7 +184,7 @@
                                     >
                                         <icon-twitter :fill="true" />
                                     </a>
-                                </li> -->
+                                </li> 
                                 <li>
                                     <a
                                         href="javascript:"
@@ -202,6 +205,7 @@
                                 </li>                                
                             </ul>
                         </div>
+
                         <div class="text-center dark:text-white">
                             {{ $t('dont_have_an_account') }}
                             
@@ -209,12 +213,13 @@
                                 {{ $t('signup') }}
                             </router-link>
                         </div>
+                        -->
                     </div>
                 </div>
                 <div class=" dark:text-white-dark p-6 pt-0 mt-auto flex items-center justify-between gap-4 absolute bottom-0 w-full">
                     <div class="text-left">© {{ new Date().getFullYear() }}. VITE-IT {{ $t('footer.rights') }}.</div>
                     <div class="text-right; pr-10">
-                        <a href="https://vite-it.com" target="_blank" class="text-sm text-gray-500 dark:text-gray-400">Versión 1.4.1</a>
+                        <a href="https://vite-it.com" target="_blank" class="text-sm text-gray-500 dark:text-gray-400">Versión 1.5.1</a>
                     </div>
                 </div>
             </div>
@@ -239,8 +244,8 @@
     // import IconInstagram from '@/components/icon/icon-instagram.vue';
     // import IconFacebookCircle from '@/components/icon/icon-facebook-circle.vue';
     // import IconTwitter from '@/components/icon/icon-twitter.vue';
-    import IconGoogle from '@/components/icon/icon-google.vue';
-    import IconMicrosoft from '@/components/icon/icon-microsoft.vue';
+    // import IconGoogle from '@/components/icon/icon-google.vue';
+    // import IconMicrosoft from '@/components/icon/icon-microsoft.vue';
     import IconX from '@/components/icon/icon-x.vue';
 
     useMeta({ title: 'VITE-IT Immigration Login' });
