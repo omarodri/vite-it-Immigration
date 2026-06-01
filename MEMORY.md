@@ -47,6 +47,60 @@
 
 ## Implementaciones Recientes
 
+### 2026-05-29 — Spec 70: CRUD Case Types + Clonación en Cascada (Fases 1-5 COMPLETADAS)
+
+**Backend (Fases 1-3):**
+- Migraciones `2026_05_29_000001` (softDeletes + unique `(tenant_id, code, deleted_at)`) y `2026_05_29_000002` (5 permisos `case_types.*`) — aplicadas ✓
+- `CaseType` model: `SoftDeletes`, `workflowStages()`, `isGlobal()`, `activeCasesCount()`, categorías `work_permit`/`other` agregadas, constante `CATEGORIES`
+- `ImmigrationCase::caseType()` — **fix H11**: ahora usa `->withTrashed()` (evita NPE con tipos soft-deleted)
+- `DashboardCaseResource` — **fix H11**: null-safe con badge `(eliminado)` para tipos trashed
+- `CaseTypeObserver` — cascade soft-delete/restore hacia `workflow_stages` → `task_templates`; registrado en `AppServiceProvider`
+- `CaseTypePolicy` — 5 métodos; tipos globales: super-admin exclusivo para update/delete, cualquiera con `clone` puede clonar; registrada en `AppServiceProvider`
+- `CaseTypeService::clone()` — deep copy síncrono en `DB::transaction`: CaseType → WorkflowStage[] → TaskTemplate[] → traducciones; `is_active=false` en clon (D4); `generateUniqueCode()` usa `withoutGlobalScope('tenant_or_global')`
+- `StoreCaseTypeRequest` / `UpdateCaseTypeRequest` — validación unique `(tenant_id, code, deleted_at IS NULL)`
+- `CaseTypeController` — CRUD completo + `clone()` + `activeCasesCount()` (aviso informativo pre-borrado, nunca bloqueante — D7). Ya no usa `CaseTypeRepositoryInterface`
+- 7 rutas admin `api/admin/case-types/*` registradas ✓
+
+**Frontend (Fases 4-5):**
+- `CaseType` interface extendida: `is_deleted`, `is_global`, `workflow_stages_count`, `tasks_count`, `active_cases_count?`
+- `CaseTypeCategory` corregida a los 6 valores reales del backend (estaba con prefijo `'category.'` incorrecto)
+- `CaseTypeForm` interface nueva, exportada desde `types/index.ts`
+- `caseTypeService.ts` — 7 métodos incluyendo `clone()` y `getActiveCasesCount()`
+- `views/admin/case-types/index.vue` — tabla con acciones Editar/Clonar/Eliminar; Clonar redirige al edit del clon (D5); Eliminar muestra aviso si hay casos activos sin bloquear (D7); sanitiza `ct.name` contra XSS en SweetAlert2
+- `views/admin/case-types/edit.vue` — formulario create/edit unificado; guardrail `canActivate` deshabilita `is_active` en clones hasta editar code (D5)
+- Router: 3 rutas admin nuevas; Sidebar: `canSeeCaseTypes` (OR lógico 5 permisos, G26)
+- 35 claves i18n FLAT en es/en/fr; **fix G10**: `clone_confirm` usa `{'<'}strong{'>'}` (build falla con HTML crudo en valores i18n)
+- Build Vite ✓ 8.95s
+
+**Pendiente (DT-16 → tests):**
+- `tests/Feature/CaseTypeCloneTest.php`, `CaseTypeDeleteTest.php`, `CaseTypePermissionsTest.php` (Fase 6)
+- Smoke test E2E manual
+
+### 2026-05-28 — Spec 70: CRUD Case Types + Clonación en Cascada (SPEC CREADO)
+- `spec/70_crud_case_types_clonacion_cascada.md` creado; `spec/INDEX.md` actualizado
+
+**Hallazgo crítico descubierto (DT-16 — bug independiente del spec):**
+`ImmigrationCase::caseType()` es `belongsTo(CaseType::class)` **sin `withTrashed()`**. Si se soft-delete un `CaseType`, Eloquent devuelve `null` y `DashboardCaseResource` lanza `NullPointerException` al acceder a `$this->caseType->id/name/code`. Fix obligatorio en Fase 2 del spec (F2.1b + F2.1c) — puede aplicarse como hotfix independiente.
+
+**Decisión arquitectónica clave (revisión del análisis inicial):**
+El soft-delete de `CaseType` es **siempre libre** — no hay restricción de negocio que lo bloquee. Los expedientes son autocontenidos (`workflow_snapshot`, `case_stages`, `tasks` materializados). La restricción original (bloquear si hay casos activos) era un workaround del bug de `withTrashed()`, no una regla de negocio real. El nuevo diseño muestra un **aviso informativo** (endpoint `GET .../active-cases-count`) sin bloquear la acción.
+
+**Resumen del Spec 70:**
+- CRUD completo `case_types` con formulario trilingüe (ES/EN/FR)
+- Soft Delete libre + cascade via `CaseTypeObserver` → stages → task_templates
+- Clonación en cascada síncrona (`DB::transaction`): CaseType → WorkflowStage[] → TaskTemplate[] → Translations. ~250-500 ms para 4 etapas × 8 tareas × 3 idiomas
+- Migración de `case_types.code`: unique global → `unique(tenant_id, code, deleted_at)`
+- 5 permisos RBAC: `case_types.{view,create,update,delete,clone}` (super-admin/admin todos; consultor solo view)
+- 6 fases de implementación con 136 casillas de verificación
+
+**Pendiente para próxima sesión (Spec 70 no implementado):**
+- Fase 1: 2 migraciones (softDeletes + unique tenant, permisos)
+- Fase 2: Modelo, Observer, Policy + fixes H11 (`withTrashed` + null-safety en Resources)
+- Fase 3: CaseTypeService (clone, generateUniqueCode), Form Requests, Resource, Controller, Rutas
+- Fase 4: tipos TS + caseTypeService.ts
+- Fase 5: index.vue, edit.vue, Router, Sidebar, i18n (35 claves)
+- Fase 6: tests Feature PHP (3 archivos) + smoke test E2E
+
 ### 2026-05-27 — Spec 67: RBAC Granular Fase 2 — builder + labels i18n en panel de roles (COMPLETADO)
 
 **4 archivos modificados, build ✓ (9.61s):**
@@ -291,7 +345,6 @@ Tres archivos afectados:
 | ID | Descripción | Impacto | Spec |
 |----|-------------|---------|------|
 | DT-01 | Calendar sync flag estático no funciona en multi-worker | BAJO (ShouldBeUnique mitiga) | 45 |
-| DT-02 | Wizard Fase 4 avatares pendiente | BAJO | 29 |
 | DT-03 | Spec 48 Fase 9 (etapas personalizadas avanzadas) deferida | BAJO | 48 |
 | DT-04 | Specs 49/50 smoke tests Phase 10 pendientes | BAJO | 49,50 |
 | DT-05 | Spec 59 tests unitarios y feature tests pendientes | BAJO | 59 |
@@ -305,3 +358,4 @@ Tres archivos afectados:
 | DT-13 | Spec 67 — botones `v-can` en vistas admin/workflows, `groupPermissions()` en panel de roles, deprecar `settings.case_code.manage` | ALTA | 67 |
 | DT-14 | Spec 68 — aplicar patrón RBAC granular (sidebar OR lógico + router arrays) a módulos: cases, documents, calendar, clients, dashboard | MEDIA | 68 |
 | DT-15 | Spec 69 — tests Feature PHP (`CompanionHierarchyTest`: jerarquía, profundidad, cross-tenant, inmutabilidad; cascade soft-delete/restore) y smoke test E2E manual | BAJA | 69 |
+| DT-16 | Spec 70 — tests Feature PHP: `CaseTypeCloneTest` (deep copy, traducciones, sort_order, tipo global→tenant), `CaseTypeDeleteTest` (cascade soft-delete/restore, withTrashed fix, null-safety), `CaseTypePermissionsTest` (roles × endpoints). Smoke test E2E manual. | MEDIA | 70 |

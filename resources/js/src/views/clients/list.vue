@@ -360,7 +360,7 @@
                                     <router-link
                                         :to="`/clients/${data.value.id}`"
                                         class="btn btn-sm btn-outline-info p-1.5"
-                                        :aria-label="`View ${data.value.first_name}`"
+                                        :aria-label="`View ${displayNameOf(data.value)}`"
                                     >
                                         <icon-eye class="w-4 h-4" />
                                     </router-link>
@@ -369,7 +369,7 @@
                                     <router-link
                                         :to="`/clients/${data.value.id}/edit`"
                                         class="btn btn-sm btn-outline-primary p-1.5"
-                                        :aria-label="`Edit ${data.value.first_name}`"
+                                        :aria-label="`Edit ${displayNameOf(data.value)}`"
                                     >
                                         <icon-pencil class="w-4 h-4" />
                                     </router-link>
@@ -379,7 +379,7 @@
                                         v-show="data.value.status === 'prospect'"
                                         type="button"
                                         class="btn btn-sm btn-outline-success p-1.5"
-                                        :aria-label="`Convert ${data.value.first_name} to active`"
+                                        :aria-label="`Convert ${displayNameOf(data.value)} to active`"
                                         @click="confirmConvert(data.value)"
                                     >
                                         <icon-arrow-forward class="w-4 h-4" />
@@ -655,11 +655,17 @@ const typeBadgeClass = (type: ClientType | undefined): string => {
 };
 
 const displayNameOf = (client: Client): string => {
-    return client.display_name
-        || client.full_name
-        || (client.type === 'company'
-            ? (client.trade_name || client.company_name || `#${client.id}`)
-            : `${client.first_name ?? ''} ${client.last_name ?? ''}`.trim() || `#${client.id}`);
+    if (client.type === 'company') {
+        return client.display_name
+            || client.trade_name
+            || client.company_name
+            || `#${client.id}`;
+    }
+    // Persons: use full_name (backend accessor respects tenant name_format — Spec 44).
+    // display_name is a MySQL GENERATED STORED column hardcoded as first_last — not format-aware.
+    return client.full_name
+        || `${client.first_name ?? ''} ${client.last_name ?? ''}`.trim()
+        || `#${client.id}`;
 };
 
 const setTypeFilter = (value: 'all' | 'person' | 'company') => {

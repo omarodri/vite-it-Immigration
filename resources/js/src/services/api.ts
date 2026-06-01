@@ -103,7 +103,16 @@ api.interceptors.response.use(
 
         switch (status) {
             case 401: {
-                // Unauthorized - session expired, revoked, or not authenticated
+                // Unauthorized - session expired, revoked, or not authenticated.
+                // Suppress silently when this is the initial session-restore probe
+                // (GET /api/user) and no prior session exists — avoids console noise on
+                // login-page load and post-logout redirect.
+                const isUserProbe = error.config?.method === 'get'
+                    && error.config?.url === '/user'
+                    && !localStorage.getItem('has_session');
+                if (isUserProbe) {
+                    return Promise.reject(error);
+                }
                 if (!isRedirectingToLogin) {
                     const currentRoute = router.currentRoute.value.name;
                     if (currentRoute !== 'boxed-signin' && currentRoute !== 'cover-login') {

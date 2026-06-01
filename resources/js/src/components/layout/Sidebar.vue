@@ -25,7 +25,7 @@
                     <ul class="relative font-semibold space-y-0.5 p-4 py-0">
 
                         <!-- Admin Section (visible only for users with permission) -->
-                        <template v-if="canViewUsers || canViewRoles || canUpdateSettings || canSeeWorkflowTasks || canSeeCaseCode">
+                        <template v-if="canViewUsers || canViewRoles || canUpdateSettings || canSeeWorkflowTasks || canSeeCaseCode || canSeeCaseTypes">
                             <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
                                 <icon-minus class="w-4 h-5 flex-none hidden" />
                                 <span>{{ $t('sidebar.admin') }}</span>
@@ -109,6 +109,16 @@
                                                 <icon-code class="group-hover:!text-primary shrink-0" />
                                                 <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
                                                     {{ $t('settings.case_code.sidebar_label') }}
+                                                </span>
+                                            </div>
+                                        </router-link>
+                                    </li>
+                                    <li v-if="canSeeCaseTypes" class="nav-item">
+                                        <router-link to="/admin/case-types" class="group" @click="toggleMobileMenu">
+                                            <div class="flex items-center">
+                                                <icon-menu-documentation class="group-hover:!text-primary shrink-0" />
+                                                <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                                                    {{ $t('case_types.menu_label') }}
                                                 </span>
                                             </div>
                                         </router-link>
@@ -993,6 +1003,15 @@
     const canSeeCaseCode = computed(() => authStore.hasAnyPermission([
         'case_code.view',
         'case_code.update',
+    ]));
+
+    // Spec 70 — RBAC granular: case-types panel visible with any case_types.* permission (G26).
+    const canSeeCaseTypes = computed(() => authStore.hasAnyPermission([
+        'case_types.view',
+        'case_types.create',
+        'case_types.update',
+        'case_types.delete',
+        'case_types.clone',
     ]));
 
     // Check if user has permission to view CRM sections

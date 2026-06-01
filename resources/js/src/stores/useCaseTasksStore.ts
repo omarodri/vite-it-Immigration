@@ -141,6 +141,9 @@ export const useCaseTasksStore = defineStore('caseTasks', () => {
             tasksByStage.value = { ...tasksByStage.value, [k]: arr };
             return task;
         } catch (e: any) {
+            if (e?.response?.status === 422) {
+                throw e;
+            }
             const msg = e?.response?.data?.message || 'No se pudo crear la tarea';
             notifyError(msg);
             return null;

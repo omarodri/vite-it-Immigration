@@ -2,7 +2,6 @@
     <div
         v-if="modelValue && task"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-        @click.self="close"
     >
         <div class="panel w-full max-w-lg mx-4">
             <!-- Header -->

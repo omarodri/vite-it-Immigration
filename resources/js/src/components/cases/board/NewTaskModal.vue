@@ -1,6 +1,6 @@
 <template>
     <TransitionRoot appear :show="modelValue" as="template">
-        <Dialog as="div" class="relative z-[60]" @close="close">
+        <Dialog as="div" class="relative z-[60]" @close="() => {}">
             <TransitionChild
                 as="template"
                 enter="duration-300 ease-out"
@@ -81,6 +81,7 @@
                                                 <option value="document">{{ $t('tasks.types.document') }}</option>
                                                 <option value="other">{{ $t('tasks.types.other') }}</option>
                                             </select>
+                                            <p v-if="errors.type" class="text-danger text-xs mt-1">{{ errors.type }}</p>
                                         </div>
 
                                         <div>
@@ -204,7 +205,7 @@ watch(
             // Load staff lazily
             if (staff.value.length === 0) {
                 try {
-                    staff.value = await userService.getStaff(null, 'todo_core.delete', ['admin', 'user']);
+                    staff.value = await userService.getStaff(null, 'tasks.create', ['admin', 'user']);
                 } catch {
                     staff.value = [];
                 }
@@ -246,6 +247,13 @@ async function submit() {
         if (result) {
             emit('created');
             emit('update:modelValue', false);
+        }
+    } catch (e: any) {
+        const fieldErrors = e?.response?.data?.errors as Record<string, string[]> | undefined;
+        if (fieldErrors) {
+            Object.entries(fieldErrors).forEach(([field, msgs]) => {
+                errors[field] = Array.isArray(msgs) ? msgs[0] : String(msgs);
+            });
         }
     } finally {
         submitting.value = false;

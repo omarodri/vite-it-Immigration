@@ -80,6 +80,7 @@ export type {
     CasePriority,
     CaseTypeCategory,
     CaseType,
+    CaseTypeForm,
     ImmigrationCase,
     CreateCaseData,
     UpdateCaseData,
@@ -97,5 +98,4 @@ export {
     LANGUAGE_OPTIONS,
     CASE_STATUS_LABELS_ES,
     CASE_PRIORITY_LABELS_ES,
-    CASE_TYPE_CATEGORY_LABELS_ES,
 } from './case';

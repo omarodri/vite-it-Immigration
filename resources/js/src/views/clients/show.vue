@@ -736,13 +736,13 @@ const client = ref<Client | null>(null);
 const isLoading = ref(true);
 const activeTab = ref('personal');
 
-// Spec 64 — Unified display name (company: trade/legal name; person: full name)
+// Spec 64 + Spec 44 — display_name (MySQL column) is always first_last for persons — not format-aware.
+// Persons must use full_name (backend accessor that respects tenant name_format).
 const displayName = computed<string>(() => {
     const c = client.value;
     if (!c) return '';
-    if (c.display_name) return c.display_name;
     if (c.type === 'company') {
-        return c.trade_name || c.company_name || `#${c.id}`;
+        return c.display_name || c.trade_name || c.company_name || `#${c.id}`;
     }
     return c.full_name || `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim() || `#${c.id}`;
 });
@@ -830,24 +830,9 @@ const getUrgencyBadgeClass = (status: string): string => {
 };
 
 const formatRelationship = (relationship: string): string => {
-    const labels: Record<string, string> = {
-        beneficiary: 'Empleado Beneficiario',
-        spouse: 'Cónyuge',
-        child: 'Hijo/a',
-        parent: 'Padre/Madre',
-        sibling: 'Hermano/a',
-        'common-law partner': 'Pareja de hecho',
-        'dependent child': 'Hijo/a dependiente',
-        grandchild: 'Nieto/a',
-        grandparent: 'Abuelo/a',
-        'aunt / uncle': 'Tía/Tío',
-        'niece / nephew': 'Sobrino/a',
-        cousin: 'Primo/a',
-        'child-in-law': 'Hijo/a de hermano/a',
-        'parent-in-law': 'Padre/Madre de hermano/a',
-        other: 'Otro',
-    };
-    return labels[relationship] || relationship;
+    const key = `companions.${relationship}`;
+    const translated = t(key);
+    return translated !== key ? translated : relationship;
 };
 
 const loadEmployees = async () => {

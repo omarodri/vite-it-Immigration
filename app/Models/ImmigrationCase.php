@@ -213,7 +213,7 @@ class ImmigrationCase extends Model
      */
     public function caseType(): BelongsTo
     {
-        return $this->belongsTo(CaseType::class);
+        return $this->belongsTo(CaseType::class)->withTrashed();
     }
 
     /**

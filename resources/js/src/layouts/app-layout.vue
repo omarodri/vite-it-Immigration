@@ -116,9 +116,11 @@
         };
 
         const eleanimation: any = document.querySelector('.animation');
-        eleanimation.addEventListener('animationend', function () {
-            appSetting.changeAnimation('remove');
-        });
+        if (eleanimation) {
+            eleanimation.addEventListener('animationend', function () {
+                appSetting.changeAnimation('remove');
+            });
+        }
         store.toggleMainLoader();
     });
 

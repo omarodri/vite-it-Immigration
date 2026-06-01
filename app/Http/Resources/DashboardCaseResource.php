@@ -25,11 +25,12 @@ class DashboardCaseResource extends JsonResource
                 'id'        => $this->client->id,
                 'full_name' => $this->client->full_name,
             ]),
-            'case_type'      => $this->whenLoaded('caseType', fn () => [
-                'id'   => $this->caseType->id,
-                'name' => $this->caseType->name,
-                'code' => $this->caseType->code,
-            ]),
+            'case_type'      => $this->whenLoaded('caseType', fn () => $this->caseType ? [
+                'id'      => $this->caseType->id,
+                'name'    => $this->caseType->name . ($this->caseType->trashed() ? ' (eliminado)' : ''),
+                'code'    => $this->caseType->code,
+                'deleted' => $this->caseType->trashed(),
+            ] : null),
             'next_deadline'  => $this->whenLoaded('importantDates',
                 fn () => $this->importantDates->first()?->due_date?->format('Y-m-d')
             ),

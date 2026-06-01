@@ -145,11 +145,10 @@
                 </div>
                 <VueDraggable
                     v-else
-                    :model-value="selectedStage.task_templates ?? []"
-                    @update:model-value="(v: any) => updateLocalTemplates(v)"
+                    v-model="currentTemplates"
                     :animation="150"
                     handle=".template-drag-handle"
-                    @end="onTemplatesReorder"
+                    @update:model-value="onTemplatesDragged"
                     class="space-y-2"
                 >
                     <div
@@ -257,6 +256,13 @@ const selectedStage = computed(() =>
     store.stages.find(s => s.id === store.selectedStageId) ?? null
 );
 
+const currentTemplates = computed({
+    get: () => selectedStage.value?.task_templates ?? [],
+    set: (v: TaskTemplate[]) => {
+        if (selectedStage.value) selectedStage.value.task_templates = v;
+    },
+});
+
 function getName(translations: TranslationsByField | undefined): string {
     if (!translations?.name) return '';
     const loc = locale.value as 'es' | 'en' | 'fr';
@@ -286,17 +292,12 @@ async function onStagesReorder() {
     }
 }
 
-function updateLocalTemplates(value: TaskTemplate[]) {
-    if (selectedStage.value) {
-        selectedStage.value.task_templates = value;
-    }
-}
-
-async function onTemplatesReorder() {
-    if (!selectedStage.value?.task_templates) return;
-    const ids = selectedStage.value.task_templates.map(t => t.id);
+async function onTemplatesDragged(newTemplates: TaskTemplate[]) {
+    if (!selectedStage.value) return;
+    const stageId = selectedStage.value.id;
+    const ids = newTemplates.map(t => t.id);
     try {
-        await store.reorderTemplates(selectedStage.value.id, ids);
+        await store.reorderTemplates(stageId, ids);
     } catch {
         notification.error('Error al reordenar plantillas');
     }

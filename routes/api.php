@@ -126,8 +126,8 @@ Route::middleware(['auth:sanctum', 'throttle:api', 'tenant', 'ensure.single.sess
         [\App\Http\Controllers\Api\ClientPromotionController::class, 'eligibility'])
         ->name('companions.promotion-eligibility');
 
-    // Case Types routes (read-only)
-    Route::get('/case-types', [CaseTypeController::class, 'index']);
+    // Case Types routes (read-only, sin permiso adicional — wizard los necesita)
+    Route::get('/case-types', [CaseTypeController::class, 'publicIndex']);
     Route::get('/case-types/{caseType}', [CaseTypeController::class, 'show']);
 
     // Folder catalog (static, no permission required beyond auth)
@@ -380,6 +380,18 @@ Route::prefix('admin/workflow')
         Route::delete('/templates/{template}', [AdminTaskTemplateController::class, 'destroy']);
         Route::post('/templates/{template}/clone', [AdminTaskTemplateController::class, 'clone'])
             ->name('admin.workflow.templates.clone');
+    });
+
+// Case Types management routes (admin panel — Spec 70)
+// Authorization is enforced per-method via CaseTypePolicy ($this->authorize()).
+Route::prefix('admin')->name('admin.')
+    ->middleware(['auth:sanctum', 'tenant', 'ensure.single.session'])
+    ->group(function () {
+        Route::apiResource('case-types', CaseTypeController::class);
+        Route::post('case-types/{caseType}/clone', [CaseTypeController::class, 'clone'])
+            ->name('case-types.clone');
+        Route::get('case-types/{caseType}/active-cases-count', [CaseTypeController::class, 'activeCasesCount'])
+            ->name('case-types.active-cases-count');
     });
 
 // OAuth callback route (no auth required - called by OAuth provider redirect)

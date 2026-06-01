@@ -29,7 +29,7 @@ class CreateAdHocTaskRequest extends FormRequest
             ],
             'subject'     => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'type'        => ['required', 'in:filing,document,other'],
+            'type'        => ['required', 'in:translation,case_creation,accounting,filing,document,other'],
             'priority'    => ['required', 'in:low,medium,high,urgent'],
             'due_date'    => ['nullable', 'date'],
             'assigned_to' => ['nullable', 'integer', 'exists:users,id'],

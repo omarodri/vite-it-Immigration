@@ -223,7 +223,7 @@ onMounted(async () => {
         await stagesStore.load(props.caseId);
         // Load staff for assignee dropdown (silent failure)
         try {
-            const staff = await userService.getStaff();
+            const staff = await userService.getStaff(null, 'tasks.create', ['admin', 'user']);
             staffUsers.value = staff.map((u) => ({ id: u.id, name: u.name }));
         } catch {
             staffUsers.value = [];

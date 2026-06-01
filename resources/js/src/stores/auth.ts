@@ -118,6 +118,7 @@ export const useAuthStore = defineStore('auth', {
 
                 this.user = response.user ?? null;
                 this.isAuthenticated = true;
+                localStorage.setItem('has_session', '1');
 
                 // Fetch tenant data after successful login
                 const { useTenantStore } = await import('@/stores/tenant');
@@ -156,6 +157,7 @@ export const useAuthStore = defineStore('auth', {
 
         async logout() {
             this.isLoading = true;
+            localStorage.removeItem('has_session');
             try {
                 await authService.logout();
                 this.user = null;
@@ -184,6 +186,7 @@ export const useAuthStore = defineStore('auth', {
                 const user = await authService.getUser();
                 this.user = user;
                 this.isAuthenticated = true;
+                localStorage.setItem('has_session', '1');
 
                 // Fetch tenant data if not already loaded
                 const { useTenantStore } = await import('@/stores/tenant');
@@ -199,6 +202,7 @@ export const useAuthStore = defineStore('auth', {
             } catch (error) {
                 this.user = null;
                 this.isAuthenticated = false;
+                localStorage.removeItem('has_session');
             } finally {
                 this.isLoading = false;
             }
@@ -323,6 +327,7 @@ export const useAuthStore = defineStore('auth', {
                     this.user = response.user;
                     this.isAuthenticated = true;
                     this.twoFactorRequired = false;
+                    localStorage.setItem('has_session', '1');
 
                     // Fetch tenant data after successful 2FA verification
                     const { useTenantStore } = await import('@/stores/tenant');

@@ -604,6 +604,26 @@ const routes: RouteRecordRaw[] = [
         },
     },
 
+    // Admin - Case Types CRUD + cascade clone (Spec 70)
+    {
+        path: '/admin/case-types',
+        name: 'admin-case-types',
+        component: () => import('../views/admin/case-types/index.vue'),
+        meta: { requiresAuth: true, permission: 'case_types.view', layout: 'app' },
+    },
+    {
+        path: '/admin/case-types/create',
+        name: 'admin-case-types-create',
+        component: () => import('../views/admin/case-types/edit.vue'),
+        meta: { requiresAuth: true, permission: 'case_types.create', layout: 'app' },
+    },
+    {
+        path: '/admin/case-types/:id/edit',
+        name: 'admin-case-types-edit',
+        component: () => import('../views/admin/case-types/edit.vue'),
+        meta: { requiresAuth: true, permission: 'case_types.update', layout: 'app' },
+    },
+
     // Trash / Recycle Bin
     {
         path: '/trash',
@@ -850,13 +870,17 @@ router.beforeEach(async (to, from, next) => {
     const isPublicRoute = publicRoutes.includes(to.name as string);
     const requiresNoVerification = noVerificationRoutes.includes(to.name as string);
 
-    // Try to fetch user on first navigation if not authenticated
+    // Restore session on first navigation only if a prior session was recorded.
+    // Skipping when has_session is absent prevents a noisy 401 on GET /api/user
+    // for unauthenticated users (login page load, post-logout redirect).
     if (!authChecked && !authStore.isAuthenticated) {
         authChecked = true;
-        try {
-            await authStore.fetchUser();
-        } catch (error) {
-            // User is not authenticated, continue
+        if (localStorage.getItem('has_session') === '1') {
+            try {
+                await authStore.fetchUser();
+            } catch {
+                // Session expired — has_session is cleared inside fetchUser()'s catch
+            }
         }
     }
 

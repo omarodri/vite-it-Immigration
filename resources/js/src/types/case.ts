@@ -12,7 +12,13 @@ import type { WorkflowSnapshot, WorkflowStage, WorkflowTask } from './workflow';
 
 export type CaseStatus = 'active' | 'inactive' | 'archived' | 'closed';
 export type CasePriority = 'urgent' | 'high' | 'medium' | 'low';
-export type CaseTypeCategory = 'category.temporary_residence' | 'category.permanent_residence' | 'category.refugee' | 'category.citizenship' | 'category.other';
+export type CaseTypeCategory =
+    | 'temporary_residence'
+    | 'permanent_residence'
+    | 'refugee'
+    | 'citizenship'
+    | 'work_permit'
+    | 'other';
 
 export type CaseStage =
     | 'initial_consultation'
@@ -49,8 +55,21 @@ export interface CaseType {
     category_label: string;
     description: string | null;
     is_active: boolean;
+    is_deleted: boolean;
+    is_global: boolean;
+    workflow_stages_count: number;
+    tasks_count: number;
+    active_cases_count?: number;
     created_at: string;
     updated_at: string;
+}
+
+export interface CaseTypeForm {
+    name: string;
+    code: string;
+    category: CaseTypeCategory;
+    description: string;
+    is_active: boolean;
 }
 
 export interface ImportantDate {
@@ -395,10 +414,12 @@ export const CASE_PRIORITY_OPTIONS: Array<{ value: CasePriority; label: string; 
 ];
 
 export const CASE_TYPE_CATEGORY_OPTIONS: Array<{ value: CaseTypeCategory; label: string }> = [
-    { value: 'category.temporary_residence', label: 'Temporary Residence' },
-    { value: 'category.permanent_residence', label: 'Permanent Residence' },
-    { value: 'category.refugee', label: 'Refugee' },
-    { value: 'category.citizenship', label: 'Citizenship' },
+    { value: 'temporary_residence', label: 'case_types.cat_temporary_residence' },
+    { value: 'permanent_residence', label: 'case_types.cat_permanent_residence' },
+    { value: 'refugee', label: 'case_types.cat_refugee' },
+    { value: 'citizenship', label: 'case_types.cat_citizenship' },
+    { value: 'work_permit', label: 'case_types.cat_work_permit' },
+    { value: 'other', label: 'case_types.cat_other' },
 ];
 
 export const CASE_STAGE_OPTIONS: Array<{ value: CaseStage; label: string; color: string }> = [

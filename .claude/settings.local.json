@@ -73,7 +73,9 @@
       "Bash(sort -t_ -k1 -n)",
       "Bash(git *)",
       "Read(//tmp/**)",
-      "Bash(composer show *)"
+      "Bash(composer show *)",
+      "Bash(sed -n '1445,1460p' /Users/omar/Herd/vite-it-Immigration/resources/js/src/locales/es.json)",
+      "Bash(sed -n '1565,1580p' /Users/omar/Herd/vite-it-Immigration/resources/js/src/locales/es.json)"
     ]
   }
 }

@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
 class CaseType extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected static function booted(): void
     {
@@ -48,19 +49,37 @@ class CaseType extends Model
     /**
      * Category constants.
      */
-    public const CATEGORY_TEMPORARY  = 'temporary_residence';
-    public const CATEGORY_PERMANENT  = 'permanent_residence';
-    public const CATEGORY_REFUGEE    = 'refugee';
+    public const CATEGORY_TEMPORARY   = 'temporary_residence';
+    public const CATEGORY_PERMANENT   = 'permanent_residence';
+    public const CATEGORY_REFUGEE     = 'refugee';
     public const CATEGORY_CITIZENSHIP = 'citizenship';
+    public const CATEGORY_WORK_PERMIT = 'work_permit';
+    public const CATEGORY_OTHER       = 'other';
 
     /**
      * Category labels in Spanish.
      */
     public const CATEGORY_LABELS = [
-        self::CATEGORY_TEMPORARY  => 'Residencia Temporal',
-        self::CATEGORY_PERMANENT  => 'Residencia Permanente',
-        self::CATEGORY_REFUGEE    => 'Refugiado / Asilo',
+        self::CATEGORY_TEMPORARY   => 'Residencia Temporal',
+        self::CATEGORY_PERMANENT   => 'Residencia Permanente',
+        self::CATEGORY_REFUGEE     => 'Refugiado / Asilo',
         self::CATEGORY_CITIZENSHIP => 'Ciudadanía',
+        self::CATEGORY_WORK_PERMIT => 'Permiso de Trabajo',
+        self::CATEGORY_OTHER       => 'Otro',
+    ];
+
+    /**
+     * All valid category values — used for validation in Form Requests.
+     *
+     * @var array<int, string>
+     */
+    public const CATEGORIES = [
+        self::CATEGORY_TEMPORARY,
+        self::CATEGORY_PERMANENT,
+        self::CATEGORY_REFUGEE,
+        self::CATEGORY_CITIZENSHIP,
+        self::CATEGORY_WORK_PERMIT,
+        self::CATEGORY_OTHER,
     ];
 
     /**
@@ -77,6 +96,34 @@ class CaseType extends Model
     public function cases(): HasMany
     {
         return $this->hasMany(ImmigrationCase::class);
+    }
+
+    /**
+     * Get the workflow stages defined for this case type, ordered by sort_order.
+     */
+    public function workflowStages(): HasMany
+    {
+        return $this->hasMany(WorkflowStage::class, 'case_type_id')
+            ->orderBy('sort_order');
+    }
+
+    /**
+     * Count active (not closed/archived) cases for this type.
+     * Informativo para el aviso en UI — no es una restricción de borrado.
+     */
+    public function activeCasesCount(): int
+    {
+        return ImmigrationCase::where('case_type_id', $this->id)
+            ->whereNotIn('status', ['closed', 'archived'])
+            ->count();
+    }
+
+    /**
+     * Whether this is a system-wide (global) case type.
+     */
+    public function isGlobal(): bool
+    {
+        return $this->tenant_id === null;
     }
 
     /**

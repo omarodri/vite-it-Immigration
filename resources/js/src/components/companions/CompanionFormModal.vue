@@ -1,6 +1,6 @@
 <template>
     <TransitionRoot appear :show="show" as="template">
-        <Dialog as="div" class="relative z-50" @close="handleClose">
+        <Dialog as="div" class="relative z-50" @close="() => {}">
             <TransitionChild
                 as="template"
                 enter="duration-300 ease-out"
@@ -50,6 +50,8 @@
                                             type="text"
                                             class="form-input"
                                             :class="{ 'border-danger': companionErrors.first_name }"
+                                            @keypress="onNameKeypress"
+                                            @paste.prevent="e => pasteAsName(e, 'first_name')"
                                             required
                                         />
                                         <p v-if="companionErrors.first_name" class="text-danger text-xs mt-1">{{ companionErrors.first_name[0] }}</p>
@@ -62,6 +64,8 @@
                                             type="text"
                                             class="form-input"
                                             :class="{ 'border-danger': companionErrors.last_name }"
+                                            @keypress="onNameKeypress"
+                                            @paste.prevent="e => pasteAsName(e, 'last_name')"
                                             required
                                         />
                                         <p v-if="companionErrors.last_name" class="text-danger text-xs mt-1">{{ companionErrors.last_name[0] }}</p>
@@ -116,6 +120,8 @@
                                             type="text"
                                             class="form-input"
                                             :class="{ 'border-danger': companionErrors.relationship_other }"
+                                            @keypress="onNameKeypress"
+                                            @paste.prevent="e => pasteAsName(e, 'relationship_other')"
                                         />
                                         <p v-if="companionErrors.relationship_other" class="text-danger text-xs mt-1">{{ companionErrors.relationship_other[0] }}</p>
                                     </div>
@@ -180,6 +186,7 @@
                                             class="form-input"
                                             maxlength="20"
                                             :placeholder="$t('companions.iuc_placeholder')"
+                                            @paste.prevent="e => pasteAsCode(e, 'iuc')"
                                         />
                                     </div>
                                 </div>
@@ -214,6 +221,7 @@
                                                 type="email"
                                                 class="form-input"
                                                 :placeholder="$t('clients.email')"
+                                                @paste.prevent="onEmailPaste"
                                             />
                                         </div>
                                         <div>
@@ -445,6 +453,13 @@ async function loadData() {
 
 async function handleSave() {
     if (!props.clientId) return
+
+    // Safety-net: sanitize before API call in case data arrived without paste handler
+    companionForm.value.first_name = sanitizeName(companionForm.value.first_name)
+    companionForm.value.last_name = sanitizeName(companionForm.value.last_name)
+    companionForm.value.relationship_other = sanitizeName(companionForm.value.relationship_other || '')
+    if (companionForm.value.iuc) companionForm.value.iuc = sanitizeCode(companionForm.value.iuc)
+
     isSavingCompanion.value = true
     companionErrors.value = {}
 
@@ -510,6 +525,46 @@ async function handleSave() {
 }
 
 const handleClose = guardClose
+
+// --- Input sanitization ---
+
+function sanitizeName(raw: string): string {
+    return raw
+        .replace(/[\u0000-\u001F\u007F-\u009F\uFEFF\u200B-\u200D\u2028\u2029]/g, '')
+        .replace(/[\r\n\t]+/g, ' ')
+        .replace(/[^\p{L}\p{M}\p{N}\s'\-.]/gu, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim()
+}
+
+function sanitizeCode(raw: string): string {
+    return raw
+        .replace(/[\r\n\t]/g, '')
+        .replace(/[\u0000-\u001F\u007F-\u009F\uFEFF\u200B-\u200D]/g, '')
+        .replace(/[^A-Za-z0-9\s\-]/g, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim()
+}
+
+function onNameKeypress(e: KeyboardEvent) {
+    if (e.key.length > 1 || e.ctrlKey || e.metaKey || e.altKey) return
+    if (/[^\p{L}\p{M}\p{N}\s'\-.]/u.test(e.key)) e.preventDefault()
+}
+
+function pasteAsName(e: ClipboardEvent, field: 'first_name' | 'last_name' | 'relationship_other') {
+    companionForm.value[field] = sanitizeName(e.clipboardData?.getData('text') ?? '')
+}
+
+function pasteAsCode(e: ClipboardEvent, field: 'iuc') {
+    companionForm.value[field] = sanitizeCode(e.clipboardData?.getData('text') ?? '')
+}
+
+function onEmailPaste(e: ClipboardEvent) {
+    companionForm.value.email = (e.clipboardData?.getData('text') ?? '')
+        .replace(/[\r\n\t\s]/g, '')
+        .replace(/[\u0000-\u001F\u007F-\u009F\uFEFF\u200B-\u200D]/g, '')
+        .trim()
+}
 
 // Watch for modal open. { immediate: true } handles the v-if mount pattern
 // where the component mounts with show=true already set (no false→true transition).

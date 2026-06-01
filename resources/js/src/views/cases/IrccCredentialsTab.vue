@@ -39,21 +39,13 @@
                         <div class="relative">
                             <input
                                 v-model="form.ircc_password"
-                                :type="reveal.ircc_password ? 'text' : 'password'"
+                                type="text"
                                 autocomplete="new-password"
                                 data-lpignore="true"
                                 data-form-type="other"
                                 class="form-input pr-10"
                                 :placeholder="$t('ircc.field_password')"
                             />
-                            <button
-                                type="button"
-                                class="absolute inset-y-0 right-2 flex items-center px-1 text-gray-400 hover:text-gray-600"
-                                :aria-label="reveal.ircc_password ? $t('ircc.hide') : $t('ircc.reveal')"
-                                @click="toggle('ircc_password')"
-                            >
-                                <icon-eye class="w-5 h-5" :class="reveal.ircc_password ? 'text-primary' : ''" />
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -86,21 +78,13 @@
                         <div class="relative">
                             <input
                                 v-model="form.email_password"
-                                :type="reveal.email_password ? 'text' : 'password'"
+                                type="text"
                                 autocomplete="new-password"
                                 data-lpignore="true"
                                 data-form-type="other"
                                 class="form-input pr-10"
                                 :placeholder="$t('ircc.field_email_password')"
                             />
-                            <button
-                                type="button"
-                                class="absolute inset-y-0 right-2 flex items-center px-1 text-gray-400 hover:text-gray-600"
-                                :aria-label="reveal.email_password ? $t('ircc.hide') : $t('ircc.reveal')"
-                                @click="toggle('email_password')"
-                            >
-                                <icon-eye class="w-5 h-5" :class="reveal.email_password ? 'text-primary' : ''" />
-                            </button>
                         </div>
                     </div>
                     <div class="md:col-span-2">
@@ -173,21 +157,13 @@
                                     <div class="relative">
                                         <input
                                             v-model="q.respuesta"
-                                            :type="reveal[`sq_${i}`] ? 'text' : 'password'"
+                                            type="text"
                                             autocomplete="off"
                                             data-lpignore="true"
                                             data-form-type="other"
                                             class="form-input w-full pr-10"
                                             :placeholder="$t('ircc.field_answer')"
                                         />
-                                        <button
-                                            type="button"
-                                            class="absolute inset-y-0 right-2 flex items-center px-1 text-gray-400 hover:text-gray-600"
-                                            :aria-label="reveal[`sq_${i}`] ? $t('ircc.hide') : $t('ircc.reveal')"
-                                            @click="toggle(`sq_${i}`)"
-                                        >
-                                            <icon-eye class="w-5 h-5" :class="reveal[`sq_${i}`] ? 'text-primary' : ''" />
-                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -263,20 +239,6 @@ const form = reactive<FormState>({
     notes: '',
     security_questions: emptyQuestions(),
 });
-
-const reveal = reactive<Record<string, boolean>>({
-    ircc_password: false,
-    email_password: false,
-    sq_0: false,
-    sq_1: false,
-    sq_2: false,
-    sq_3: false,
-    sq_4: false,
-});
-
-function toggle(key: string): void {
-    reveal[key] = !reveal[key];
-}
 
 function formatDateTime(iso: string): string {
     try {
