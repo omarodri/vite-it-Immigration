@@ -35,6 +35,11 @@ class TaskTemplatePolicy
             && $template->tenant_id === $user->tenant_id;
     }
 
+    public function reorder(User $user): bool
+    {
+        return $user->can('workflow_tasks.update');
+    }
+
     public function clone(User $user, TaskTemplate $template): bool
     {
         return $user->can('workflow_tasks.clone')

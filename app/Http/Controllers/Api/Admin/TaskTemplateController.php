@@ -49,7 +49,7 @@ class TaskTemplateController extends Controller
 
     public function reorder(Request $request, WorkflowStage $stage): JsonResponse
     {
-        $this->authorize('update', TaskTemplate::class);
+        $this->authorize('reorder', TaskTemplate::class);
         $request->validate([
             'ordered_ids'   => ['required', 'array'],
             'ordered_ids.*' => ['integer', 'exists:task_templates,id'],
