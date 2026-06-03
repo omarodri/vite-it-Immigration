@@ -133,6 +133,12 @@ class DocumentController extends Controller
             return $this->documentService->previewDocument($document);
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            \Log::error('Document preview failed', [
+                'document_id' => $document->id,
+                'error'       => $e->getMessage(),
+            ]);
+            return response()->json(['message' => 'Error al procesar el documento para vista previa.'], 500);
         }
     }
 

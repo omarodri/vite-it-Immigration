@@ -130,15 +130,22 @@ class DocumentService
      */
     public function previewDocument(Document $document): StreamedResponse|\Illuminate\Http\Response
     {
+        // makeDisposition throws \InvalidArgumentException for non-ASCII filenames when no
+        // fallback is provided. Always supply an ASCII-safe fallback (Bug: accented names
+        // like "Pasaporte_García.pdf" crashed with 500 for all users).
+        $originalName  = $document->original_name ?? 'document';
+        $asciiFallback = preg_replace('/[^\x20-\x7e]+/', '_', $originalName);
+        $asciiFallback = trim($asciiFallback) !== '' ? $asciiFallback : 'document';
+
         $headers = [
-            'Content-Type' => $document->mime_type,
-            'Content-Disposition' => HeaderUtils::makeDisposition('inline', $document->original_name),
-            'Cache-Control' => 'private, max-age=3600',
+            'Content-Type'        => $document->mime_type ?? 'application/octet-stream',
+            'Content-Disposition' => HeaderUtils::makeDisposition('inline', $originalName, $asciiFallback),
+            'Cache-Control'       => 'private, max-age=3600',
         ];
 
         // For cloud-stored documents, proxy the content via download URL
         if ($document->storage_type !== Document::STORAGE_LOCAL && $document->external_id) {
-            $provider = $this->providerFactory->make($document->storage_type);
+            $provider      = $this->providerFactory->make($document->storage_type);
             $downloadResult = $provider->download($document);
 
             // OneDrive/GoogleDrive download() returns a download URL string
@@ -162,11 +169,15 @@ class DocumentService
         $path = $document->storage_path;
         $disk = Storage::disk('local');
 
+        if (! $path || ! $disk->exists($path)) {
+            throw new \RuntimeException('El archivo no se encontró en el almacenamiento local.');
+        }
+
         return response()->stream(
             function () use ($disk, $path) {
                 $stream = $disk->readStream($path);
-                fpassthru($stream);
                 if (is_resource($stream)) {
+                    fpassthru($stream);
                     fclose($stream);
                 }
             },
