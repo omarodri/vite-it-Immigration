@@ -41,7 +41,8 @@ clients-create-page.png
 clients-list-page.png
 
 #spec
-spec/
+spec/.obsidian/
+spec/*.canvas
 
 /AGENTS.md
 /CLAUDE.md
