@@ -47,6 +47,13 @@
 
 ## Implementaciones Recientes
 
+### 2026-11-25 — Scrumboard: avatar del asignado + filtro "@me" por defecto
+
+- `ScrumTaskListResource` devuelve `assigned_to.avatar_url` (el board ya hace eager load de `assignedTo.profile`) → tarjetas y filas muestran la foto de perfil (cierra DT-18). Test `tests/Feature/Scrum/ScrumBoardAvatarTest.php`
+- Filtro "Asignado a" = `@me` por defecto: `initUiPreferences(userId)` fija `filterUserId = userId` al recargar / iniciar sesión; la navegación SPA conserva la elección (Spec 71 R11, CA7, CA8 actualizados). `ScrumBoard.vue` llama a `initUiPreferences` con un `watch` inmediato sobre `authStore.user.id` (antes solo en `onMounted`)
+- Tarea creada/editada que no coincide con "Asignado a" (sin asignar u otra persona) → `pinTaskVisible(id)`: sigue visible (sin saltarse el filtro de finalizadas) hasta cambiar el filtro (`setFilterUserId` limpia `pinnedTaskIds`), recargar o logout; toast `scrum_task_saved_outside_filter`
+- **Incidente local:** `bootstrap/cache/config.php` (config cacheada) hizo que phpunit ignorara SQLite de `phpunit.xml` y `RefreshDatabase` vació la BD de desarrollo `vite-it-2`. Recuperada por replay de binlogs MySQL; tablas vacías apartadas en `vite-it-2-wiped`. **Nunca correr phpunit con config cacheada** (`php artisan config:clear` antes)
+
 ### 2026-11-24 — Spec 71: Scrumboard Vista de Lista + mostrar/ocultar finalizadas (PART — falta QA manual)
 
 **Solo frontend, sin cambios de API/BD.**
@@ -373,5 +380,4 @@ Tres archivos afectados:
 | DT-15 | Spec 69 — tests Feature PHP (`CompanionHierarchyTest`: jerarquía, profundidad, cross-tenant, inmutabilidad; cascade soft-delete/restore) y smoke test E2E manual | BAJA | 69 |
 | DT-16 | Spec 70 — tests Feature PHP: `CaseTypeCloneTest` (deep copy, traducciones, sort_order, tipo global→tenant), `CaseTypeDeleteTest` (cascade soft-delete/restore, withTrashed fix, null-safety), `CaseTypePermissionsTest` (roles × endpoints). Smoke test E2E manual. | MEDIA | 70 |
 | DT-17 | API Scrum sin autorización: ningún controller llama `authorize()`, sin Policy ni middleware `permission:`, todos los Form Requests de `app/Http/Requests/Scrum/` devuelven `true`, ruta `/apps/scrumboard` sin `meta.permission`. Cualquier usuario autenticado del tenant (incl. rol `cliente`) puede leer/modificar el tablero vía API. Aislamiento cross-tenant sí cubierto por `BelongsToTenant`. Detectado al redactar Spec 71 | **ALTA** | 18 |
-| DT-18 | `ScrumTaskListResource` no devuelve `assigned_to.avatar_url` (el tipo TS y `UserAvatar` lo esperan) → el tablero muestra siempre iniciales | BAJA | 18 |
 | DT-19 | Spec 71 — pendiente para pasar a DONE: QA manual (móvil 375px, navegación solo teclado, drag y "Mover a…" en Firefox/Safari, CA36 con 200 tareas). `/code-review` ya hecho | MEDIA | 71 |

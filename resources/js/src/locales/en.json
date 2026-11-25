@@ -1236,6 +1236,7 @@
     "scrum_no_columns": "No columns yet. Add your first column.",
     "scrum_column_not_empty": "Cannot delete column with tasks",
     "scrum_task_saved": "Task saved successfully",
+    "scrum_task_saved_outside_filter": "Task saved. It does not match the \"Assigned to\" filter: it stays visible until you change the filter or reload.",
     "scrum_task_deleted": "Task deleted",
     "scrum_column_saved": "Column saved",
     "scrum_column_deleted": "Column deleted",

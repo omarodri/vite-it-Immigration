@@ -83,6 +83,21 @@ describe('Scrum Store — UI state (Spec 71)', () => {
             expect(store.visibleTasks(1).map((t) => t.id)).toEqual([1, 2]);
         });
 
+        it('a pinned task stays visible outside the assignee filter until the filter changes', () => {
+            store.setFilterUserId(7);
+            expect(store.isFilteredOutByAssignee(store.findTask(2)!)).toBe(true);
+            store.pinTaskVisible(2);
+            expect(store.visibleTasks(1).map((t) => t.id)).toEqual([1, 2]);
+            store.setFilterUserId(7);
+            expect(store.visibleTasks(1).map((t) => t.id)).toEqual([1]);
+        });
+
+        it('pinning does not bypass the completed filter', () => {
+            store.setFilterUserId(7);
+            store.pinTaskVisible(4); // u8, completed
+            expect(store.visibleTasks(1).map((t) => t.id)).toEqual([1]);
+        });
+
         it('returns [] for an unknown column', () => {
             expect(store.visibleTasks(999)).toEqual([]);
         });
@@ -144,6 +159,18 @@ describe('Scrum Store — UI state (Spec 71)', () => {
             other.$reset();
             other.initUiPreferences(11, false);
             expect(other.viewMode).toBe('board');
+        });
+
+        it('defaults the assignee filter to the current user (@me)', () => {
+            store.initUiPreferences(10, false);
+            expect(store.filterUserId).toBe(10);
+        });
+
+        it('keeps the chosen filter when the view is re-entered (SPA navigation)', () => {
+            store.initUiPreferences(10, false);
+            store.setFilterUserId(null);
+            store.initUiPreferences(10, false);
+            expect(store.filterUserId).toBeNull();
         });
 
         it('a saved view wins over the screen-size default', () => {
@@ -225,6 +252,14 @@ describe('Scrum Store — UI state (Spec 71)', () => {
             expect(store.showCompleted).toBe(false);
             expect(store.columns).toEqual([]);
             expect(store.prefsUserId).toBeNull();
+        });
+
+        it('after logout, the next user gets their own @me filter', () => {
+            store.initUiPreferences(10, false);
+            store.setFilterUserId(null);
+            store.$reset();
+            store.initUiPreferences(11, false);
+            expect(store.filterUserId).toBe(11);
         });
     });
 });

@@ -47,7 +47,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import Swal from 'sweetalert2';
 import { useI18n } from 'vue-i18n';
 import { useScrumStore } from '@/stores/scrum';
@@ -77,8 +77,17 @@ const showTaskModal = ref(false);
 const editingTask = ref<ScrumTask | null>(null);
 const taskModalColumnId = ref<number | undefined>(undefined);
 
+// Load per-user preferences (view, collapsed sections, "@me" default) as soon as the user is known,
+// even if it is fetched after this view mounts. initUiPreferences is a no-op for the same user.
+watch(
+    () => authStore.user?.id,
+    (userId) => {
+        if (userId) store.initUiPreferences(userId);
+    },
+    { immediate: true },
+);
+
 onMounted(() => {
-    if (authStore.user?.id) store.initUiPreferences(authStore.user.id);
     store.fetchBoard();
     store.fetchAssignees();
 });
@@ -138,8 +147,14 @@ function openEditTask(task: ScrumTask) {
     showTaskModal.value = true;
 }
 
-function onTaskSaved(_task: ScrumTask) {
+function onTaskSaved(task: ScrumTask) {
     showTaskModal.value = false;
+    // A task saved for someone else (or unassigned) must not vanish under the "Asignado a" filter
+    if (store.isFilteredOutByAssignee(task)) {
+        store.pinTaskVisible(task.id);
+        showMessage(t('scrum_task_saved_outside_filter'), 'info', 6000);
+        return;
+    }
     showMessage(t('scrum_task_saved'));
 }
 
@@ -295,12 +310,12 @@ function onMoveTask(payload: MoveTaskPayload) {
     if (payload.viaMenu) showMessage(t('scrum_moved_to', { column: targetCol.title }));
 }
 
-function showMessage(msg = '', type = 'success') {
+function showMessage(msg = '', type = 'success', timer = 3000) {
     const toast: any = Swal.mixin({
         toast: true,
         position: 'top',
         showConfirmButton: false,
-        timer: 3000,
+        timer,
         customClass: { container: 'toast' },
     });
     toast.fire({

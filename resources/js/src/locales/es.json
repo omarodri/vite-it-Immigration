@@ -1355,6 +1355,7 @@
     "scrum_no_columns": "Sin columnas. Agrega tu primera columna.",
     "scrum_column_not_empty": "No se puede eliminar una columna con Tareas",
     "scrum_task_saved": "Tarea guardada correctamente",
+    "scrum_task_saved_outside_filter": "Tarea guardada. No coincide con el filtro \"Asignado a\": se muestra hasta que cambies el filtro o recargues.",
     "scrum_task_deleted": "Tarea eliminada",
     "scrum_column_saved": "Columna guardada",
     "scrum_column_deleted": "Columna eliminada",

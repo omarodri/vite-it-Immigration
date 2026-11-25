@@ -115,7 +115,7 @@ Añadir una vista alternativa **Lista** al Scrumboard actual (vista **Tablero**/
 - R10.3 Los modales se montan fuera de las vistas: nunca se duplican ni pierden estado al cambiar de vista.
 - R10.4 Toda creación/edición/movimiento/eliminación en una vista se ve en la otra sin recargar (ambas leen `store.columns`).
 
-**R11 — Persistencia de los filtros.** "Asignado a" y "Mostrar finalizadas" **no se reinician** al navegar fuera de la ruta y volver dentro de la SPA (viven en el store, como en Spec 43). Al recargar la página y al cerrar sesión vuelven a su valor por defecto: "Todos" y finalizadas **ocultas** (ver R14 y R16).
+**R11 — Persistencia de los filtros.** "Asignado a" y "Mostrar finalizadas" **no se reinician** al navegar fuera de la ruta y volver dentro de la SPA (viven en el store, como en Spec 43). Excepción (2026-11-25): una tarea recién creada o editada que **no coincide** con el filtro "Asignado a" (sin asignar o asignada a otra persona) sigue visible hasta que se cambie el filtro, se recargue o se cierre sesión, con un toast que lo indica — para que no parezca perdida. No afecta al filtro de finalizadas. Al recargar la página y al cerrar sesión vuelven a su valor por defecto: **"@me"** (tareas del usuario actual; cambio 2026-11-25, antes "Todos") y finalizadas **ocultas** (ver R14 y R16).
 
 **R12 — Diseño de la fila de tarea.** De izquierda a derecha:
 
@@ -272,8 +272,8 @@ Cada criterio se verifica en **ambas vistas** cuando aplica.
 - [ ] CA4 Elegir Lista y recargar (F5) → abre en Lista. Elegir Tablero, ir a otra ruta y volver → abre en Tablero.
 - [ ] CA5 Primera visita (sin preferencia) a 375 px → Lista; a 1280 px → Tablero. Tras elegir Tablero en móvil, recargar en móvil → Tablero.
 - [ ] CA6 Con `localStorage` bloqueado, la página carga (vista por defecto) sin errores en consola, y el selector funciona en memoria.
-- [ ] CA7 Filtro `@me` → ir a Expedientes → volver → el filtro sigue en `@me`. Recargar → "Todos".
-- [ ] CA8 Usuario A con filtro `@me` cierra sesión; usuario B inicia sesión en la misma pestaña → filtro "Todos", sin datos de A en pantalla; las preferencias de vista de A y B son independientes.
+- [ ] CA7 Filtro "Todos" → ir a Expedientes → volver → el filtro sigue en "Todos". Recargar → `@me` (default desde 2026-11-25).
+- [ ] CA8 Usuario A con filtro `@me` cierra sesión; usuario B inicia sesión en la misma pestaña → filtro `@me` de B, sin datos de A en pantalla; las preferencias de vista de A y B son independientes.
 - [ ] CA9 Crear una tarea en Lista → cambiar a Tablero → aparece en la columna y posición correctas, sin recargar.
 
 **Contenido de la lista**

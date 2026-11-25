@@ -855,6 +855,7 @@
     "scrum_no_columns": "Aucune colonne. Ajoutez votre premiere colonne.",
     "scrum_column_not_empty": "Impossible de supprimer une colonne avec des activités",
     "scrum_task_saved": "Activité enregistree",
+    "scrum_task_saved_outside_filter": "Tâche enregistrée. Elle ne correspond pas au filtre « Assigné à » : elle reste visible jusqu’à ce que vous changiez le filtre ou rechargiez la page.",
     "scrum_task_deleted": "Activité supprimée",
     "scrum_column_saved": "Colonne enregistree",
     "scrum_column_deleted": "Colonne supprimee",

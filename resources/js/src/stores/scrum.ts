@@ -31,6 +31,11 @@ interface ScrumState {
     collapsedColumnIds: number[];
     /** Tasks just marked completed, kept visible during the grace period before hiding */
     pendingHideTaskIds: number[];
+    /**
+     * Tasks just created/edited that do not match the assignee filter: kept visible so a saved
+     * task never seems to vanish. Cleared when the filter changes, on reload and on logout.
+     */
+    pinnedTaskIds: number[];
     /** User whose localStorage preferences are loaded (keys are per user) */
     prefsUserId: number | null;
 }
@@ -88,6 +93,7 @@ export const useScrumStore = defineStore('scrum', {
         showCompleted: false,
         collapsedColumnIds: [],
         pendingHideTaskIds: [],
+        pinnedTaskIds: [],
         prefsUserId: null,
     }),
 
@@ -107,7 +113,12 @@ export const useScrumStore = defineStore('scrum', {
         },
 
         /** Assignee filter predicate. */
-        matchesAssignee: (state) => (task: ScrumTask): boolean => state.filterUserId === null || task.assigned_to?.id === state.filterUserId,
+        matchesAssignee: (state) => (task: ScrumTask): boolean =>
+            state.filterUserId === null || task.assigned_to?.id === state.filterUserId || state.pinnedTaskIds.includes(task.id),
+
+        /** The task is excluded by the assignee filter itself (ignoring pins). */
+        isFilteredOutByAssignee: (state) => (task: ScrumTask): boolean =>
+            state.filterUserId !== null && task.assigned_to?.id !== state.filterUserId,
 
         /** Completed filter predicate: completed, filter on, and not in its grace period. */
         isHiddenAsCompleted: (state) => (task: ScrumTask): boolean =>
@@ -177,6 +188,8 @@ export const useScrumStore = defineStore('scrum', {
         initUiPreferences(userId: number, smallScreen: boolean = isSmallScreen()) {
             if (this.prefsUserId === userId) return;
             this.prefsUserId = userId;
+            // "Asignado a" defaults to @me on each load / login; SPA navigation keeps the user's choice (R11)
+            this.filterUserId = userId;
 
             const savedView = readStorage(viewModeKey(userId));
             this.viewMode = savedView === 'board' || savedView === 'list' ? savedView : smallScreen ? 'list' : 'board';
@@ -198,6 +211,12 @@ export const useScrumStore = defineStore('scrum', {
 
         setFilterUserId(userId: number | null) {
             this.filterUserId = userId;
+            // Choosing a filter explicitly applies it to every task again
+            this.pinnedTaskIds = [];
+        },
+
+        pinTaskVisible(taskId: number) {
+            if (!this.pinnedTaskIds.includes(taskId)) this.pinnedTaskIds.push(taskId);
         },
 
         setShowCompleted(value: boolean) {
