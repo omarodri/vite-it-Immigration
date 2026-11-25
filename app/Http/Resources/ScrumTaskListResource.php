@@ -23,6 +23,7 @@ class ScrumTaskListResource extends JsonResource
             'assigned_to' => $this->whenLoaded('assignedTo', fn () => $this->assignedTo ? [
                 'id' => $this->assignedTo->id,
                 'name' => $this->assignedTo->name,
+                'avatar_url' => $this->assignedTo->profile?->avatar_url,
             ] : null),
             'case' => $this->whenLoaded('immigrationCase', fn () => $this->immigrationCase ? [
                 'id' => $this->immigrationCase->id,
