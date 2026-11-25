@@ -18,6 +18,36 @@ Al completar un feature: actualizar `MEMORY.md` (agregar entrada en "Implementac
 
 Atajo: `/load-context` ejecuta este protocolo automáticamente.
 
+## Flujo de Trabajo
+
+Desarrollo directo con Claude Code sobre el sistema de specs propio (`spec/` + `INDEX.md` + `MEMORY.md` + `PATTERNS.md`). BMAD fue retirado del proyecto el 2026-11-24 (respaldo en `~/bmad-backup-vite-it-2026-11-24.tar.gz`); no reinstalarlo para el ciclo de desarrollo.
+
+### Clasificar el trabajo antes de empezar
+
+| Tipo | Criterio | Flujo |
+|------|----------|-------|
+| **Bug / ajuste** | Comportamiento incorrecto o cambio acotado, sin contratos nuevos (API, BD, permisos) | Diagnóstico de causa raíz → fix mínimo → verificación (build / tests / prueba manual) → commit. Sin spec. Si el bug revela una gotcha nueva, documentarla en "Known Gotchas". |
+| **Feature mediano** | Toca BD, API, permisos o varias vistas; cabe en 1-2 sesiones | `/load-context` → spec en `spec/<NN>_<nombre>.md` (siguiente número libre, mismo formato que los specs recientes) → **aprobación del usuario** → implementación → tests → cierre. |
+| **Feature grande / módulo nuevo** | Dominio nuevo, decisiones arquitectónicas o datos sensibles | Igual que mediano, precedido de análisis con el agente `architect` (y `cybersecurity` si maneja credenciales, datos personales o cifrado). Spec con fases y checklist; implementar fase por fase. |
+
+Ante la duda entre dos tipos, tratarlo como el mayor. No implementar un spec sin aprobación explícita del usuario.
+
+### Definición de Terminado (DoD)
+
+Un feature solo pasa a `DONE` en `spec/INDEX.md` cuando cumple **todo** lo siguiente:
+1. `npm run build` sin errores (si tocó frontend) y `./vendor/bin/phpunit` en verde.
+2. **Tests Feature PHP** de autorización y aislamiento multi-tenant para todo endpoint nuevo o modificado: rol sin permiso → 403, recurso de otro tenant → 404 (ver G15), rol con permiso → éxito.
+3. Permisos nuevos sembrados en migración (G4), claves i18n FLAT en es/en/fr (G6).
+4. Revisión con `/code-review` sobre el diff antes del commit.
+5. `MEMORY.md` actualizado ("Implementaciones Recientes" + "Deuda Técnica Activa" si quedó algo pendiente).
+
+Si algún punto queda pendiente, el estado es `PART` y lo pendiente se registra como `DT-NN` en `MEMORY.md` — nunca marcar `DONE` con tests diferidos.
+
+### Commits
+
+- Commit solo cuando el usuario lo pida; un commit por bug o fase lógica.
+- Mensajes en el estilo existente: `feat: ...`, `Fix: ...`, `Refactor: ...`.
+
 ## Common Commands
 
 ```bash

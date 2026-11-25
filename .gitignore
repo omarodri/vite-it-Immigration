@@ -43,8 +43,5 @@ clients-list-page.png
 #spec
 spec/
 
-#BMAD
-/.bmad-output
-/.bmad
 /AGENTS.md
 /CLAUDE.md
