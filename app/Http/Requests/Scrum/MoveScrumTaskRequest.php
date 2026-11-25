@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Scrum;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class MoveScrumTaskRequest extends FormRequest
 {
@@ -14,7 +15,12 @@ class MoveScrumTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'scrum_column_id' => ['required', 'integer', 'exists:scrum_columns,id'],
+            // Scoped to the user's tenant — a bare exists rule would accept another tenant's column ID
+            'scrum_column_id' => [
+                'required',
+                'integer',
+                Rule::exists('scrum_columns', 'id')->where('tenant_id', $this->user()->tenant_id),
+            ],
             'position' => ['required', 'integer', 'min:0'],
         ];
     }

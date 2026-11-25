@@ -76,7 +76,7 @@
 
                                 <!-- Task list -->
                                 <draggable
-                                    v-model="column.tasks"
+                                    :model-value="getVisibleTasks(column)"
                                     group="tasks"
                                     :animation="200"
                                     ghost-class="sortable-ghost"
@@ -88,6 +88,7 @@
                                     <ScrumTaskCard
                                         v-for="task in getVisibleTasks(column)"
                                         :key="task.id"
+                                        :data-task-id="task.id"
                                         :task="task"
                                         @edit="openEditTask"
                                         @clone="cloneTask"
@@ -267,19 +268,32 @@ function onColumnDragEnd() {
     store.reorderColumns(store.columns);
 }
 
+/**
+ * The task lists are rendered from getVisibleTasks() (filtered by assignee), so DOM
+ * indices are NOT indices into column.tasks. The draggable is bound one-way
+ * (:model-value) — it never mutates the store; we identify the task by its DOM
+ * data-task-id and translate the visible drop index into a full-list position.
+ */
 function onTaskDragEnd(evt: any) {
-    const targetColumnEl = evt.to;
-    const targetColumnId = parseInt(targetColumnEl.dataset.columnId);
-    const newIndex = evt.newIndex;
+    const taskId = Number(evt.item?.dataset?.taskId);
+    const targetColumnId = Number(evt.to?.dataset?.columnId);
+    const sourceColumnId = Number(evt.from?.dataset?.columnId);
+    const newIndex: number = evt.newIndex;
+    if (!taskId || !targetColumnId || newIndex == null) return;
+    if (sourceColumnId === targetColumnId && evt.oldIndex === newIndex) return;
 
-    // vue-draggable-plus already updated the v-model arrays
     const targetCol = store.columns.find((c) => c.id === targetColumnId);
     if (!targetCol) return;
 
-    const movedTask = targetCol.tasks[newIndex];
-    if (!movedTask) return;
+    // Target column without the moved task — same basis the backend uses for `position`
+    const rest = targetCol.tasks.filter((t) => t.id !== taskId);
+    const visibleRest = filterUserId.value !== null ? rest.filter((t) => t.assigned_to?.id === filterUserId.value) : rest;
 
-    store.moveTask(movedTask.id, targetColumnId, newIndex);
+    // Insert before the visible task now at newIndex; dropped past the last visible one → end
+    const anchor = visibleRest[newIndex];
+    const position = anchor ? rest.findIndex((t) => t.id === anchor.id) : rest.length;
+
+    store.moveTask(taskId, targetColumnId, position);
 }
 
 function showMessage(msg = '', type = 'success') {
