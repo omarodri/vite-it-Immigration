@@ -3,7 +3,7 @@ tipo: spec
 numero: 71
 modulo: Workflows / Scrumboard
 dominio: WFLOW/UX
-estado: PEND
+estado: PART
 tags: [spec, scrumboard, kanban, vista-lista, drag-and-drop, accesibilidad, ux, filtros]
 relacionados:
   - "[[18_scrum_board_kanban|Spec 18]]"
@@ -13,7 +13,7 @@ relacionados:
 # [[71_scrumboard_vista_lista|Spec 71]] — Scrumboard: Vista de Lista
 
 **Dominio:** WFLOW / UX
-**Estado:** PEND — preguntas abiertas resueltas (§8) + R16 (finalizadas) añadido, listo para implementar
+**Estado:** PART — implementado 2026-11-24; `/code-review` aplicado; pendiente QA manual (móvil, teclado, Firefox/Safari) (DT-19)
 **Tipo (CLAUDE.md › Flujo de Trabajo):** Feature mediano — **solo frontend**, sin cambios de BD ni API
 **Relacionados:** 18 (diseño original del Scrum Board), 42 (modal guard), 43 (persistencia de filtros); commit `72f2637` (fix DnD con filtro activo)
 **Creado:** 2026-11-24 · **Decisiones del usuario:** 2026-11-24

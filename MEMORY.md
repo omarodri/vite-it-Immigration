@@ -47,6 +47,19 @@
 
 ## Implementaciones Recientes
 
+### 2026-11-24 — Spec 71: Scrumboard Vista de Lista + mostrar/ocultar finalizadas (PART — falta QA manual)
+
+**Solo frontend, sin cambios de API/BD.**
+- `ScrumBoard.vue` → contenedor: header (selector Tablero/Lista, filtro asignado, switch "Mostrar finalizadas"), modales únicos, handlers centralizados (`onMoveTask` resuelve posición con `resolveDropPosition`). Vistas `ScrumKanbanView` (extraída 1:1) y `ScrumListView` → `ScrumListSection` → `ScrumTaskRow`; `ScrumMoveToMenu` (accesible por teclado), `ScrumViewToggle`, `ScrumEmptyState`; helpers en `views/apps/scrumboard/scrumUi.ts`
+- `utils/scrumDragPosition.ts`: `resolveDropPosition` (índice visible → posición lista completa; `'first'`/`'last'`) + `parseTaskDragEnd`
+- `stores/scrum.ts`: estado UI (`viewMode`, `filterUserId`, `showCompleted`, `collapsedColumnIds`, `pendingHideTaskIds`), predicado único `isTaskVisible`, `hiddenCompletedCount`, `hiddenTasksCount`, `initUiPreferences(userId)` (localStorage por usuario `scrum.viewMode.{id}` / `scrum.collapsed.{id}`, default Lista < 768px). `auth.ts` logout → `useScrumStore().$reset()`
+- Clic/Enter en tarjeta o fila abre `ScrumTaskModal`; finalizadas ocultas por defecto con gracia 1,5 s + toast "Deshacer"
+- 19 claves i18n FLAT `scrum_*` en es/en/fr; 35 tests Vitest nuevos (`tests/unit/utils/scrumDragPosition.spec.ts`, `tests/unit/stores/scrum.spec.ts`)
+- **Bug encontrado y corregido durante QA (afecta también al fix `72f2637`):** con `:model-value` unidireccional, tras un drop entre columnas quedaba una tarjeta fantasma en la columna origen (Vue desmonta el componente pero no elimina el nodo que vue-draggable-plus reinsertó fuera del rango del fragmento v-for). Fix: remount de las listas de tareas (key bump) tras cada drag — ver `DRAG_REMOUNT_NOTE` en `scrumUi.ts` y gotcha G27
+- QA en navegador (local): drag entre columnas, reorden, drop en sección colapsada (`'first'`), drop con finalizadas ocultas intercaladas, reordenar secciones, "Mover a…" + foco, toggle con gracia/Deshacer, persistencia tras recarga — DOM y servidor consistentes. Pendiente: QA manual en móvil, teclado completo, Firefox/Safari
+- `/code-review` (2026-11-24) — corregidos: reset del store scrum también en el handler 401 de `api.ts` (sesión revocada/expirada); `ScrumMoveToMenu` ya no se cierra con `focusout` de `relatedTarget=null` (Safari/Firefox macOS); fechas `due_date` tratadas como fecha calendario (antes UTC → un día antes al oeste de UTC; ahora "vencida" solo desde el día siguiente); estado vacío compara contra `assigneeMatchCount` (misma base que `hiddenCompletedCount`); timers de gracia por tarea + `Swal.close()` solo si el popup es el toast Deshacer; aviso de borrado con tareas ocultas solo si la columna se ve vacía; getter cacheado `columnViews` (predicados `matchesAssignee`/`isHiddenAsCompleted` compartidos); composable `useScrumViewInteractions` compartido por ambas vistas; `COMPLETE_GRACE_MS` alimenta la animación CSS vía `--scrum-grace`. No aplicado: reemplazar el remount (G27) — vue-draggable-plus solo expone `customUpdate`, no hooks para add/remove
+
+
 ### 2026-05-29 — Spec 70: CRUD Case Types + Clonación en Cascada (Fases 1-5 COMPLETADAS)
 
 **Backend (Fases 1-3):**
@@ -361,3 +374,4 @@ Tres archivos afectados:
 | DT-16 | Spec 70 — tests Feature PHP: `CaseTypeCloneTest` (deep copy, traducciones, sort_order, tipo global→tenant), `CaseTypeDeleteTest` (cascade soft-delete/restore, withTrashed fix, null-safety), `CaseTypePermissionsTest` (roles × endpoints). Smoke test E2E manual. | MEDIA | 70 |
 | DT-17 | API Scrum sin autorización: ningún controller llama `authorize()`, sin Policy ni middleware `permission:`, todos los Form Requests de `app/Http/Requests/Scrum/` devuelven `true`, ruta `/apps/scrumboard` sin `meta.permission`. Cualquier usuario autenticado del tenant (incl. rol `cliente`) puede leer/modificar el tablero vía API. Aislamiento cross-tenant sí cubierto por `BelongsToTenant`. Detectado al redactar Spec 71 | **ALTA** | 18 |
 | DT-18 | `ScrumTaskListResource` no devuelve `assigned_to.avatar_url` (el tipo TS y `UserAvatar` lo esperan) → el tablero muestra siempre iniciales | BAJA | 18 |
+| DT-19 | Spec 71 — pendiente para pasar a DONE: QA manual (móvil 375px, navegación solo teclado, drag y "Mover a…" en Firefox/Safari, CA36 con 200 tareas). `/code-review` ya hecho | MEDIA | 71 |

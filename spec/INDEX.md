@@ -90,7 +90,7 @@
 | 48 | 48_etapas_personalizadas_por_expediente | Etapas Personalizadas | WFLOW | PART | 46,47 |
 | 49 | 49_todos_core_desde_workflow | Todos desde Workflow | WFLOW | DONE | 19,46 |
 | 50 | 50_edicion_clonacion_tareas_workflow | Edición/Clonación Tareas | WFLOW | DONE | 46,49 |
-| 71 | 71_scrumboard_vista_lista | Scrumboard: Vista de Lista | WFLOW/UX | PEND | 18,42,43 |
+| 71 | 71_scrumboard_vista_lista | Scrumboard: Vista de Lista | WFLOW/UX | PART | 18,42,43 |
 
 ---
 

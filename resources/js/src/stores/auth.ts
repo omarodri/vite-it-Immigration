@@ -173,6 +173,10 @@ export const useAuthStore = defineStore('auth', {
                 const { useTimesheetStore } = await import('@/stores/useTimesheetStore');
                 const timesheetStore = useTimesheetStore();
                 timesheetStore.clearAll();
+
+                // Clear scrum board data + UI filters so the next user does not inherit them (Spec 71 R14)
+                const { useScrumStore } = await import('@/stores/scrum');
+                useScrumStore().$reset();
             } catch (error: any) {
                 console.error('Logout error:', error);
             } finally {

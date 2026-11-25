@@ -131,6 +131,13 @@ api.interceptors.response.use(
                             timesheetStore.clearLocal();
                         } catch { /* ignore */ }
 
+                        // Clear scrum board data + UI filters so the next user on this tab
+                        // does not inherit them (Spec 71 R14 — same as explicit logout)
+                        try {
+                            const { useScrumStore } = await import('@/stores/scrum');
+                            useScrumStore().$reset();
+                        } catch { /* ignore */ }
+
                         // Clear auth state FIRST so the router guest-guard
                         // doesn't bounce us back to home (isAuthenticated && to.meta.guest)
                         const { useAuthStore } = await import('@/stores/auth');

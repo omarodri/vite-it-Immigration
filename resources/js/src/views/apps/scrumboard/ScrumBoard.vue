@@ -1,18 +1,25 @@
 <template>
-    <div>
+    <div :style="{ '--scrum-grace': `${COMPLETE_GRACE_MS}ms` }">
         <!-- Header -->
         <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
             <h5 class="font-semibold text-xl dark:text-white">{{ $t('scrum_board') }}</h5>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 flex-wrap">
+                <!-- View: Board | List (Spec 71) -->
+                <ScrumViewToggle :model-value="store.viewMode" @update:model-value="store.setViewMode" />
                 <!-- Filter: Asignado a -->
                 <div class="flex items-center gap-2">
-                    <label class="text-sm font-medium dark:text-white whitespace-nowrap">{{ $t('scrum_task_assigned_to') }}:</label>
-                    <select v-model="filterUserId" class="form-select text-sm py-1.5 min-w-[140px]">
+                    <label for="scrumFilterAssignee" class="text-sm font-medium dark:text-white whitespace-nowrap">{{ $t('scrum_task_assigned_to') }}:</label>
+                    <select id="scrumFilterAssignee" v-model="filterUserId" class="form-select text-sm py-1.5 min-w-[140px]">
                         <option :value="null">{{ $t('scrum_filter_all') }}</option>
                         <option :value="currentUserId">@me</option>
                         <option v-for="user in otherAssignees" :key="user.id" :value="user.id">{{ user.name }}</option>
                     </select>
                 </div>
+                <!-- Filter: show completed (hidden by default — Spec 71 R16) -->
+                <label class="inline-flex items-center gap-2 cursor-pointer text-sm font-medium dark:text-white whitespace-nowrap mb-0">
+                    <input v-model="showCompleted" type="checkbox" class="form-checkbox" />
+                    {{ $t('scrum_show_completed') }}
+                </label>
                 <!-- Add Column -->
                 <button type="button" class="btn btn-primary flex" @click="openColumnModal()">
                     <icon-plus class="w-5 h-5 ltr:mr-3 rtl:ml-3" />
@@ -26,130 +33,42 @@
             <span class="animate-spin border-4 border-primary border-l-transparent rounded-full w-10 h-10 inline-block align-middle"></span>
         </div>
 
-        <!-- Board -->
-        <div v-else class="relative pt-5">
-            <div class="h-full -mx-2">
-                <div class="overflow-x-auto pb-2">
-                    <draggable
-                        v-model="store.columns"
-                        group="columns"
-                        handle=".column-drag-handle"
-                        :animation="200"
-                        item-key="id"
-                        class="flex items-start flex-nowrap gap-5 px-2"
-                        @end="onColumnDragEnd"
-                    >
-                        <template v-for="column in store.columns" :key="column.id">
-                            <div class="panel w-80 flex-none">
-                                <!-- Column header -->
-                                <div class="flex justify-between mb-5">
-                                    <div class="flex items-center gap-2">
-                                        <span class="column-drag-handle cursor-grab text-gray-400 hover:text-gray-600">
-                                            <icon-menu class="w-4 h-4" />
-                                        </span>
-                                        <h4 class="text-base font-semibold">{{ column.title }}</h4>
-                                        <span class="badge bg-gray-200 dark:bg-gray-700 text-xs">{{ getVisibleTasks(column).length }}</span>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <button type="button" class="hover:text-primary ltr:mr-2 rtl:ml-2" @click="openTaskModal(column.id)">
-                                            <icon-plus-circle />
-                                        </button>
-                                        <div class="dropdown">
-                                            <Popper :placement="appStore.rtlClass === 'rtl' ? 'bottom-start' : 'bottom-end'" offsetDistance="0">
-                                                <button type="button" class="hover:text-primary">
-                                                    <icon-horizontal-dots class="opacity-70 hover:opacity-100" />
-                                                </button>
-                                                <template #content="{ close }">
-                                                    <ul @click="close()" class="text-black dark:text-white-dark whitespace-nowrap">
-                                                        <li>
-                                                            <a href="javascript:;" @click="openColumnModal(column)">{{ $t('scrum_edit_column') }}</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="javascript:;" class="text-danger" @click="confirmDeleteColumn(column)">{{ $t('scrum_delete_column') }}</a>
-                                                        </li>
-                                                    </ul>
-                                                </template>
-                                            </Popper>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Task list -->
-                                <draggable
-                                    :model-value="getVisibleTasks(column)"
-                                    group="tasks"
-                                    :animation="200"
-                                    ghost-class="sortable-ghost"
-                                    drag-class="sortable-drag"
-                                    class="connect-sorting-content min-h-[150px]"
-                                    :data-column-id="column.id"
-                                    @end="onTaskDragEnd"
-                                >
-                                    <ScrumTaskCard
-                                        v-for="task in getVisibleTasks(column)"
-                                        :key="task.id"
-                                        :data-task-id="task.id"
-                                        :task="task"
-                                        @edit="openEditTask"
-                                        @clone="cloneTask"
-                                        @delete="confirmDeleteTask"
-                                        @toggle="toggleTask"
-                                    />
-                                </draggable>
-
-                                <div class="pt-3">
-                                    <button type="button" class="btn btn-primary mx-auto" @click="openTaskModal(column.id)">
-                                        <icon-plus />
-                                        {{ $t('scrum_add_task') }}
-                                    </button>
-                                </div>
-                            </div>
-                        </template>
-                    </draggable>
-                </div>
-            </div>
-
-            <div v-if="store.columns.length === 0" class="text-center text-gray-400 py-20">
-                {{ $t('scrum_no_columns') }}
-            </div>
+        <div v-else-if="store.columns.length === 0" class="text-center text-gray-400 py-20">
+            {{ $t('scrum_no_columns') }}
         </div>
 
-        <!-- Column Modal -->
-        <ScrumColumnModal :is-open="showColumnModal" :column="editingColumn" @close="showColumnModal = false" @save="saveColumn" />
+        <ScrumKanbanView v-else-if="store.viewMode === 'board'" v-bind="viewProps" v-on="viewHandlers" />
+        <ScrumListView v-else v-bind="viewProps" v-on="viewHandlers" />
 
-        <!-- Task Modal -->
+        <!-- Modals: single instances shared by both views (Spec 71 R4.5 / R10.3) -->
+        <ScrumColumnModal :is-open="showColumnModal" :column="editingColumn" @close="showColumnModal = false" @save="saveColumn" />
         <ScrumTaskModal :is-open="showTaskModal" :task="editingTask" :column-id="taskModalColumnId" @close="showTaskModal = false" @saved="onTaskSaved" />
     </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
-import { VueDraggable as draggable } from 'vue-draggable-plus';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import Swal from 'sweetalert2';
 import { useI18n } from 'vue-i18n';
-import { useAppStore } from '@/stores/index';
 import { useScrumStore } from '@/stores/scrum';
 import { useAuthStore } from '@/stores/auth';
 import { useMeta } from '@/composables/use-meta';
-import ScrumTaskCard from './components/ScrumTaskCard.vue';
+import { resolveDropPosition, type MoveTaskPayload } from '@/utils/scrumDragPosition';
+import { COMPLETE_GRACE_MS } from './scrumUi';
+import ScrumKanbanView from './components/ScrumKanbanView.vue';
+import ScrumListView from './components/ScrumListView.vue';
+import ScrumViewToggle from './components/ScrumViewToggle.vue';
 import ScrumColumnModal from './components/ScrumColumnModal.vue';
 import ScrumTaskModal from './components/ScrumTaskModal.vue';
-
 import IconPlus from '@/components/icon/icon-plus.vue';
-import IconPlusCircle from '@/components/icon/icon-plus-circle.vue';
-import IconHorizontalDots from '@/components/icon/icon-horizontal-dots.vue';
-import IconMenu from '@/components/icon/icon-menu.vue';
 
 import type { ScrumColumn, ScrumTask } from '@/types/scrum';
 
 useMeta({ title: 'Scrumboard' });
 
 const { t } = useI18n();
-const appStore = useAppStore();
 const store = useScrumStore();
 const authStore = useAuthStore();
-
-const filterUserId = ref<number | null>(null);
 
 const showColumnModal = ref(false);
 const editingColumn = ref<ScrumColumn | null>(null);
@@ -159,22 +78,48 @@ const editingTask = ref<ScrumTask | null>(null);
 const taskModalColumnId = ref<number | undefined>(undefined);
 
 onMounted(() => {
+    if (authStore.user?.id) store.initUiPreferences(authStore.user.id);
     store.fetchBoard();
     store.fetchAssignees();
 });
 
 const currentUserId = computed(() => authStore.user?.id);
 
-const otherAssignees = computed(() =>
-    store.assignees.filter((a) => a.id !== currentUserId.value)
-);
+const otherAssignees = computed(() => store.assignees.filter((a) => a.id !== currentUserId.value));
 
-function getVisibleTasks(column: ScrumColumn): ScrumTask[] {
-    if (filterUserId.value !== null) {
-        return column.tasks.filter((t) => t.assigned_to?.id === filterUserId.value);
-    }
-    return column.tasks;
-}
+// Filters live in the store so both views share them and they survive SPA navigation (R5/R11)
+const filterUserId = computed({
+    get: () => store.filterUserId,
+    set: (value: number | null) => store.setFilterUserId(value),
+});
+
+const showCompleted = computed({
+    get: () => store.showCompleted,
+    set: (value: boolean) => store.setShowCompleted(value),
+});
+
+// Same contract for both views
+const viewProps = computed(() => ({
+    columns: store.columns,
+    visibleTasks: store.visibleTasks,
+    hiddenCompletedCount: store.hiddenCompletedCount,
+    assigneeMatchCount: store.assigneeMatchCount,
+    // Fade only while completed tasks are hidden; if the user shows them, nothing fades
+    fadingTaskIds: store.showCompleted ? [] : store.pendingHideTaskIds,
+}));
+
+const viewHandlers = {
+    'add-task': openTaskModal,
+    'open-task': openEditTask,
+    'clone-task': cloneTask,
+    'delete-task': confirmDeleteTask,
+    'toggle-task': toggleTask,
+    'move-task': onMoveTask,
+    'edit-column': openColumnModal,
+    'delete-column': confirmDeleteColumn,
+    'reorder-columns': (columns: ScrumColumn[]) => store.reorderColumns(columns),
+    'show-completed': () => store.setShowCompleted(true),
+};
 
 function openColumnModal(column?: ScrumColumn) {
     editingColumn.value = column ?? null;
@@ -214,7 +159,9 @@ async function saveColumn(title: string) {
 
 async function confirmDeleteColumn(column: ScrumColumn) {
     if (column.tasks && column.tasks.length > 0) {
-        showMessage(t('scrum_column_not_empty'), 'error');
+        // A column that LOOKS empty may hold tasks hidden by the filters (R7.1)
+        const looksEmpty = store.visibleTasks(column.id).length === 0;
+        showMessage(looksEmpty ? t('scrum_column_has_hidden_tasks', { n: column.tasks.length }) : t('scrum_column_not_empty'), 'error');
         return;
     }
 
@@ -234,8 +181,78 @@ async function confirmDeleteColumn(column: ScrumColumn) {
     }
 }
 
+/** One grace timer per task: re-completing within the grace period restarts it. */
+const graceTimers = new Map<number, ReturnType<typeof setTimeout>>();
+
+function startGrace(taskId: number) {
+    clearTimeout(graceTimers.get(taskId));
+    store.holdTaskVisible(taskId);
+    graceTimers.set(
+        taskId,
+        setTimeout(() => {
+            graceTimers.delete(taskId);
+            store.releaseTaskVisible(taskId);
+        }, COMPLETE_GRACE_MS),
+    );
+}
+
+function endGrace(taskId: number) {
+    clearTimeout(graceTimers.get(taskId));
+    graceTimers.delete(taskId);
+    store.releaseTaskVisible(taskId);
+}
+
+onBeforeUnmount(() => graceTimers.forEach((timer) => clearTimeout(timer)));
+
+/** Popup of the currently shown "Undo" toast, so we never close an unrelated dialog. */
+let undoToastPopup: HTMLElement | null = null;
+
+/**
+ * Completing a task while completed tasks are hidden: keep it visible for a grace period,
+ * fade it out and offer "Undo" instead of making it vanish instantly (R16.5).
+ */
 async function toggleTask(task: ScrumTask) {
-    await store.toggleTask(task.id);
+    const hidesOnComplete = !task.is_completed && !store.showCompleted;
+    if (!hidesOnComplete) {
+        await store.toggleTask(task.id);
+        return;
+    }
+
+    const taskId = task.id;
+    startGrace(taskId);
+    showUndoToast(taskId);
+
+    await store.toggleTask(taskId);
+    if (!store.findTask(taskId)?.is_completed) {
+        // Server rejected the change (optimistic update reverted): nothing to hide or undo
+        endGrace(taskId);
+        if (undoToastPopup && Swal.getPopup() === undoToastPopup) Swal.close();
+    }
+}
+
+function showUndoToast(taskId: number) {
+    Swal.fire({
+        didOpen: (popup) => {
+            undoToastPopup = popup;
+        },
+        didDestroy: () => {
+            undoToastPopup = null;
+        },
+        toast: true,
+        position: 'top',
+        icon: 'success',
+        title: t('scrum_task_completed_toast'),
+        showConfirmButton: true,
+        confirmButtonText: t('scrum_undo'),
+        timer: 5000,
+        timerProgressBar: true,
+        padding: '10px 20px',
+        customClass: { container: 'toast' },
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+        endGrace(taskId);
+        if (store.findTask(taskId)?.is_completed) store.toggleTask(taskId);
+    });
 }
 
 async function cloneTask(task: ScrumTask) {
@@ -264,36 +281,18 @@ async function confirmDeleteTask(task: ScrumTask) {
     }
 }
 
-function onColumnDragEnd() {
-    store.reorderColumns(store.columns);
-}
-
 /**
- * The task lists are rendered from getVisibleTasks() (filtered by assignee), so DOM
- * indices are NOT indices into column.tasks. The draggable is bound one-way
- * (:model-value) — it never mutates the store; we identify the task by its DOM
- * data-task-id and translate the visible drop index into a full-list position.
+ * Single entry point for drags (both views) and "Move to…". The views report a visible
+ * index / special target; it is translated to a full-list position here (Spec 71 §3.2).
  */
-function onTaskDragEnd(evt: any) {
-    const taskId = Number(evt.item?.dataset?.taskId);
-    const targetColumnId = Number(evt.to?.dataset?.columnId);
-    const sourceColumnId = Number(evt.from?.dataset?.columnId);
-    const newIndex: number = evt.newIndex;
-    if (!taskId || !targetColumnId || newIndex == null) return;
-    if (sourceColumnId === targetColumnId && evt.oldIndex === newIndex) return;
-
-    const targetCol = store.columns.find((c) => c.id === targetColumnId);
+function onMoveTask(payload: MoveTaskPayload) {
+    const targetCol = store.columns.find((c) => c.id === payload.targetColumnId);
     if (!targetCol) return;
 
-    // Target column without the moved task — same basis the backend uses for `position`
-    const rest = targetCol.tasks.filter((t) => t.id !== taskId);
-    const visibleRest = filterUserId.value !== null ? rest.filter((t) => t.assigned_to?.id === filterUserId.value) : rest;
+    const position = resolveDropPosition(targetCol.tasks, payload.taskId, payload.target, store.isTaskVisible);
+    store.moveTask(payload.taskId, payload.targetColumnId, position);
 
-    // Insert before the visible task now at newIndex; dropped past the last visible one → end
-    const anchor = visibleRest[newIndex];
-    const position = anchor ? rest.findIndex((t) => t.id === anchor.id) : rest.length;
-
-    store.moveTask(taskId, targetColumnId, position);
+    if (payload.viaMenu) showMessage(t('scrum_moved_to', { column: targetCol.title }));
 }
 
 function showMessage(msg = '', type = 'success') {
@@ -311,3 +310,20 @@ function showMessage(msg = '', type = 'success') {
     });
 }
 </script>
+
+<style>
+/* Spec 71 R16.5 — a task completed while completed tasks are hidden stays briefly, then fades.
+   Duration comes from COMPLETE_GRACE_MS (scrumUi.ts) via the --scrum-grace custom property. */
+@keyframes scrum-fade-out {
+    0%,
+    60% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+.scrum-task-fading {
+    animation: scrum-fade-out var(--scrum-grace, 1.5s) ease-in forwards;
+}
+</style>
